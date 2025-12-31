@@ -31,6 +31,9 @@ logs/
 
 # Testing
 coverage/
+.playwright-mcp/
+playwright-report/
+test-results/
 
 # Docker
 docker-compose.override.yml
