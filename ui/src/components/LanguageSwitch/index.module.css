@@ -1,0 +1,56 @@
+.container {
+  position: relative;
+}
+
+.button {
+  color: var(--mui-palette-text-primary);
+}
+
+.flagImage {
+  width: 2rem;
+  height: 2rem;
+}
+
+.popover {
+  margin-top: 2.5rem;
+  margin-left: -6.25rem;
+}
+
+.popover :global(.MuiPaper-root) {
+  min-width: 15.625rem;
+  background-color: var(--mui-palette-background-default);
+  background-image: none;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+}
+
+.popover :global(button) {
+  display: flex;
+  justify-content: start;
+  border-radius: 0 !important;
+}
+
+.languageButton {
+  padding: 1rem 0 1rem 1rem;
+  background-color: transparent;
+  color: var(--mui-palette-text-primary) !important;
+}
+
+.languageButtonSelected {
+  padding: 1rem 0 1rem 1rem;
+  background-color: var(--mui-palette-inverse-primary) !important;
+  color: var(--mui-palette-inverse-surface) !important;
+}
+
+.languageButton:hover {
+  background-color: var(--mui-palette-background-paper3) !important;
+}
+
+.flagIcon {
+  width: 1.5rem;
+}
+
+.languageLabel {
+  margin-left: 0.5rem;
+}

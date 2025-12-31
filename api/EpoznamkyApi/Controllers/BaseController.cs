@@ -1,0 +1,35 @@
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+
+namespace EpoznamkyApi.Controllers;
+
+public abstract class BaseController : ControllerBase
+{
+    protected string UserId
+    {
+        get
+        {
+            // Try to get user ID from JWT token (Keycloak 'sub' claim)
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                   ?? User.FindFirstValue("sub");
+
+            if (!string.IsNullOrEmpty(sub))
+                return sub;
+
+            // Fallback to header for development/testing
+            var headerUserId = Request.Headers["X-User-Id"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(headerUserId))
+                return headerUserId;
+
+            return "anonymous";
+        }
+    }
+
+    protected string UserEmail => User.FindFirstValue(ClaimTypes.Email)
+                                ?? User.FindFirstValue("email")
+                                ?? "";
+
+    protected string UserName => User.FindFirstValue(ClaimTypes.Name)
+                               ?? User.FindFirstValue("preferred_username")
+                               ?? "";
+}

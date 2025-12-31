@@ -1,0 +1,261 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--mui-palette-background-default);
+  border-right: 1px solid var(--mui-palette-divider);
+}
+
+.section {
+  padding: 8px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--mui-palette-text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.navItem:hover {
+  background-color: var(--mui-palette-action-hover);
+}
+
+.navItemActive {
+  background-color: var(--mui-palette-action-selected);
+}
+
+.navItemIcon {
+  color: var(--mui-palette-text-secondary);
+}
+
+.navItemLabel {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.navItemCount {
+  font-size: 0.75rem;
+  color: var(--mui-palette-text-secondary);
+  background-color: var(--mui-palette-action-hover);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.folderItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.folderItem:hover {
+  background-color: var(--mui-palette-action-hover);
+}
+
+.folderItemActive {
+  background-color: var(--mui-palette-action-selected);
+}
+
+.folderItemNested {
+  padding-left: 32px;
+}
+
+.folderItemIcon {
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.folderItemLabel {
+  flex: 1;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tagItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-size: 0.8rem;
+}
+
+.tagItem:hover {
+  opacity: 0.8;
+}
+
+.tagDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px;
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--mui-palette-text-secondary);
+  transition: background-color 0.2s;
+  font-size: 0.875rem;
+}
+
+.addButton:hover {
+  background-color: var(--mui-palette-action-hover);
+}
+
+/* Tree view note items */
+.noteTreeItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.noteTreeItem:hover {
+  background-color: var(--mui-palette-action-hover);
+}
+
+.noteTreeItemActive {
+  background-color: var(--mui-palette-action-selected);
+}
+
+.noteTreeIcon {
+  color: var(--mui-palette-text-secondary);
+  font-size: 1rem !important;
+}
+
+.noteTreeLabel {
+  flex: 1;
+  font-size: 0.8125rem;
+  color: var(--mui-palette-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Unfiled notes section */
+.unfiledHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  margin-top: 8px;
+  color: var(--mui-palette-text-secondary);
+}
+
+.unfiledIcon {
+  font-size: 1rem !important;
+}
+
+.unfiledLabel {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+/* Drag and drop styles */
+.dropTarget {
+  background-color: var(--mui-palette-primary-main) !important;
+  background-opacity: 0.15;
+  outline: 2px dashed var(--mui-palette-primary-main);
+  outline-offset: -2px;
+}
+
+.dragging {
+  opacity: 0.5;
+}
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: var(--mui-palette-text-disabled);
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+}
+
+.dragHandle:hover {
+  color: var(--mui-palette-text-secondary);
+  background-color: var(--mui-palette-action-hover);
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.dragOverlay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: var(--mui-palette-background-paper);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--mui-palette-primary-main);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.unfiledSection {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  min-height: 60px;
+}
+
+.unfiledDropHint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  color: var(--mui-palette-text-disabled);
+  font-size: 0.75rem;
+  font-style: italic;
+  border: 1px dashed var(--mui-palette-divider);
+  border-radius: 6px;
+  margin: 4px 0;
+}

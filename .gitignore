@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+ui/build/
+ui/dist/
+api/**/bin/
+api/**/obj/
+api/**/publish/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Logs
+*.log
+logs/
+
+# Testing
+coverage/
+
+# Docker
+docker-compose.override.yml
+
+# .NET
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Claude Code
+.claude/

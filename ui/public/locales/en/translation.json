@@ -1,0 +1,38 @@
+{
+  "Common": {
+    "Logo": "Logo",
+    "User": "User",
+    "Nav": {
+      "Home": "Home",
+      "Settings": "Settings"
+    },
+    "Loading": "Loading...",
+    "ErrorLoadingData": "Error loading data",
+    "Login": "Login",
+    "Save": "Save",
+    "Cancel": "Cancel",
+    "Submit": "Submit",
+    "Add": "Add",
+    "Delete": "Delete",
+    "Search": "Search...",
+    "ClearSearch": "Clear search",
+    "NoResults": "No results",
+    "SessionExpired": "Your session expired. Please log in again.",
+    "DarkMode": "Dark mode",
+    "Logout": "Logout",
+    "Version": "Version",
+    "Welcome": "Welcome"
+  },
+  "HomePage": {
+    "Description": "This is your starter template. Start building your app!"
+  },
+  "SettingsPage": {
+    "Description": "Configure your application settings here."
+  },
+  "ErrorPage": {
+    "Title": "Something went wrong",
+    "Message": "An unexpected error occurred. Please try reloading the page.",
+    "ReloadPage": "Reload Page",
+    "GoHome": "Go to Home"
+  }
+}

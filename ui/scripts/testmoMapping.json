@@ -1,0 +1,60 @@
+{
+  "cases": [
+    {
+      "id": "TC-001",
+      "name": "History page",
+      "automation": "tests/e2e/history/history-page.spec.ts"
+    },
+    {
+      "id": "TC-002",
+      "name": "Login page",
+      "automation": "tests/e2e/login/login.spec.ts"
+    },
+    {
+      "id": "TC-003",
+      "name": "Navigation page",
+      "automation": "tests/e2e/navigation/navigation.spec.ts"
+    },
+    {
+      "id": "TC-004",
+      "name": "New and Renew page",
+      "automation": "tests/e2e/navigation/new-renew-page.spec.ts"
+    },
+    {
+      "id": "TC-005",
+      "name": "Train Drivers - Add Exam Dialog",
+      "automation": "tests/e2e/train-drivers/add-exam-dialog.spec.ts"
+    },
+    {
+      "id": "TC-006",
+      "name": "Train Drivers - Add HV Class Dialog",
+      "automation": "tests/e2e/train-drivers/add-hv-class-dialog.spec.ts"
+    },
+    {
+      "id": "TC-007",
+      "name": "Train Drivers - Exams API",
+      "automation": "tests/e2e/train-drivers/exams-user-api.spec.ts"
+    },
+    {
+      "id": "TC-008",
+      "name": "Train Drivers - Right sidebar",
+      "automation": "tests/e2e/train-drivers/right-sidebar.spec.ts"
+    },
+    {
+      "id": "TC-009",
+      "name": "Train routes - API verification",
+      "automation": "tests/e2e/train-routes/api-verification.spec.ts"
+    }, 
+    {
+      "id": "TC-010",
+      "name": "Train routes - Right sidebar",
+      "automation": "tests/e2e/train-routes/right-sidebar.spec.ts"
+    },
+    {
+      "id": "TC-011",
+      "name": "Format date",
+      "automation": "tests/e2e/utils/formatDate.spec.ts"
+    }
+
+  ]
+}

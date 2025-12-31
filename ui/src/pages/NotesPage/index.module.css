@@ -1,0 +1,49 @@
+.container {
+  display: grid;
+  grid-template-columns: 240px 350px 1fr;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sidebar {
+  overflow-y: auto;
+}
+
+.noteList {
+  border-right: 1px solid var(--mui-palette-divider);
+  overflow: hidden;
+}
+
+.editor {
+  overflow: hidden;
+  background-color: var(--mui-palette-background-default);
+}
+
+@media (max-width: 1024px) {
+  .container {
+    grid-template-columns: 200px 280px 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar,
+  .noteList {
+    display: none;
+  }
+
+  .sidebarVisible {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 100;
+    background-color: var(--mui-palette-background-paper);
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+  }
+}

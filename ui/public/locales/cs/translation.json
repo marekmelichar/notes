@@ -1,0 +1,38 @@
+{
+  "Common": {
+    "Logo": "Logo",
+    "User": "Uživatel",
+    "Nav": {
+      "Home": "Domů",
+      "Settings": "Nastavení"
+    },
+    "Loading": "Načítám...",
+    "ErrorLoadingData": "Chyba při načítání dat",
+    "Login": "Přihlásit",
+    "Save": "Uložit",
+    "Cancel": "Zrušit",
+    "Submit": "Odeslat",
+    "Add": "Přidat",
+    "Delete": "Smazat",
+    "Search": "Hledat...",
+    "ClearSearch": "Smazat hledání",
+    "NoResults": "Žádné výsledky",
+    "SessionExpired": "Vaše relace vypršela. Prosím přihlaste se znovu.",
+    "DarkMode": "Tmavý režim",
+    "Logout": "Odhlásit",
+    "Version": "Verze",
+    "Welcome": "Vítejte"
+  },
+  "HomePage": {
+    "Description": "Toto je váš startovací šablona. Začněte budovat svou aplikaci!"
+  },
+  "SettingsPage": {
+    "Description": "Zde můžete konfigurovat nastavení aplikace."
+  },
+  "ErrorPage": {
+    "Title": "Něco se pokazilo",
+    "Message": "Došlo k neočekávané chybě. Zkuste prosím obnovit stránku.",
+    "ReloadPage": "Obnovit stránku",
+    "GoHome": "Jít domů"
+  }
+}

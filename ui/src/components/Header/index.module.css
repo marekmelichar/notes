@@ -1,0 +1,107 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 4rem;
+  padding: 0 1.5rem;
+  background-color: var(--mui-palette-background-default);
+  border-bottom: 1px solid var(--mui-palette-outlineVariant);
+  color: var(--mui-palette-text-primary);
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 1rem;
+  }
+}
+
+.logoLink {
+  padding: 1rem 0 0 0 !important;
+  text-decoration: none;
+}
+
+.logo {
+  height: 1.375rem;
+}
+
+@media (max-width: 768px) {
+  .logo {
+    height: 1.125rem;
+  }
+}
+
+.avatarButton {
+  margin-left: 0.5rem;
+}
+
+.avatar {
+  width: 2rem;
+  height: 2rem;
+  background-color: var(--mui-palette-primary-main);
+}
+
+.menuUserInfo {
+  padding: 1.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.menuSection {
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.themeToggleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.themeToggleLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.iconWrapper {
+  width: 2rem;
+  height: 2rem;
+  margin-right: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  color: var(--mui-palette-text-secondary);
+}
+
+.logoutMenuItem {
+  padding: 0.5rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.logoutRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0.25rem;
+}
+
+.footerSection {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  display: flex;
+  justify-content: center;
+}
+
+.versionText {
+  color: var(--mui-palette-text-secondary);
+}
+
+.menuPaper {
+  min-width: 280px;
+  margin-top: 1.5rem;
+}

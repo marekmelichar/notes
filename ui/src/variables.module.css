@@ -1,0 +1,80 @@
+.customAutocomplete {
+  width: 100%;
+}
+
+.customAutocomplete :global .MuiInputBase-input {
+  padding-left: 0px !important;
+}
+
+.customAutocomplete :global .MuiOutlinedInput-root {
+  padding-right: 8px !important;
+}
+
+.customAutocomplete :global .MuiAutocomplete-clearIndicator {
+  display: none;
+}
+
+.customAutocomplete :global .MuiAutocomplete-endAdornment {
+  right: 4px !important;
+}
+
+.visibleClearButton :global .p-hidden-space {
+    visibility: visible !important;
+}
+
+/* Custom scrollbar - reusable for any scrollable container */
+.customScrollbar {
+  overflow-y: auto;
+}
+
+.customScrollbar::-webkit-scrollbar {
+  width: 0.375rem;
+}
+
+.customScrollbar:hover::-webkit-scrollbar {
+  display: block;
+}
+
+.customScrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.customScrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 0.1875rem;
+}
+
+.customScrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Dark mode scrollbar */
+:global([data-mui-color-scheme="dark"]) .customScrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+:global([data-mui-color-scheme="dark"]) .customScrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Hidden scrollbar variant - completely hides the scrollbar */
+.customScrollbarHidden {
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.customScrollbarHidden::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* If you need more global reusable classes, add them below and use via className */
+
+/* Search icon in input fields */
+.searchIcon {
+  color: var(--mui-palette-text-secondary);
+}

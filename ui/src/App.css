@@ -1,0 +1,53 @@
+/* Application fonts
+   ================= */
+
+@font-face {
+  font-family: 'Source Sans';
+  src: url('./assets/fonts/SourceSans3-VariableFont_wght.ttf') format('truetype');
+}
+
+body {
+  margin: 0;
+  font-family: 'Source Sans', Arial, sans-serif !important;
+  background-color: var(--mui-palette-background-default);
+  color: var(--mui-palette-text-primary);
+}
+
+a,
+a:link,
+a:visited,
+a:hover,
+a:active,
+a:focus {
+  all: unset; /* resets most styles */
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+img {
+  width: 100%;
+}
+
+/* Accessible focus styles */
+:focus-visible {
+  outline: 2px solid var(--mui-palette-primary-main);
+  outline-offset: 2px;
+}
+
+/* High contrast focus for buttons */
+button:focus-visible,
+.MuiButton-root:focus-visible,
+.MuiIconButton-root:focus-visible {
+  outline: 2px solid var(--mui-palette-primary-main);
+  outline-offset: 2px;
+}
+
+/* Focus for inputs */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--mui-palette-primary-main);
+  outline-offset: 2px;
+}
+

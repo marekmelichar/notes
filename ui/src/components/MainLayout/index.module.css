@@ -1,0 +1,6 @@
+.mainContent {
+  background-color: var(--mui-palette-background-default);
+  color: var(--mui-palette-text-primary);
+  overflow: hidden;
+  box-sizing: border-box;
+}

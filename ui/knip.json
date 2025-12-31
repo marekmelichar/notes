@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": [
+    "src/api/generated/**",
+    "src/types/generated/**",
+    "src/mocks/index.ts",
+    "src/theme/index.ts",
+    "src/pages/TrainRoutesPage/**"
+  ],
+  "entry": [
+    "src/main.tsx",
+    "orval.config.ts"
+  ],
+  "ignoreDependencies": [
+    "rollup-plugin-visualizer"
+  ],
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "duplicates": "off",
+    "exports": "off",
+    "types": "off"
+  }
+}

@@ -1,0 +1,6 @@
+@EpoznamkyApi_HostAddress = http://localhost:5158
+
+GET {{EpoznamkyApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

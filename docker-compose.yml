@@ -1,0 +1,80 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16
+    container_name: epoznamky-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Keycloak Authentication
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: epoznamky-keycloak
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KC_HOSTNAME_URL: "http://host.docker.internal:8080"
+      KC_HOSTNAME_ADMIN_URL: "http://host.docker.internal:8080"
+    command: start-dev --import-realm
+    volumes:
+      - ./keycloak-realm.json:/opt/keycloak/data/import/epoznamky-realm.json:ro
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # .NET API
+  api:
+    build:
+      context: ./api/EpoznamkyApi
+      dockerfile: Dockerfile
+    container_name: epoznamky-api
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=epoznamky;Username=postgres;Password=postgres"
+      Keycloak__Authority: "http://keycloak:8080/realms/epoznamky"
+      ASPNETCORE_ENVIRONMENT: Development
+      Logging__LogLevel__Microsoft.AspNetCore.Authentication: Debug
+    ports:
+      - "5001:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+
+  # Frontend
+  frontend:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    container_name: epoznamky-frontend
+    environment:
+      API_URL: "http://localhost:5001"
+      KEYCLOAK_URL: "http://localhost:8080"
+      KEYCLOAK_REALM: "epoznamky"
+      KEYCLOAK_CLIENT_ID: "epoznamky-frontend"
+      MOCK_MODE: "false"
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+      - keycloak
+
+volumes:
+  postgres_data:
