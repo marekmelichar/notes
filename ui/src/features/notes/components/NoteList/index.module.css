@@ -171,3 +171,56 @@
   margin-left: 16px;
   flex-shrink: 0;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .header {
+    padding: 12px;
+  }
+
+  .listContainer {
+    padding: 12px;
+  }
+
+  .gridView {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .noteCard {
+    padding: 12px;
+  }
+
+  .noteCard:hover {
+    transform: none;
+  }
+
+  .noteCard:active {
+    background-color: var(--mui-palette-action-hover);
+  }
+
+  .noteListItem {
+    padding: 12px;
+    min-height: 64px;
+  }
+
+  .noteListItem:hover {
+    background-color: transparent;
+  }
+
+  .noteListItem:active {
+    background-color: var(--mui-palette-action-hover);
+  }
+
+  .noteListItemMeta {
+    margin-left: 8px;
+  }
+
+  .emptyState {
+    padding: 24px;
+  }
+
+  .emptyStateIcon {
+    font-size: 48px;
+  }
+}

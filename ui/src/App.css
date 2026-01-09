@@ -51,3 +51,42 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
+/* Mobile global styles */
+html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Prevent pull-to-refresh on mobile */
+@media (max-width: 768px) {
+  body {
+    overscroll-behavior-y: contain;
+  }
+
+  /* Improve touch responsiveness */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ensure buttons have adequate touch targets */
+  button,
+  [role='button'] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Improve scrolling performance */
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+

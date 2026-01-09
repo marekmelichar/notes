@@ -4,7 +4,10 @@
     "User": "User",
     "Nav": {
       "Home": "Home",
-      "Settings": "Settings"
+      "Settings": "Settings",
+      "Folders": "Folders",
+      "Notes": "Notes",
+      "Editor": "Editor"
     },
     "Loading": "Loading...",
     "ErrorLoadingData": "Error loading data",
