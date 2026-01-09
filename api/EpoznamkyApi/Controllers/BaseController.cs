@@ -10,8 +10,9 @@ public abstract class BaseController : ControllerBase
         get
         {
             // Try to get user ID from JWT token (Keycloak 'sub' claim)
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                   ?? User.FindFirstValue("sub");
+            // With JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear(), 'sub' is preserved as-is
+            var sub = User.FindFirstValue("sub")
+                   ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             if (!string.IsNullOrEmpty(sub))
                 return sub;

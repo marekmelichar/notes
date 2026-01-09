@@ -1,8 +1,12 @@
+using System.IdentityModel.Tokens.Jwt;
 using EpoznamkyApi.Data;
 using EpoznamkyApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
+// Disable default claim type mapping to preserve original JWT claim names (e.g., 'sub' instead of mapped Microsoft types)
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 
