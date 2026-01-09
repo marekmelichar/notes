@@ -1,7 +1,7 @@
 import { apiManager } from '@/lib';
 import type { Note, Folder, Tag } from '../types';
 
-const API_BASE = '/api/v1';
+const API_BASE = '/v1';
 
 // Note operations via API
 export const notesApi = {
