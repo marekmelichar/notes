@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useAppDispatch, useAppSelector, setMobileView } from '@/store';
 import { loadNotes } from '@/features/notes/store/notesSlice';
@@ -38,11 +38,16 @@ const NotesPage = () => {
     };
   }, [dispatch]);
 
-  // Switch to editor view when a note is selected on mobile
+  // Track previous selected note to detect new selections
+  const prevSelectedNoteId = useRef<string | null>(null);
+
+  // Switch to editor view only when a NEW note is selected on mobile
   useEffect(() => {
-    if (isMobile && selectedNoteId && mobileView === 'list') {
+    const isNewSelection = selectedNoteId && selectedNoteId !== prevSelectedNoteId.current;
+    if (isMobile && isNewSelection && mobileView === 'list') {
       dispatch(setMobileView('editor'));
     }
+    prevSelectedNoteId.current = selectedNoteId;
   }, [dispatch, isMobile, selectedNoteId, mobileView]);
 
   // Helper to get panel visibility class
