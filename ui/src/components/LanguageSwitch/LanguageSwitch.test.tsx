@@ -14,14 +14,6 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
-// Mock flag images
-vi.mock('@/assets/Flag_CZ.svg', () => ({ default: 'flag-cz.svg' }));
-vi.mock('@/assets/Flag_SK.svg', () => ({ default: 'flag-sk.svg' }));
-vi.mock('@/assets/Flag_EN.svg', () => ({ default: 'flag-en.svg' }));
-vi.mock('@/assets/Flag_HU.svg', () => ({ default: 'flag-hu.svg' }));
-vi.mock('@/assets/Flag_DE.svg', () => ({ default: 'flag-de.svg' }));
-vi.mock('@/assets/Flag_IT.svg', () => ({ default: 'flag-it.svg' }));
-
 const renderWithTheme = (component: React.ReactElement, mode: 'light' | 'dark' = 'light') => {
   const theme = createTheme({
     palette: {
@@ -40,29 +32,8 @@ describe('LanguageSwitch', () => {
   describe('Rendering - Initial State', () => {
     it('should render the language switch button', () => {
       renderWithTheme(<LanguageSwitch />);
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       expect(button).toBeInTheDocument();
-    });
-
-    it('should display the current language flag for English', () => {
-      i18n.language = 'en';
-      renderWithTheme(<LanguageSwitch />);
-      const flag = screen.getByAltText('English');
-      expect(flag).toBeInTheDocument();
-    });
-
-    it('should display Slovak flag when language is Slovak', () => {
-      i18n.language = 'sk';
-      renderWithTheme(<LanguageSwitch />);
-      const flag = screen.getByAltText('Slovensky');
-      expect(flag).toBeInTheDocument();
-    });
-
-    it('should display Czech flag when language is Czech', () => {
-      i18n.language = 'cs';
-      renderWithTheme(<LanguageSwitch />);
-      const flag = screen.getByAltText('Čeština');
-      expect(flag).toBeInTheDocument();
     });
 
     it('should not show popover by default', () => {
@@ -76,7 +47,7 @@ describe('LanguageSwitch', () => {
       const user = userEvent.setup();
       renderWithTheme(<LanguageSwitch />);
 
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       await user.click(button);
 
       await waitFor(() => {
@@ -88,15 +59,11 @@ describe('LanguageSwitch', () => {
       const user = userEvent.setup();
       renderWithTheme(<LanguageSwitch />);
 
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       await user.click(button);
 
       await waitFor(() => {
-        expect(screen.getByText('Slovensky')).toBeInTheDocument();
         expect(screen.getByText('English')).toBeInTheDocument();
-        expect(screen.getByText('Deutsch')).toBeInTheDocument();
-        expect(screen.getByText('Magyar')).toBeInTheDocument();
-        expect(screen.getByText('Italiano')).toBeInTheDocument();
         expect(screen.getByText('Čeština')).toBeInTheDocument();
       });
     });
@@ -107,7 +74,7 @@ describe('LanguageSwitch', () => {
       const user = userEvent.setup();
       renderWithTheme(<LanguageSwitch />);
 
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       await user.click(button);
 
       await waitFor(() => {
@@ -123,82 +90,50 @@ describe('LanguageSwitch', () => {
   });
 
   describe('Language Selection', () => {
-    it('should call i18n.changeLanguage when selecting Slovak', async () => {
+    it('should call i18n.changeLanguage when selecting Czech', async () => {
       const user = userEvent.setup();
       renderWithTheme(<LanguageSwitch />);
 
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       await user.click(button);
 
       await waitFor(() => {
-        expect(screen.getByText('Slovensky')).toBeInTheDocument();
+        expect(screen.getByText('Čeština')).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText('Slovensky'));
+      await user.click(screen.getByText('Čeština'));
 
-      expect(i18n.changeLanguage).toHaveBeenCalledWith('sk');
+      expect(i18n.changeLanguage).toHaveBeenCalledWith('cs');
     });
 
     it('should close popover after selecting a language', async () => {
       const user = userEvent.setup();
       renderWithTheme(<LanguageSwitch />);
 
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       await user.click(button);
 
       await waitFor(() => {
-        expect(screen.getByText('Deutsch')).toBeInTheDocument();
+        expect(screen.getByText('Čeština')).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText('Deutsch'));
-
-      await waitFor(() => {
-        expect(screen.queryByText('Deutsch')).not.toBeInTheDocument();
-      });
-    });
-
-    it('should change language to German', async () => {
-      const user = userEvent.setup();
-      renderWithTheme(<LanguageSwitch />);
-
-      await user.click(screen.getByRole('button', { name: /Přepnout jazyk/i }));
-      await waitFor(() => screen.getByText('Deutsch'));
-      await user.click(screen.getByText('Deutsch'));
-
-      expect(i18n.changeLanguage).toHaveBeenCalledWith('de');
-    });
-
-    it('should change language to Hungarian', async () => {
-      const user = userEvent.setup();
-      renderWithTheme(<LanguageSwitch />);
-
-      await user.click(screen.getByRole('button', { name: /Přepnout jazyk/i }));
-      await waitFor(() => screen.getByText('Magyar'));
-      await user.click(screen.getByText('Magyar'));
-
-      expect(i18n.changeLanguage).toHaveBeenCalledWith('hu');
-    });
-
-    it('should change language to Italian', async () => {
-      const user = userEvent.setup();
-      renderWithTheme(<LanguageSwitch />);
-
-      await user.click(screen.getByRole('button', { name: /Přepnout jazyk/i }));
-      await waitFor(() => screen.getByText('Italiano'));
-      await user.click(screen.getByText('Italiano'));
-
-      expect(i18n.changeLanguage).toHaveBeenCalledWith('it');
-    });
-
-    it('should change language to Czech', async () => {
-      const user = userEvent.setup();
-      renderWithTheme(<LanguageSwitch />);
-
-      await user.click(screen.getByRole('button', { name: /Přepnout jazyk/i }));
-      await waitFor(() => screen.getByText('Čeština'));
       await user.click(screen.getByText('Čeština'));
 
-      expect(i18n.changeLanguage).toHaveBeenCalledWith('cs');
+      await waitFor(() => {
+        expect(screen.queryByText('Čeština')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should change language to English', async () => {
+      const user = userEvent.setup();
+      i18n.language = 'cs';
+      renderWithTheme(<LanguageSwitch />);
+
+      await user.click(screen.getByRole('button', { name: /Switch language/i }));
+      await waitFor(() => screen.getByText('English'));
+      await user.click(screen.getByText('English'));
+
+      expect(i18n.changeLanguage).toHaveBeenCalledWith('en');
     });
   });
 
@@ -207,29 +142,29 @@ describe('LanguageSwitch', () => {
       i18n.language = 'en-US';
       renderWithTheme(<LanguageSwitch />);
 
-      const flag = screen.getByAltText('English');
-      expect(flag).toBeInTheDocument();
+      const button = screen.getByTestId('language-switch-button');
+      expect(button).toHaveAttribute('data-language', 'en');
     });
 
-    it('should match language code from locale string like sk-SK', () => {
-      i18n.language = 'sk-SK';
+    it('should match language code from locale string like cs-CZ', () => {
+      i18n.language = 'cs-CZ';
       renderWithTheme(<LanguageSwitch />);
 
-      const flag = screen.getByAltText('Slovensky');
-      expect(flag).toBeInTheDocument();
+      const button = screen.getByTestId('language-switch-button');
+      expect(button).toHaveAttribute('data-language', 'cs');
     });
   });
 
   describe('Theme Integration', () => {
     it('should render in light mode', () => {
       renderWithTheme(<LanguageSwitch />, 'light');
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       expect(button).toBeInTheDocument();
     });
 
     it('should render in dark mode', () => {
       renderWithTheme(<LanguageSwitch />, 'dark');
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       expect(button).toBeInTheDocument();
     });
   });
@@ -237,7 +172,7 @@ describe('LanguageSwitch', () => {
   describe('Accessibility', () => {
     it('should have accessible button label', () => {
       renderWithTheme(<LanguageSwitch />);
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       expect(button).toHaveAccessibleName();
     });
 
@@ -246,7 +181,7 @@ describe('LanguageSwitch', () => {
       renderWithTheme(<LanguageSwitch />);
 
       await user.tab();
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       expect(button).toHaveFocus();
     });
 
@@ -254,7 +189,7 @@ describe('LanguageSwitch', () => {
       const user = userEvent.setup();
       renderWithTheme(<LanguageSwitch />);
 
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       button.focus();
       await user.keyboard('{Enter}');
 
@@ -269,7 +204,7 @@ describe('LanguageSwitch', () => {
       const user = userEvent.setup();
       renderWithTheme(<LanguageSwitch />);
 
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
 
       await user.click(button);
       await user.click(button);
@@ -288,7 +223,7 @@ describe('LanguageSwitch', () => {
       i18n.language = 'xyz';
       renderWithTheme(<LanguageSwitch />);
 
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
       expect(button).toBeInTheDocument();
     });
   });
@@ -298,7 +233,7 @@ describe('LanguageSwitch', () => {
       const user = userEvent.setup();
       renderWithTheme(<LanguageSwitch />);
 
-      const button = screen.getByRole('button', { name: /Přepnout jazyk/i });
+      const button = screen.getByRole('button', { name: /Switch language/i });
 
       expect(screen.queryByText('English')).not.toBeInTheDocument();
 
