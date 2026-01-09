@@ -55,7 +55,9 @@
         "http://localhost:5173/*",
         "http://127.0.0.1:3000/*",
         "http://127.0.0.1:5173/*",
-        "http://host.docker.internal:3000/*"
+        "http://host.docker.internal:3000/*",
+        "https://epoznamky.cz/*",
+        "https://www.epoznamky.cz/*"
       ],
       "webOrigins": [
         "http://localhost:3000",
@@ -63,12 +65,14 @@
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
         "http://host.docker.internal:3000",
+        "https://epoznamky.cz",
+        "https://www.epoznamky.cz",
         "+"
       ],
       "protocol": "openid-connect",
       "attributes": {
         "pkce.code.challenge.method": "S256",
-        "post.logout.redirect.uris": "http://localhost:3000/*##http://localhost:5173/*"
+        "post.logout.redirect.uris": "http://localhost:3000/*##http://localhost:5173/*##https://epoznamky.cz/*##https://www.epoznamky.cz/*"
       },
       "defaultClientScopes": [
         "web-origins",
