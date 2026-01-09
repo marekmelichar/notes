@@ -3,7 +3,6 @@ import {
   createAsyncThunk,
   type PayloadAction,
 } from "@reduxjs/toolkit";
-import { v4 as uuidv4 } from "uuid";
 import { notesApi } from "../services/notesApi";
 import type {
   Note,
@@ -44,22 +43,22 @@ export const createNote = createAsyncThunk(
     const now = Date.now();
     // Get the max order in the folder and add 1
     const maxOrder = await notesApi.getMaxOrderInFolder(data.folderId ?? null);
-    const note: Note = {
-      id: uuidv4(),
+    const noteData = {
       title: data.title || "Untitled",
       content: "",
       folderId: data.folderId ?? null,
-      tags: [],
+      tags: [] as string[],
       isPinned: false,
       isDeleted: false,
-      sharedWith: [],
+      sharedWith: [] as Array<{ userId: string; email: string; permission: string }>,
       order: maxOrder + 1,
       createdAt: now,
       updatedAt: now,
       syncedAt: null,
     };
-    await notesApi.create(note);
-    return note;
+    // Use the server-generated ID
+    const id = await notesApi.create(noteData);
+    return { ...noteData, id } as Note;
   }
 );
 
