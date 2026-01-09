@@ -1,0 +1,34 @@
+.container {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  border-top: 1px solid var(--mui-palette-divider);
+  background-color: var(--mui-palette-background-paper);
+}
+
+@media (max-width: 768px) {
+  .container {
+    display: block;
+  }
+}
+
+.navigation {
+  background-color: var(--mui-palette-background-paper);
+  height: 56px;
+}
+
+.action {
+  min-width: 60px;
+  padding: 6px 12px 8px;
+}
+
+.action.Mui-selected {
+  color: var(--mui-palette-primary-main);
+}
+
+.action.Mui-disabled {
+  opacity: 0.5;
+}

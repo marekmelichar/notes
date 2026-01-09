@@ -259,3 +259,67 @@
   border-radius: 6px;
   margin: 4px 0;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .sidebar {
+    border-right: none;
+  }
+
+  .navItem {
+    padding: 12px;
+    min-height: 48px;
+  }
+
+  .navItem:hover {
+    background-color: transparent;
+  }
+
+  .navItem:active {
+    background-color: var(--mui-palette-action-hover);
+  }
+
+  .folderItem {
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+
+  .folderItem:hover {
+    background-color: transparent;
+  }
+
+  .folderItem:active {
+    background-color: var(--mui-palette-action-hover);
+  }
+
+  .tagItem {
+    padding: 8px 12px;
+    min-height: 36px;
+  }
+
+  .addButton {
+    padding: 12px;
+    min-height: 48px;
+  }
+
+  .addButton:hover {
+    background-color: transparent;
+  }
+
+  .addButton:active {
+    background-color: var(--mui-palette-action-hover);
+  }
+
+  .noteTreeItem {
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+
+  .noteTreeItem:hover {
+    background-color: transparent;
+  }
+
+  .noteTreeItem:active {
+    background-color: var(--mui-palette-action-hover);
+  }
+}

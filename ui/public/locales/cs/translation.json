@@ -4,7 +4,10 @@
     "User": "Uživatel",
     "Nav": {
       "Home": "Domů",
-      "Settings": "Nastavení"
+      "Settings": "Nastavení",
+      "Folders": "Složky",
+      "Notes": "Poznámky",
+      "Editor": "Editor"
     },
     "Loading": "Načítám...",
     "ErrorLoadingData": "Chyba při načítání dat",
