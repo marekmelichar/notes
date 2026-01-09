@@ -50,7 +50,7 @@ export const createNote = createAsyncThunk(
       tags: [] as string[],
       isPinned: false,
       isDeleted: false,
-      sharedWith: [] as Array<{ userId: string; email: string; permission: string }>,
+      sharedWith: [],
       order: maxOrder + 1,
       createdAt: now,
       updatedAt: now,
