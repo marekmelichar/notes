@@ -76,7 +76,6 @@ interface SortableNoteProps {
 const SortableNote = ({ note, level }: SortableNoteProps) => {
   const dispatch = useAppDispatch();
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
-  const filter = useAppSelector(selectNotesFilter);
   const isSelected = selectedNoteId === note.id;
 
   const {
@@ -99,19 +98,9 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
   };
 
   const handleClick = () => {
+    // Only select the note - don't change the filter
+    // The tree view already shows folder context visually
     dispatch(setSelectedNote(note.id));
-    // Switch to the note's folder if it's different from the current filter
-    if (filter.folderId !== note.folderId) {
-      dispatch(
-        setFilter({
-          folderId: note.folderId,
-          isDeleted: false,
-          isPinned: null,
-          tagIds: [],
-          searchQuery: "",
-        })
-      );
-    }
   };
 
   return (
