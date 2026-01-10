@@ -149,11 +149,12 @@ const DroppableFolder = ({
 
   const isExpanded = expandedIds.includes(folder.id);
 
-  // Folder is active if filter points to it OR if the selected note is in this folder
+  // Folder is active if it contains the selected note, or if no note is selected and filter points to it
   const selectedNote = selectedNoteId ? notes.find((n) => n.id === selectedNoteId) : null;
   const containsSelectedNote = selectedNote?.folderId === folder.id;
   const isFilterActive = filter.folderId === folder.id && !filter.isDeleted && filter.isPinned === null;
-  const isActive = isFilterActive || containsSelectedNote;
+  // When a note is selected, only its parent folder should be active (not the filtered folder)
+  const isActive = containsSelectedNote || (!selectedNote && isFilterActive);
   const folderNotes = useMemo(() => {
     return notes
       .filter((n) => n.folderId === folder.id && !n.isDeleted)
