@@ -196,7 +196,7 @@ const DroppableFolder = ({
     <>
       <Box
         ref={setNodeRef}
-        className={`${styles.folderItem} ${isOver ? styles.dropTarget : ""}`}
+        className={`${styles.folderItem} ${isActive ? styles.folderItemActive : ""} ${isOver ? styles.dropTarget : ""}`}
         style={{ paddingLeft: 12 + level * 20 }}
         onClick={handleClick}
       >
