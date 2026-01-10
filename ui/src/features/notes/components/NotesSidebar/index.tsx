@@ -136,7 +136,6 @@ const DroppableFolder = ({
   showNotes = false,
 }: DroppableFolderProps) => {
   const dispatch = useAppDispatch();
-  const filter = useAppSelector(selectNotesFilter);
   const expandedIds = useAppSelector(selectExpandedFolderIds);
   const childFolders = useAppSelector(selectChildFolders(folder.id));
   const notes = useAppSelector(selectAllNotes);
@@ -148,9 +147,6 @@ const DroppableFolder = ({
 
   const isExpanded = expandedIds.includes(folder.id);
 
-  // Folder is active when filter points to it (simple and direct)
-  const isFilterActive = filter.folderId === folder.id && !filter.isDeleted;
-  const isActive = isFilterActive;
   const folderNotes = useMemo(() => {
     return notes
       .filter((n) => n.folderId === folder.id && !n.isDeleted)
@@ -164,8 +160,6 @@ const DroppableFolder = ({
     childFolders.length > 0 || (showNotes && folderNotes.length > 0);
 
   const handleClick = () => {
-    // Clear note selection so the folder becomes active via filter
-    dispatch(setSelectedNote(null));
     dispatch(
       setFilter({
         folderId: folder.id,
@@ -175,7 +169,6 @@ const DroppableFolder = ({
         searchQuery: "",
       })
     );
-    // Also expand the folder to show its notes in the tree
     if (!isExpanded) {
       dispatch(expandFolder(folder.id));
     }
@@ -184,24 +177,13 @@ const DroppableFolder = ({
   const handleToggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
     dispatch(toggleFolderExpanded(folder.id));
-    // Also make this folder active when expanding/collapsing
-    dispatch(setSelectedNote(null));
-    dispatch(
-      setFilter({
-        folderId: folder.id,
-        isDeleted: false,
-        isPinned: null,
-        tagIds: [],
-        searchQuery: "",
-      })
-    );
   };
 
   return (
     <>
       <Box
         ref={setNodeRef}
-        className={`${styles.folderItem} ${isActive ? styles.folderItemActive : ""} ${isOver ? styles.dropTarget : ""}`}
+        className={`${styles.folderItem} ${isOver ? styles.dropTarget : ""}`}
         style={{ paddingLeft: 12 + level * 20 }}
         onClick={handleClick}
       >
