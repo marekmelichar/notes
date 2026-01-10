@@ -11,6 +11,7 @@ import {
   Button,
   TextField,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
 import {
   DndContext,
@@ -58,11 +59,12 @@ import {
   selectRootFolders,
   selectChildFolders,
   selectExpandedFolderIds,
+  selectFoldersLoading,
   toggleFolderExpanded,
   expandFolder,
   createFolder,
 } from "../../store/foldersSlice";
-import { selectAllTags, createTag } from "../../store/tagsSlice";
+import { selectAllTags, selectTagsLoading, createTag } from "../../store/tagsSlice";
 import type { Folder, Note } from "../../types";
 import styles from "./index.module.css";
 
@@ -270,6 +272,8 @@ export const NotesSidebar = () => {
   const rootFolders = useAppSelector(selectRootFolders);
   const tags = useAppSelector(selectAllTags);
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
+  const isFoldersLoading = useAppSelector(selectFoldersLoading);
+  const isTagsLoading = useAppSelector(selectTagsLoading);
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
@@ -533,13 +537,19 @@ export const NotesSidebar = () => {
             </Box>
           </Box>
 
-          {rootFolders.map((folder) => (
-            <DroppableFolder
-              key={folder.id}
-              folder={folder}
-              showNotes={showTreeView}
-            />
-          ))}
+          {isFoldersLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            rootFolders.map((folder) => (
+              <DroppableFolder
+                key={folder.id}
+                folder={folder}
+                showNotes={showTreeView}
+              />
+            ))
+          )}
 
           {/* Unfiled notes - only in tree view */}
           {showTreeView && (
@@ -599,35 +609,43 @@ export const NotesSidebar = () => {
           </Box>
 
           <Box className={styles.tagsContainer}>
-            {tags.map((tag) => (
-              <Box
-                key={tag.id}
-                className={styles.tagItem}
-                onClick={() => handleTagClick(tag.id)}
-                sx={{
-                  backgroundColor: filter.tagIds.includes(tag.id)
-                    ? tag.color
-                    : "transparent",
-                  color: filter.tagIds.includes(tag.id) ? "white" : "inherit",
-                  border: `1px solid ${tag.color}`,
-                }}
-              >
-                <span
-                  className={styles.tagDot}
-                  style={{ backgroundColor: tag.color }}
-                />
-                {tag.name}
+            {isTagsLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, width: '100%' }}>
+                <CircularProgress size={20} />
               </Box>
-            ))}
+            ) : (
+              <>
+                {tags.map((tag) => (
+                  <Box
+                    key={tag.id}
+                    className={styles.tagItem}
+                    onClick={() => handleTagClick(tag.id)}
+                    sx={{
+                      backgroundColor: filter.tagIds.includes(tag.id)
+                        ? tag.color
+                        : "transparent",
+                      color: filter.tagIds.includes(tag.id) ? "white" : "inherit",
+                      border: `1px solid ${tag.color}`,
+                    }}
+                  >
+                    <span
+                      className={styles.tagDot}
+                      style={{ backgroundColor: tag.color }}
+                    />
+                    {tag.name}
+                  </Box>
+                ))}
 
-            {tags.length === 0 && (
-              <Box
-                className={styles.addButton}
-                onClick={() => setIsTagDialogOpen(true)}
-              >
-                <LocalOfferOutlinedIcon fontSize="small" />
-                <span>Add tag</span>
-              </Box>
+                {tags.length === 0 && (
+                  <Box
+                    className={styles.addButton}
+                    onClick={() => setIsTagDialogOpen(true)}
+                  >
+                    <LocalOfferOutlinedIcon fontSize="small" />
+                    <span>Add tag</span>
+                  </Box>
+                )}
+              </>
             )}
           </Box>
         </Box>

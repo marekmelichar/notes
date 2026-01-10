@@ -8,6 +8,7 @@ import {
   MenuItem,
   Button,
   Divider,
+  CircularProgress,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -20,6 +21,7 @@ import {
   selectNotesViewMode,
   selectNotesSortBy,
   selectNotesSortOrder,
+  selectNotesLoading,
   setSelectedNote,
   setViewMode,
   setSortBy,
@@ -42,6 +44,7 @@ export const NoteList = () => {
   const sortOrder = useAppSelector(selectNotesSortOrder);
   const filter = useAppSelector(selectNotesFilter);
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
+  const isLoading = useAppSelector(selectNotesLoading);
 
   const [sortAnchorEl, setSortAnchorEl] = React.useState<null | HTMLElement>(null);
 
@@ -152,7 +155,14 @@ export const NoteList = () => {
       </Box>
 
       <Box className={styles.listContainer}>
-        {notes.length === 0 ? (
+        {isLoading ? (
+          <Box className={styles.loadingState}>
+            <CircularProgress size={40} />
+            <Typography variant="body2" color="text.secondary">
+              Loading notes...
+            </Typography>
+          </Box>
+        ) : notes.length === 0 ? (
           <Box className={styles.emptyState}>
             <NoteOutlinedIcon className={styles.emptyStateIcon} />
             <Typography variant="h6">No notes yet</Typography>
