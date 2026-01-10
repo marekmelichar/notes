@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import { v4 as uuidv4 } from 'uuid';
 import { foldersApi } from '../services/notesApi';
 import { showSuccess, showError } from '@/store/notificationsSlice';
 import type { Folder, FoldersState } from '../types';
@@ -24,8 +23,7 @@ export const createFolder = createAsyncThunk(
       const maxOrder = folders.reduce((max, f) => Math.max(max, f.order), -1);
 
       const now = Date.now();
-      const folder: Folder = {
-        id: uuidv4(),
+      const folderData = {
         name: data.name,
         parentId: data.parentId ?? null,
         color: data.color || '#6366f1',
@@ -33,9 +31,10 @@ export const createFolder = createAsyncThunk(
         createdAt: now,
         updatedAt: now,
       };
-      await foldersApi.create(folder);
+      // Use the server-generated ID
+      const id = await foldersApi.create(folderData);
       dispatch(showSuccess('Folder created'));
-      return folder;
+      return { ...folderData, id } as Folder;
     } catch (error) {
       dispatch(showError('Failed to create folder'));
       throw error;

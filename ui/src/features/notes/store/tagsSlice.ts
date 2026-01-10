@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { v4 as uuidv4 } from 'uuid';
 import { tagsApi } from '../services/notesApi';
 import { showSuccess, showError } from '@/store/notificationsSlice';
 import type { Tag, TagsState } from '../types';
@@ -19,14 +18,14 @@ export const createTag = createAsyncThunk(
   'tags/createTag',
   async (data: { name: string; color?: string }, { dispatch }) => {
     try {
-      const tag: Tag = {
-        id: uuidv4(),
+      const tagData = {
         name: data.name,
         color: data.color || '#6366f1',
       };
-      await tagsApi.create(tag);
+      // Use the server-generated ID
+      const id = await tagsApi.create(tagData);
       dispatch(showSuccess('Tag created'));
-      return tag;
+      return { ...tagData, id } as Tag;
     } catch (error) {
       dispatch(showError('Failed to create tag'));
       throw error;
