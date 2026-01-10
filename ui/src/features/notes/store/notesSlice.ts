@@ -4,6 +4,7 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { notesApi } from "../services/notesApi";
+import { showSuccess, showError } from "@/store/notificationsSlice";
 import type {
   Note,
   NotesState,
@@ -39,60 +40,89 @@ export const loadNotes = createAsyncThunk("notes/loadNotes", async () => {
 
 export const createNote = createAsyncThunk(
   "notes/createNote",
-  async (data: { title?: string; folderId?: string | null }) => {
-    const now = Date.now();
-    // Get the max order in the folder and add 1
-    const maxOrder = await notesApi.getMaxOrderInFolder(data.folderId ?? null);
-    const noteData = {
-      title: data.title || "Untitled",
-      content: "",
-      folderId: data.folderId ?? null,
-      tags: [] as string[],
-      isPinned: false,
-      isDeleted: false,
-      sharedWith: [],
-      order: maxOrder + 1,
-      createdAt: now,
-      updatedAt: now,
-      syncedAt: null,
-    };
-    // Use the server-generated ID
-    const id = await notesApi.create(noteData);
-    return { ...noteData, id } as Note;
+  async (data: { title?: string; folderId?: string | null }, { dispatch }) => {
+    try {
+      const now = Date.now();
+      // Get the max order in the folder and add 1
+      const maxOrder = await notesApi.getMaxOrderInFolder(data.folderId ?? null);
+      const noteData = {
+        title: data.title || "Untitled",
+        content: "",
+        folderId: data.folderId ?? null,
+        tags: [] as string[],
+        isPinned: false,
+        isDeleted: false,
+        sharedWith: [],
+        order: maxOrder + 1,
+        createdAt: now,
+        updatedAt: now,
+        syncedAt: null,
+      };
+      // Use the server-generated ID
+      const id = await notesApi.create(noteData);
+      dispatch(showSuccess("Note created"));
+      return { ...noteData, id } as Note;
+    } catch (error) {
+      dispatch(showError("Failed to create note"));
+      throw error;
+    }
   }
 );
 
 export const updateNote = createAsyncThunk(
   "notes/updateNote",
-  async ({ id, updates }: { id: string; updates: Partial<Note> }) => {
-    await notesApi.update(id, updates);
-    const updatedNote = await notesApi.getById(id);
-    return updatedNote;
+  async ({ id, updates }: { id: string; updates: Partial<Note> }, { dispatch }) => {
+    try {
+      await notesApi.update(id, updates);
+      const updatedNote = await notesApi.getById(id);
+      return updatedNote;
+    } catch (error) {
+      dispatch(showError("Failed to save note"));
+      throw error;
+    }
   }
 );
 
 export const deleteNote = createAsyncThunk(
   "notes/deleteNote",
-  async (id: string) => {
-    await notesApi.delete(id);
-    return id;
+  async (id: string, { dispatch }) => {
+    try {
+      await notesApi.delete(id);
+      dispatch(showSuccess("Note moved to trash"));
+      return id;
+    } catch (error) {
+      dispatch(showError("Failed to delete note"));
+      throw error;
+    }
   }
 );
 
 export const restoreNote = createAsyncThunk(
   "notes/restoreNote",
-  async (id: string) => {
-    await notesApi.restore(id);
-    const note = await notesApi.getById(id);
-    return note;
+  async (id: string, { dispatch }) => {
+    try {
+      await notesApi.restore(id);
+      const note = await notesApi.getById(id);
+      dispatch(showSuccess("Note restored"));
+      return note;
+    } catch (error) {
+      dispatch(showError("Failed to restore note"));
+      throw error;
+    }
   }
 );
 
 export const permanentDeleteNote = createAsyncThunk(
   "notes/permanentDeleteNote",
-  async (id: string) => {
-    await notesApi.permanentDelete(id);
-    return id;
+  async (id: string, { dispatch }) => {
+    try {
+      await notesApi.permanentDelete(id);
+      dispatch(showSuccess("Note permanently deleted"));
+      return id;
+    } catch (error) {
+      dispatch(showError("Failed to delete note"));
+      throw error;
+    }
   }
 );
 

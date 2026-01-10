@@ -3,7 +3,7 @@ import { IconButton, styled } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { closeSnackbar, MaterialDesignContent, SnackbarProvider } from 'notistack';
-import { ErrorBoundary, LoadingFallback } from './components';
+import { ErrorBoundary, LoadingFallback, NotificationListener } from './components';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { ROUTE_HOME, SNACKBARS_AUTOHIDE_DURATION } from './config';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
@@ -121,6 +121,7 @@ export const App = () => {
           warning: StyledSnackbar,
         }}
       >
+        <NotificationListener />
         <ErrorBoundary>
           <Suspense fallback={<LoadingFallback />}>
             <RouterProvider router={router} />
