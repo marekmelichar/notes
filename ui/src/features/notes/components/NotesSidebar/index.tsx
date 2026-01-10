@@ -140,6 +140,7 @@ const DroppableFolder = ({
   const expandedIds = useAppSelector(selectExpandedFolderIds);
   const childFolders = useAppSelector(selectChildFolders(folder.id));
   const notes = useAppSelector(selectAllNotes);
+  const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
 
   const { isOver, setNodeRef } = useDroppable({
     id: `folder-${folder.id}`,
@@ -147,7 +148,12 @@ const DroppableFolder = ({
   });
 
   const isExpanded = expandedIds.includes(folder.id);
-  const isActive = filter.folderId === folder.id && !filter.isDeleted && filter.isPinned === null;
+
+  // Folder is active if filter points to it OR if the selected note is in this folder
+  const selectedNote = selectedNoteId ? notes.find((n) => n.id === selectedNoteId) : null;
+  const containsSelectedNote = selectedNote?.folderId === folder.id;
+  const isFilterActive = filter.folderId === folder.id && !filter.isDeleted && filter.isPinned === null;
+  const isActive = isFilterActive || containsSelectedNote;
   const folderNotes = useMemo(() => {
     return notes
       .filter((n) => n.folderId === folder.id && !n.isDeleted)
