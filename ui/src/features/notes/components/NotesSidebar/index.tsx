@@ -355,10 +355,11 @@ export const NotesSidebar = () => {
           }
         } else if (note.folderId !== overNote.folderId) {
           // Moving to a different folder - place at the end
+          // Use empty string to clear folder (null means "don't change" in the API)
           dispatch(
             updateNote({
               id: note.id,
-              updates: { folderId: overNote.folderId },
+              updates: { folderId: overNote.folderId ?? '' },
             })
           );
           if (overNote.folderId) {
@@ -383,7 +384,8 @@ export const NotesSidebar = () => {
       // Check if dropping on unfiled zone
       if (overData?.type === "unfiled") {
         if (note.folderId !== null) {
-          dispatch(updateNote({ id: note.id, updates: { folderId: null } }));
+          // Use empty string to clear folder (null means "don't change" in the API)
+          dispatch(updateNote({ id: note.id, updates: { folderId: '' } }));
         }
         return;
       }
