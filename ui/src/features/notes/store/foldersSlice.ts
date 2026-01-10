@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 import { foldersApi } from '../services/notesApi';
+import { showSuccess, showError } from '@/store/notificationsSlice';
 import type { Folder, FoldersState } from '../types';
 
 const initialState: FoldersState = {
@@ -17,38 +18,59 @@ export const loadFolders = createAsyncThunk('folders/loadFolders', async () => {
 
 export const createFolder = createAsyncThunk(
   'folders/createFolder',
-  async (data: { name: string; parentId?: string | null; color?: string }) => {
-    const folders = await foldersApi.getAll();
-    const maxOrder = folders.reduce((max, f) => Math.max(max, f.order), -1);
+  async (data: { name: string; parentId?: string | null; color?: string }, { dispatch }) => {
+    try {
+      const folders = await foldersApi.getAll();
+      const maxOrder = folders.reduce((max, f) => Math.max(max, f.order), -1);
 
-    const now = Date.now();
-    const folder: Folder = {
-      id: uuidv4(),
-      name: data.name,
-      parentId: data.parentId ?? null,
-      color: data.color || '#6366f1',
-      order: maxOrder + 1,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await foldersApi.create(folder);
-    return folder;
+      const now = Date.now();
+      const folder: Folder = {
+        id: uuidv4(),
+        name: data.name,
+        parentId: data.parentId ?? null,
+        color: data.color || '#6366f1',
+        order: maxOrder + 1,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await foldersApi.create(folder);
+      dispatch(showSuccess('Folder created'));
+      return folder;
+    } catch (error) {
+      dispatch(showError('Failed to create folder'));
+      throw error;
+    }
   },
 );
 
 export const updateFolder = createAsyncThunk(
   'folders/updateFolder',
-  async ({ id, updates }: { id: string; updates: Partial<Folder> }) => {
-    await foldersApi.update(id, updates);
-    const folder = await foldersApi.getById(id);
-    return folder;
+  async ({ id, updates }: { id: string; updates: Partial<Folder> }, { dispatch }) => {
+    try {
+      await foldersApi.update(id, updates);
+      const folder = await foldersApi.getById(id);
+      dispatch(showSuccess('Folder updated'));
+      return folder;
+    } catch (error) {
+      dispatch(showError('Failed to update folder'));
+      throw error;
+    }
   },
 );
 
-export const deleteFolder = createAsyncThunk('folders/deleteFolder', async (id: string) => {
-  await foldersApi.delete(id);
-  return id;
-});
+export const deleteFolder = createAsyncThunk(
+  'folders/deleteFolder',
+  async (id: string, { dispatch }) => {
+    try {
+      await foldersApi.delete(id);
+      dispatch(showSuccess('Folder deleted'));
+      return id;
+    } catch (error) {
+      dispatch(showError('Failed to delete folder'));
+      throw error;
+    }
+  },
+);
 
 export const reorderFolders = createAsyncThunk(
   'folders/reorderFolders',

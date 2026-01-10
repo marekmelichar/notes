@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { v4 as uuidv4 } from 'uuid';
 import { tagsApi } from '../services/notesApi';
+import { showSuccess, showError } from '@/store/notificationsSlice';
 import type { Tag, TagsState } from '../types';
 
 const initialState: TagsState = {
@@ -16,30 +17,51 @@ export const loadTags = createAsyncThunk('tags/loadTags', async () => {
 
 export const createTag = createAsyncThunk(
   'tags/createTag',
-  async (data: { name: string; color?: string }) => {
-    const tag: Tag = {
-      id: uuidv4(),
-      name: data.name,
-      color: data.color || '#6366f1',
-    };
-    await tagsApi.create(tag);
-    return tag;
+  async (data: { name: string; color?: string }, { dispatch }) => {
+    try {
+      const tag: Tag = {
+        id: uuidv4(),
+        name: data.name,
+        color: data.color || '#6366f1',
+      };
+      await tagsApi.create(tag);
+      dispatch(showSuccess('Tag created'));
+      return tag;
+    } catch (error) {
+      dispatch(showError('Failed to create tag'));
+      throw error;
+    }
   },
 );
 
 export const updateTag = createAsyncThunk(
   'tags/updateTag',
-  async ({ id, updates }: { id: string; updates: Partial<Tag> }) => {
-    await tagsApi.update(id, updates);
-    const tag = await tagsApi.getById(id);
-    return tag;
+  async ({ id, updates }: { id: string; updates: Partial<Tag> }, { dispatch }) => {
+    try {
+      await tagsApi.update(id, updates);
+      const tag = await tagsApi.getById(id);
+      dispatch(showSuccess('Tag updated'));
+      return tag;
+    } catch (error) {
+      dispatch(showError('Failed to update tag'));
+      throw error;
+    }
   },
 );
 
-export const deleteTag = createAsyncThunk('tags/deleteTag', async (id: string) => {
-  await tagsApi.delete(id);
-  return id;
-});
+export const deleteTag = createAsyncThunk(
+  'tags/deleteTag',
+  async (id: string, { dispatch }) => {
+    try {
+      await tagsApi.delete(id);
+      dispatch(showSuccess('Tag deleted'));
+      return id;
+    } catch (error) {
+      dispatch(showError('Failed to delete tag'));
+      throw error;
+    }
+  },
+);
 
 export const tagsSlice = createSlice({
   name: 'tags',
