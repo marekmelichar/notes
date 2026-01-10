@@ -152,7 +152,8 @@ const DroppableFolder = ({
   // Folder is active if it contains the selected note, or if no note is selected and filter points to it
   const selectedNote = selectedNoteId ? notes.find((n) => n.id === selectedNoteId) : null;
   const containsSelectedNote = selectedNote?.folderId === folder.id;
-  const isFilterActive = filter.folderId === folder.id && !filter.isDeleted && filter.isPinned === null;
+  // Check if filter is pointing to this folder (simplified check - just folder match and not in trash)
+  const isFilterActive = filter.folderId === folder.id && !filter.isDeleted;
   // When a note is selected, only its parent folder should be active (not the filtered folder)
   const isActive = containsSelectedNote || (!selectedNote && isFilterActive);
   const folderNotes = useMemo(() => {
@@ -188,6 +189,17 @@ const DroppableFolder = ({
   const handleToggleExpand = (e: React.MouseEvent) => {
     e.stopPropagation();
     dispatch(toggleFolderExpanded(folder.id));
+    // Also make this folder active when expanding/collapsing
+    dispatch(setSelectedNote(null));
+    dispatch(
+      setFilter({
+        folderId: folder.id,
+        isDeleted: false,
+        isPinned: null,
+        tagIds: [],
+        searchQuery: "",
+      })
+    );
   };
 
   return (
