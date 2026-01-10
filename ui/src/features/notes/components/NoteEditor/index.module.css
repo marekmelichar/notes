@@ -56,6 +56,13 @@
   color: var(--mui-palette-text-secondary);
 }
 
+.lastSaved {
+  padding: 4px 16px;
+  font-size: 0.75rem;
+  color: var(--mui-palette-text-secondary);
+  text-align: right;
+}
+
 .emptyState {
   display: flex;
   flex-direction: column;
