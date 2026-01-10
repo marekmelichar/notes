@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef, useMemo } from 'react';
+import React, { useCallback, useState, useRef, useMemo } from 'react';
 import { Box, IconButton, Typography, Tooltip, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress } from '@mui/material';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
@@ -35,7 +35,6 @@ function parseContent(content: string | undefined): PartialBlock[] | undefined {
     }
 
     // Legacy TipTap format - return undefined to start fresh
-    // User will need to re-enter content or we can add migration later
     if (parsed.type === 'doc' && parsed.content) {
       return undefined;
     }
@@ -46,66 +45,108 @@ function parseContent(content: string | undefined): PartialBlock[] | undefined {
   }
 }
 
+// Separate component for the BlockNote editor to handle remounting on note change
+interface BlockNoteEditorProps {
+  initialContent: PartialBlock[] | undefined;
+  onSave: (content: string) => void;
+  onChange: () => void;
+}
+
+const BlockNoteEditor = ({ initialContent, onSave, onChange }: BlockNoteEditorProps) => {
+  const editor = useCreateBlockNote({
+    initialContent,
+  });
+
+  // Calculate word count from blocks
+  const getTextFromBlocks = (blocks: Block[]): string => {
+    let text = '';
+    for (const block of blocks) {
+      if (block.content && Array.isArray(block.content)) {
+        for (const item of block.content) {
+          if (item.type === 'text' && item.text) {
+            text += item.text + ' ';
+          }
+        }
+      }
+      if (block.children) {
+        text += getTextFromBlocks(block.children as Block[]);
+      }
+    }
+    return text;
+  };
+
+  const textContent = getTextFromBlocks(editor.document);
+  const charCount = textContent.replace(/\s/g, '').length;
+  const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
+
+  const handleChange = useCallback(() => {
+    onChange();
+  }, [onChange]);
+
+  // Expose save method via callback
+  const handleSaveContent = useCallback(() => {
+    return JSON.stringify(editor.document);
+  }, [editor]);
+
+  // Store the save handler for parent to call
+  React.useEffect(() => {
+    (window as unknown as Record<string, () => string>).__blockNoteGetContent = handleSaveContent;
+    return () => {
+      delete (window as unknown as Record<string, () => string>).__blockNoteGetContent;
+    };
+  }, [handleSaveContent]);
+
+  return (
+    <>
+      <Box className={styles.editorContent}>
+        <BlockNoteView
+          editor={editor}
+          theme="dark"
+          onChange={handleChange}
+        />
+      </Box>
+      <Box className={styles.footer}>
+        <Typography variant="caption">
+          {wordCount} words | {charCount} characters
+        </Typography>
+      </Box>
+    </>
+  );
+};
+
 export const NoteEditor = () => {
   const dispatch = useAppDispatch();
   const note = useAppSelector(selectSelectedNote);
   const folders = useAppSelector(selectAllFolders);
   const tags = useAppSelector((state) => (note ? selectTagsByIds(note.tags)(state) : []));
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(note?.title || '');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [folderMenuAnchor, setFolderMenuAnchor] = useState<null | HTMLElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Track which note we're currently editing
-  const currentNoteIdRef = useRef<string | null>(null);
-  const lastSavedContentRef = useRef<string>('');
-  const lastSavedTitleRef = useRef<string>('');
+  // Track the last saved values
+  const lastSavedContentRef = useRef<string>(note?.content || '');
+  const lastSavedTitleRef = useRef<string>(note?.title || '');
+
+  // Update title when note changes
+  React.useEffect(() => {
+    if (note) {
+      setTitle(note.title || '');
+      lastSavedContentRef.current = note.content || '';
+      lastSavedTitleRef.current = note.title || '';
+      setHasUnsavedChanges(false);
+    }
+  }, [note?.id]);
 
   // Get initial content for the editor
   const initialContent = useMemo(() => {
     return parseContent(note?.content);
-  }, [note?.id]); // Only recalculate when note ID changes
+  }, [note?.id]);
 
-  // Create BlockNote editor
-  const editor = useCreateBlockNote({
-    initialContent,
-  });
-
-  // Update editor content when note changes
-  useEffect(() => {
-    if (editor && note) {
-      // Update tracking refs
-      currentNoteIdRef.current = note.id;
-      lastSavedContentRef.current = note.content || '';
-      lastSavedTitleRef.current = note.title || '';
-
-      // Set editor content
-      const blocks = parseContent(note.content);
-      if (blocks) {
-        editor.replaceBlocks(editor.document, blocks);
-      } else {
-        // Clear editor for new note or legacy content
-        editor.replaceBlocks(editor.document, []);
-      }
-
-      setTitle(note.title || '');
-      setHasUnsavedChanges(false);
-    } else if (editor && !note) {
-      currentNoteIdRef.current = null;
-      editor.replaceBlocks(editor.document, []);
-      setTitle('');
-      setHasUnsavedChanges(false);
-    }
-  }, [editor, note?.id, note?.content, note?.title]);
-
-  // Handle editor changes
   const handleEditorChange = useCallback(() => {
-    if (!note) return;
-    const content = JSON.stringify(editor.document);
-    const hasContentChanged = content !== lastSavedContentRef.current;
-    setHasUnsavedChanges(hasContentChanged || title !== lastSavedTitleRef.current);
-  }, [editor, note, title]);
+    setHasUnsavedChanges(true);
+  }, []);
 
   // Handle title changes
   const handleTitleChange = useCallback(
@@ -119,9 +160,10 @@ export const NoteEditor = () => {
 
   // Manual save handler
   const handleSave = useCallback(async () => {
-    if (!note || !editor || isSaving) return;
+    if (!note || isSaving) return;
 
-    const content = JSON.stringify(editor.document);
+    const getContent = (window as unknown as Record<string, () => string>).__blockNoteGetContent;
+    const content = getContent ? getContent() : '[]';
     const updates: { content?: string; title?: string } = {};
 
     const hasContentChanged = content !== lastSavedContentRef.current;
@@ -146,10 +188,10 @@ export const NoteEditor = () => {
         setIsSaving(false);
       }
     }
-  }, [note, editor, title, dispatch, isSaving]);
+  }, [note, title, dispatch, isSaving]);
 
   // Keyboard shortcut for save (Ctrl/Cmd + S)
-  useEffect(() => {
+  React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
@@ -185,7 +227,6 @@ export const NoteEditor = () => {
 
   const handleFolderChange = useCallback((folderId: string | null) => {
     if (note) {
-      // Send empty string to API to clear folder (null means "don't change" in the API)
       dispatch(updateNote({ id: note.id, updates: { folderId: folderId ?? '' } }));
     }
     setFolderMenuAnchor(null);
@@ -204,28 +245,6 @@ export const NoteEditor = () => {
       </Box>
     );
   }
-
-  // Calculate word count from blocks
-  const getTextFromBlocks = (blocks: Block[]): string => {
-    let text = '';
-    for (const block of blocks) {
-      if (block.content && Array.isArray(block.content)) {
-        for (const item of block.content) {
-          if (item.type === 'text' && item.text) {
-            text += item.text + ' ';
-          }
-        }
-      }
-      if (block.children) {
-        text += getTextFromBlocks(block.children as Block[]);
-      }
-    }
-    return text;
-  };
-
-  const textContent = getTextFromBlocks(editor.document);
-  const charCount = textContent.replace(/\s/g, '').length;
-  const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
 
   return (
     <Box className={styles.editorContainer}>
@@ -313,24 +332,21 @@ export const NoteEditor = () => {
         </Box>
       </Box>
 
-      <Box className={styles.editorContent}>
-        <BlockNoteView
-          editor={editor}
-          theme="dark"
-          onChange={handleEditorChange}
-        />
-      </Box>
+      {/* Key forces remount when note changes */}
+      <BlockNoteEditor
+        key={note.id}
+        initialContent={initialContent}
+        onSave={handleSave}
+        onChange={handleEditorChange}
+      />
 
-      <Box className={styles.footer}>
-        <Typography variant="caption">
-          {wordCount} words | {charCount} characters
-        </Typography>
-        {lastSaved && (
+      {lastSaved && (
+        <Box className={styles.lastSaved}>
           <Typography variant="caption">
             Last saved: {lastSaved.toLocaleTimeString()}
           </Typography>
-        )}
-      </Box>
+        </Box>
+      )}
     </Box>
   );
 };
