@@ -215,6 +215,7 @@
   padding: 2px;
   border-radius: 4px;
   transition: color 0.2s, background-color 0.2s;
+  touch-action: none;
 }
 
 .dragHandle:hover {
