@@ -168,6 +168,8 @@ const DroppableFolder = ({
     childFolders.length > 0 || (showNotes && folderNotes.length > 0);
 
   const handleClick = () => {
+    // Clear note selection so the folder becomes active via filter
+    dispatch(setSelectedNote(null));
     dispatch(
       setFilter({
         folderId: folder.id,
