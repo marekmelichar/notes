@@ -159,7 +159,8 @@ export const NoteEditor = () => {
 
   const handleFolderChange = useCallback((folderId: string | null) => {
     if (note) {
-      dispatch(updateNote({ id: note.id, updates: { folderId } }));
+      // Send empty string to API to clear folder (null means "don't change" in the API)
+      dispatch(updateNote({ id: note.id, updates: { folderId: folderId ?? '' } }));
     }
     setFolderMenuAnchor(null);
   }, [note, dispatch]);

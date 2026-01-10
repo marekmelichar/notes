@@ -53,7 +53,11 @@ public class NotesController(DataService dataService) : BaseController
         {
             if (request.Title != null) n.Title = request.Title;
             if (request.Content != null) n.Content = request.Content;
-            if (request.FolderId != null) n.FolderId = request.FolderId;
+            // FolderId: null means "don't change", empty string means "remove from folder"
+            if (request.FolderId != null)
+            {
+                n.FolderId = request.FolderId == "" ? null : request.FolderId;
+            }
             if (request.IsPinned.HasValue) n.IsPinned = request.IsPinned.Value;
             if (request.Order.HasValue) n.Order = request.Order.Value;
         }, request.Tags);
