@@ -158,7 +158,7 @@ const DroppableFolder = ({
   });
 
   const isExpanded = expandedIds.includes(folder.id);
-  const isActive = filter.folderId === folder.id;
+  const isActive = filter.folderId === folder.id && !filter.isDeleted && filter.isPinned === null;
   const folderNotes = useMemo(() => {
     return notes
       .filter((n) => n.folderId === folder.id && !n.isDeleted)
