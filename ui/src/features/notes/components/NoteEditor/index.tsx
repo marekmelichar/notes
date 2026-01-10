@@ -1,6 +1,10 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { Box, IconButton, Typography, Tooltip, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress } from '@mui/material';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useCreateBlockNote } from '@blocknote/react';
+import { BlockNoteView } from '@blocknote/mantine';
+import { Block, PartialBlock } from '@blocknote/core';
+import '@blocknote/core/fonts/inter.css';
+import '@blocknote/mantine/style.css';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -8,8 +12,6 @@ import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
-import { getEditorExtensions } from './extensions';
-import { Toolbar } from './Toolbar';
 import { useAppDispatch, useAppSelector } from '@/store';
 import {
   updateNote,
@@ -19,6 +21,30 @@ import {
 import { selectTagsByIds } from '../../store/tagsSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
 import styles from './index.module.css';
+
+// Parse content from storage - handles both BlockNote and legacy TipTap formats
+function parseContent(content: string | undefined): PartialBlock[] | undefined {
+  if (!content) return undefined;
+
+  try {
+    const parsed = JSON.parse(content);
+
+    // Check if it's BlockNote format (array of blocks)
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+
+    // Legacy TipTap format - return undefined to start fresh
+    // User will need to re-enter content or we can add migration later
+    if (parsed.type === 'doc' && parsed.content) {
+      return undefined;
+    }
+
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export const NoteEditor = () => {
   const dispatch = useAppDispatch();
@@ -36,17 +62,17 @@ export const NoteEditor = () => {
   const lastSavedContentRef = useRef<string>('');
   const lastSavedTitleRef = useRef<string>('');
 
-  const editor = useEditor({
-    extensions: getEditorExtensions('Start writing your note...'),
-    content: '',
-    editorProps: {
-      attributes: {
-        class: styles.editor,
-      },
-    },
+  // Get initial content for the editor
+  const initialContent = useMemo(() => {
+    return parseContent(note?.content);
+  }, [note?.id]); // Only recalculate when note ID changes
+
+  // Create BlockNote editor
+  const editor = useCreateBlockNote({
+    initialContent,
   });
 
-  // Update editor content when note changes (including on initial load)
+  // Update editor content when note changes
   useEffect(() => {
     if (editor && note) {
       // Update tracking refs
@@ -55,36 +81,30 @@ export const NoteEditor = () => {
       lastSavedTitleRef.current = note.title || '';
 
       // Set editor content
-      try {
-        const content = note.content ? JSON.parse(note.content) : '';
-        editor.commands.setContent(content);
-      } catch {
-        editor.commands.setContent('');
+      const blocks = parseContent(note.content);
+      if (blocks) {
+        editor.replaceBlocks(editor.document, blocks);
+      } else {
+        // Clear editor for new note or legacy content
+        editor.replaceBlocks(editor.document, []);
       }
+
       setTitle(note.title || '');
       setHasUnsavedChanges(false);
     } else if (editor && !note) {
       currentNoteIdRef.current = null;
-      editor.commands.setContent('');
+      editor.replaceBlocks(editor.document, []);
       setTitle('');
       setHasUnsavedChanges(false);
     }
   }, [editor, note?.id, note?.content, note?.title]);
 
-  // Track changes to mark as unsaved
-  useEffect(() => {
-    if (!editor || !note) return;
-
-    const handleUpdate = () => {
-      const content = JSON.stringify(editor.getJSON());
-      const hasContentChanged = content !== lastSavedContentRef.current;
-      setHasUnsavedChanges(hasContentChanged || title !== lastSavedTitleRef.current);
-    };
-
-    editor.on('update', handleUpdate);
-    return () => {
-      editor.off('update', handleUpdate);
-    };
+  // Handle editor changes
+  const handleEditorChange = useCallback(() => {
+    if (!note) return;
+    const content = JSON.stringify(editor.document);
+    const hasContentChanged = content !== lastSavedContentRef.current;
+    setHasUnsavedChanges(hasContentChanged || title !== lastSavedTitleRef.current);
   }, [editor, note, title]);
 
   // Handle title changes
@@ -101,7 +121,7 @@ export const NoteEditor = () => {
   const handleSave = useCallback(async () => {
     if (!note || !editor || isSaving) return;
 
-    const content = JSON.stringify(editor.getJSON());
+    const content = JSON.stringify(editor.document);
     const updates: { content?: string; title?: string } = {};
 
     const hasContentChanged = content !== lastSavedContentRef.current;
@@ -185,8 +205,27 @@ export const NoteEditor = () => {
     );
   }
 
-  const charCount = editor?.storage.characterCount?.characters() ?? 0;
-  const wordCount = editor?.getText().trim().split(/\s+/).filter(Boolean).length ?? 0;
+  // Calculate word count from blocks
+  const getTextFromBlocks = (blocks: Block[]): string => {
+    let text = '';
+    for (const block of blocks) {
+      if (block.content && Array.isArray(block.content)) {
+        for (const item of block.content) {
+          if (item.type === 'text' && item.text) {
+            text += item.text + ' ';
+          }
+        }
+      }
+      if (block.children) {
+        text += getTextFromBlocks(block.children as Block[]);
+      }
+    }
+    return text;
+  };
+
+  const textContent = getTextFromBlocks(editor.document);
+  const charCount = textContent.replace(/\s/g, '').length;
+  const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
 
   return (
     <Box className={styles.editorContainer}>
@@ -274,10 +313,12 @@ export const NoteEditor = () => {
         </Box>
       </Box>
 
-      <Toolbar editor={editor} />
-
       <Box className={styles.editorContent}>
-        <EditorContent editor={editor} />
+        <BlockNoteView
+          editor={editor}
+          theme="dark"
+          onChange={handleEditorChange}
+        />
       </Box>
 
       <Box className={styles.footer}>
