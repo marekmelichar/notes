@@ -76,6 +76,7 @@
 
 .folderItemActive {
   background-color: var(--mui-palette-action-selected);
+  font-weight: 500;
 }
 
 .folderItemNested {
@@ -157,7 +158,9 @@
 }
 
 .noteTreeItemActive {
-  background-color: var(--mui-palette-action-selected);
+  background-color: transparent;
+  border-left: 3px solid var(--mui-palette-primary-main);
+  padding-left: 9px;
 }
 
 .noteTreeIcon {
