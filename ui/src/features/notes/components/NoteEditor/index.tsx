@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
-import { Box, IconButton, Typography, Tooltip, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Button } from '@mui/material';
+import { Box, IconButton, Typography, Tooltip, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress } from '@mui/material';
 import { useEditor, EditorContent } from '@tiptap/react';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
@@ -29,6 +29,7 @@ export const NoteEditor = () => {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [folderMenuAnchor, setFolderMenuAnchor] = useState<null | HTMLElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Track which note we're currently editing
   const currentNoteIdRef = useRef<string | null>(null);
@@ -97,8 +98,8 @@ export const NoteEditor = () => {
   );
 
   // Manual save handler
-  const handleSave = useCallback(() => {
-    if (!note || !editor) return;
+  const handleSave = useCallback(async () => {
+    if (!note || !editor || isSaving) return;
 
     const content = JSON.stringify(editor.getJSON());
     const updates: { content?: string; title?: string } = {};
@@ -116,11 +117,16 @@ export const NoteEditor = () => {
     }
 
     if (hasContentChanged || hasTitleChanged) {
-      dispatch(updateNote({ id: note.id, updates }));
-      setLastSaved(new Date());
-      setHasUnsavedChanges(false);
+      setIsSaving(true);
+      try {
+        await dispatch(updateNote({ id: note.id, updates })).unwrap();
+        setLastSaved(new Date());
+        setHasUnsavedChanges(false);
+      } finally {
+        setIsSaving(false);
+      }
     }
-  }, [note, editor, title, dispatch]);
+  }, [note, editor, title, dispatch, isSaving]);
 
   // Keyboard shortcut for save (Ctrl/Cmd + S)
   useEffect(() => {
@@ -244,10 +250,11 @@ export const NoteEditor = () => {
               variant={hasUnsavedChanges ? 'contained' : 'outlined'}
               color={hasUnsavedChanges ? 'primary' : 'inherit'}
               onClick={handleSave}
-              startIcon={<SaveIcon fontSize="small" />}
+              disabled={isSaving}
+              startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon fontSize="small" />}
               sx={{ minWidth: 'auto', px: 1.5 }}
             >
-              {hasUnsavedChanges ? 'Save' : 'Saved'}
+              {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save' : 'Saved'}
             </Button>
           </Tooltip>
           <Tooltip title={note.isPinned ? 'Unpin' : 'Pin'}>
