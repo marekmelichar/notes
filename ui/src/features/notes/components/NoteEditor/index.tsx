@@ -247,14 +247,16 @@ export const NoteEditor = () => {
         />
         <Box className={styles.headerActions}>
           <Tooltip title="Move to folder">
-            <Chip
-              icon={<FolderIcon fontSize="small" />}
-              label={currentFolder?.name || 'No folder'}
+            <Button
               size="small"
               variant="outlined"
+              color="inherit"
               onClick={handleFolderMenuOpen}
-              className={styles.folderChip}
-            />
+              startIcon={<FolderIcon fontSize="small" />}
+              className={styles.folderButton}
+            >
+              {currentFolder?.name || 'No folder'}
+            </Button>
           </Tooltip>
           <Menu
             anchorEl={folderMenuAnchor}
