@@ -11,10 +11,10 @@ declare module '@mui/material/Button' {
 // Global window interface extensions
 declare global {
   interface Window {
-    API_URL: string;
+    API_URL?: string;
     KEYCLOAK_URL: string;
     KEYCLOAK_REALM: string;
     KEYCLOAK_CLIENT_ID: string;
-    MOCK_MODE: boolean;
+    MOCK_MODE?: boolean;
   }
 }

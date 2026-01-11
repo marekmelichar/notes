@@ -46,17 +46,6 @@ declare module '@mui/material/styles' {
   }
 }
 
-// Runtime environment configuration (defined in public/env.js)
-declare global {
-  interface Window {
-    API_URL?: string;
-    KEYCLOAK_URL: string;
-    KEYCLOAK_REALM: string;
-    KEYCLOAK_CLIENT_ID: string;
-    // Mock mode flag
-    MOCK_MODE?: boolean;
-  }
-}
 
 /**
  * Initialize and render the application
