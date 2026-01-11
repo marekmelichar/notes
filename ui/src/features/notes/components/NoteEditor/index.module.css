@@ -89,8 +89,10 @@
   opacity: 0.5;
 }
 
-.folderChip {
-  cursor: pointer;
+.folderButton {
+  min-width: auto;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
 }
 
 .saveButton {
