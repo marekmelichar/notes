@@ -23,6 +23,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.FolderId);
             entity.HasIndex(e => e.IsDeleted);
+            entity.HasIndex(e => e.DeletedAt);
             entity.HasIndex(e => new { e.UserId, e.IsDeleted });
 
             entity.HasOne<Folder>()
