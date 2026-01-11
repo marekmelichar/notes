@@ -26,27 +26,48 @@ epoznamky.cz/
 - Node.js 22+ (for UI development without Docker)
 - .NET 10 SDK (for API development without Docker)
 
-### Quick Start
+### Quick Start (Docker)
 
 ```bash
-# Start all services
+# Start all services (API, DB, Keycloak)
 docker compose up -d
 
 # Access the application
-# Frontend: http://localhost:3000
+# Frontend: http://localhost:3000 (via Docker)
 # API: http://localhost:5001
 # Keycloak Admin: http://localhost:8080 (admin/admin)
-# PostgreSQL: localhost:5432 (postgres/postgres)
 ```
+
+### Frontend Development (Recommended)
+
+```bash
+cd ui
+npm install
+npm run dev    # http://localhost:5173
+```
+
+This runs Vite dev server with hot reload. API calls are proxied to localhost:5001.
 
 ### Development URLs
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Frontend | http://localhost:3000 | - |
-| API | http://localhost:5001 | - |
-| Keycloak Admin | http://localhost:8080 | admin / admin |
-| PostgreSQL | localhost:5432 | postgres / postgres |
+| Service | Docker | Vite Dev | Credentials |
+|---------|--------|----------|-------------|
+| Frontend | http://localhost:3000 | http://localhost:5173 | - |
+| API | http://localhost:5001 | http://localhost:5001 | - |
+| Keycloak Admin | http://localhost:8080 | http://localhost:8080 | admin / admin |
+| PostgreSQL | localhost:5432 | localhost:5432 | postgres / postgres |
+
+### Code Quality
+
+Pre-commit hooks automatically run lint and build checks:
+
+```bash
+# Manual lint check
+cd ui && npm run lint
+
+# Manual build check
+cd ui && npm run build
+```
 
 ## Production Deployment
 
@@ -62,13 +83,16 @@ See [deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md) for detailed deployment instruc
 ## Tech Stack
 
 ### Frontend (ui/)
-- React 18 with TypeScript
-- Vite for build tooling
-- Material-UI (MUI) for components
+- React 19 with TypeScript
+- Vite 7 for build tooling
+- Material-UI (MUI) v6 for components
 - Redux Toolkit for state management
 - React Query for API calls
+- BlockNote for rich text editing
 - Keycloak JS for authentication
 - i18next for internationalization
+- ESLint + Prettier for code quality
+- Husky pre-commit hooks (lint + build)
 
 ### Backend (api/)
 - .NET 10

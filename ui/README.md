@@ -1,6 +1,6 @@
-# React Starter Template
+# epoznamky.cz - Frontend
 
-A production-ready React starter template with TypeScript, Vite, and enterprise features including authentication, theming, internationalization, and more.
+React frontend for epoznamky.cz - a note-taking application with rich text editing, folder organization, and tag management.
 
 ## Table of Contents
 
@@ -31,30 +31,35 @@ A production-ready React starter template with TypeScript, Vite, and enterprise 
 | **Unit Testing** | Vitest | Fast unit testing |
 | **E2E Testing** | Playwright | Cross-browser E2E tests |
 | **Code Quality** | ESLint + Prettier | Consistent code style |
+| **Pre-commit** | Husky | Lint + build checks on commit |
+| **Rich Text Editor** | BlockNote | Block-based note editing |
 | **Theming** | MUI Theming | Dark/Light mode support |
 
 ## Quick Start
 
 ```bash
-# 1. Install dependencies
+# 1. Start backend services (from repo root)
+docker compose up -d
+
+# 2. Install dependencies
 npm install
 
-# 2. Start in mock mode (no backend required)
-npm run dev:mock
+# 3. Start development server
+npm run dev
 
-# 3. Open http://localhost:5173
+# 4. Open http://localhost:5173
 ```
 
-### Production Setup
+### Mock Mode (no backend)
 
 ```bash
-# 1. Configure environment
-# Edit public/env.js with your settings
+npm run dev:mock
+```
 
-# 2. Build for production
+### Build for Production
+
+```bash
 npm run build
-
-# 3. Preview the build
 npm run preview
 ```
 
@@ -82,9 +87,14 @@ npm run preview
 │   │   ├── env.ts          # Environment validation
 │   │   └── routes.ts       # Route constants
 │   ├── features/           # Feature modules
-│   │   └── auth/           # Authentication feature
-│   │       ├── components/ # Auth components
-│   │       └── utils/      # Keycloak utilities
+│   │   ├── auth/           # Authentication feature
+│   │   │   ├── components/ # Auth components
+│   │   │   └── utils/      # Keycloak utilities
+│   │   └── notes/          # Notes feature
+│   │       ├── components/ # NoteEditor, NoteList, NotesSidebar
+│   │       ├── store/      # notesSlice, foldersSlice, tagsSlice
+│   │       ├── services/   # API services
+│   │       └── types/      # Note, Folder, Tag types
 │   ├── hooks/              # Custom React hooks
 │   │   ├── useAuth.ts      # Authentication hook
 │   │   ├── useAuthQuery.ts # Auth-aware data fetching
@@ -233,6 +243,14 @@ Detailed documentation is available in the `docs/` folder:
 | eslint | 8.56.0 | Linting |
 | prettier | 3.2.5 | Formatting |
 
+## Pre-commit Hooks
+
+Husky automatically runs on every commit:
+1. `npm run lint` - TypeScript + ESLint checks
+2. `npm run build` - Production build
+
+Commits are rejected if either check fails.
+
 ## License
 
-MIT
+Private - All rights reserved

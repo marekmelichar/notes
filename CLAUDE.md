@@ -17,22 +17,33 @@ A full-stack note-taking application (Czech: "e-poznámky" = "e-notes") with off
 ## Quick Commands
 
 ```bash
-# Run locally (requires Docker)
+# Run locally (requires Docker for API/DB/Keycloak)
 docker compose up -d
 
 # Frontend dev (from ui/)
 npm install && npm run dev    # Runs on http://localhost:5173
 
+# Lint (TypeScript + ESLint)
+npm run lint
+
+# Build
+npm run build
+
 # Run tests (from ui/)
 npm test              # Vitest watch mode
 npm run test:run      # Single run
 npm run pw:test       # Playwright E2E
+```
 
-# TypeScript check (from ui/)
-npx tsc --noEmit
+## Pre-commit Hooks
 
-# Build (from ui/)
-npm run build
+Husky runs automatically on every commit:
+1. `npm run lint` - TypeScript check + ESLint
+2. `npm run build` - Full production build
+
+If either fails, the commit is rejected. To bypass (not recommended):
+```bash
+git commit --no-verify -m "message"
 ```
 
 ## Git Flow
@@ -165,10 +176,15 @@ Note content is stored as **BlockNote JSON** (stringified array of blocks).
 | Note editor | `ui/src/features/notes/components/NoteEditor/index.tsx` |
 | UI state (mobile view) | `ui/src/store/uiSlice.ts` |
 | Notes state | `ui/src/features/notes/store/notesSlice.ts` |
+| Folders state | `ui/src/features/notes/store/foldersSlice.ts` |
+| Tags state | `ui/src/features/notes/store/tagsSlice.ts` |
 | API client | `ui/src/lib/apiManager.tsx` |
 | API services | `ui/src/features/notes/services/notesApi.ts` |
 | Environment config | `ui/public/env.js` |
 | Theme config | `ui/src/theme/ThemeProvider.tsx` |
 | Routes | `ui/src/config/routes.ts` |
+| ESLint config | `ui/.eslintrc.cjs` |
+| Prettier config | `ui/.prettierrc` |
+| Pre-commit hook | `.husky/pre-commit` |
 | Styling guide | `ui/docs/styling-guide.md` |
 | Git flow | `docs/git-flow.md` |
