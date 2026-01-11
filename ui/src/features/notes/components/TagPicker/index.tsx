@@ -95,15 +95,8 @@ export const TagPicker = ({ selectedTagIds, onTagsChange }: TagPickerProps) => {
           sx={{
             backgroundColor: tag.color,
             color: 'white',
-            paddingLeft: '0.25rem',
-            paddingRight: '0.125rem',
-            '& .MuiChip-label': {
-              paddingLeft: '0.5rem',
-              paddingRight: '0.375rem',
-            },
             '& .MuiChip-deleteIcon': {
               color: 'rgba(255, 255, 255, 0.7)',
-              marginRight: '0.25rem',
               '&:hover': {
                 color: 'white',
               },
