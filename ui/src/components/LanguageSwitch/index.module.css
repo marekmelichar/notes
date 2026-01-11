@@ -45,8 +45,10 @@
   color: var(--mui-palette-inverse-surface) !important;
 }
 
-.languageButton:hover {
-  background-color: var(--mui-palette-background-paper3) !important;
+@media (hover: hover) {
+  .languageButton:hover {
+    background-color: var(--mui-palette-background-paper3) !important;
+  }
 }
 
 .flagButton {
