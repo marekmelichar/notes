@@ -82,8 +82,10 @@
   color: var(--mui-palette-primary-main);
 }
 
-.navButton:global(.Mui-selected:hover) {
-  background-color: var(--mui-palette-action-hover) !important;
+@media (hover: hover) {
+  .navButton:global(.Mui-selected:hover) {
+    background-color: var(--mui-palette-action-hover) !important;
+  }
 }
 
 .navLabel {

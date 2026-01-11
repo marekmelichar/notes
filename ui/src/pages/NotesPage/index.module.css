@@ -22,9 +22,14 @@
   z-index: 10;
 }
 
-.resizeHandle:hover,
 .resizeHandleActive {
   background-color: var(--mui-palette-primary-main);
+}
+
+@media (hover: hover) {
+  .resizeHandle:hover {
+    background-color: var(--mui-palette-primary-main);
+  }
 }
 
 .noteList {
