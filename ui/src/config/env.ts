@@ -6,7 +6,7 @@
  */
 
 interface EnvironmentConfig {
-  API_URL?: string;
+  API_URL: string;
   KEYCLOAK_URL: string;
   KEYCLOAK_REALM: string;
   KEYCLOAK_CLIENT_ID: string;
@@ -22,8 +22,8 @@ function getEnvironmentConfig(): EnvironmentConfig {
   const keycloakRealm = window.KEYCLOAK_REALM;
   const keycloakClientId = window.KEYCLOAK_CLIENT_ID;
 
-  // Validate API_URL format if provided
-  if (apiUrl) {
+  // Validate API_URL format if provided (non-empty)
+  if (apiUrl && apiUrl.trim()) {
     try {
       new URL(apiUrl);
     } catch {
@@ -48,7 +48,8 @@ function getEnvironmentConfig(): EnvironmentConfig {
   }
 
   return {
-    API_URL: apiUrl,
+    // Empty string means use relative URLs (same origin)
+    API_URL: apiUrl?.trim() || '',
     KEYCLOAK_URL: keycloakUrl,
     KEYCLOAK_REALM: keycloakRealm,
     KEYCLOAK_CLIENT_ID: keycloakClientId,
@@ -61,6 +62,6 @@ const env = getEnvironmentConfig();
 
 /**
  * Gets the API base URL
- * @returns API URL or undefined if not configured
+ * Empty string = relative URLs (requests go to same origin)
  */
-export const getApiBaseUrl = (): string | undefined => env.API_URL;
+export const getApiBaseUrl = (): string => env.API_URL;

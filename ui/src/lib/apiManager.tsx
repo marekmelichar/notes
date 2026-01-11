@@ -34,8 +34,11 @@ export const clearAuthToken = () => {
   }
 };
 
+const apiBaseUrl = getApiBaseUrl();
+
 export const apiManager = axios.create({
-  baseURL: getApiBaseUrl(),
+  // Only set baseURL if non-empty, otherwise use relative URLs
+  ...(apiBaseUrl ? { baseURL: apiBaseUrl } : {}),
 });
 
 apiManager.interceptors.request.use(
