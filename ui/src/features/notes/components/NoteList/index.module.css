@@ -80,9 +80,11 @@
   border: 1px solid var(--mui-palette-divider);
 }
 
-.noteCard:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .noteCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
 }
 
 .noteCardSelected {
@@ -155,8 +157,10 @@
   border: 1px solid var(--mui-palette-divider);
 }
 
-.noteListItem:hover {
-  background-color: var(--mui-palette-action-hover);
+@media (hover: hover) {
+  .noteListItem:hover {
+    background-color: var(--mui-palette-action-hover);
+  }
 }
 
 .noteListItemSelected {
@@ -220,10 +224,6 @@
     padding: 0.75rem;
   }
 
-  .noteCard:hover {
-    transform: none;
-  }
-
   .noteCard:active {
     background-color: var(--mui-palette-action-hover);
   }
@@ -231,10 +231,6 @@
   .noteListItem {
     padding: 0.75rem;
     min-height: 4rem;
-  }
-
-  .noteListItem:hover {
-    background-color: transparent;
   }
 
   .noteListItem:active {

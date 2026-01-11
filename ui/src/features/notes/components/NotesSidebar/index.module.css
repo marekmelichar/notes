@@ -35,8 +35,10 @@
   transition: background-color 0.2s;
 }
 
-.navItem:hover {
-  background-color: var(--mui-palette-action-hover);
+@media (hover: hover) {
+  .navItem:hover {
+    background-color: var(--mui-palette-action-hover);
+  }
 }
 
 .navItemActive {
@@ -74,12 +76,14 @@
   position: relative;
 }
 
-.folderItem:hover {
-  background-color: var(--mui-palette-action-hover);
-}
+@media (hover: hover) {
+  .folderItem:hover {
+    background-color: var(--mui-palette-action-hover);
+  }
 
-.folderItem:hover .addSubfolderButton {
-  opacity: 1;
+  .folderItem:hover .addSubfolderButton {
+    opacity: 1;
+  }
 }
 
 .addSubfolderButton {
@@ -102,13 +106,15 @@
   opacity: 0;
 }
 
-.folderItem:hover .folderDragHandle {
-  opacity: 1;
-}
+@media (hover: hover) {
+  .folderItem:hover .folderDragHandle {
+    opacity: 1;
+  }
 
-.folderDragHandle:hover {
-  color: var(--mui-palette-text-secondary);
-  background-color: var(--mui-palette-action-hover);
+  .folderDragHandle:hover {
+    color: var(--mui-palette-text-secondary);
+    background-color: var(--mui-palette-action-hover);
+  }
 }
 
 .folderDragHandle:active {
@@ -150,9 +156,11 @@
   align-items: center;
 }
 
-.tagItemWrapper:hover .tagActions {
-  opacity: 1;
-  visibility: visible;
+@media (hover: hover) {
+  .tagItemWrapper:hover .tagActions {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 .tagItem {
@@ -166,8 +174,10 @@
   font-size: 0.8rem;
 }
 
-.tagItem:hover {
-  opacity: 0.8;
+@media (hover: hover) {
+  .tagItem:hover {
+    opacity: 0.8;
+  }
 }
 
 .tagActions {
@@ -213,8 +223,10 @@
   font-size: 0.875rem;
 }
 
-.addButton:hover {
-  background-color: var(--mui-palette-action-hover);
+@media (hover: hover) {
+  .addButton:hover {
+    background-color: var(--mui-palette-action-hover);
+  }
 }
 
 /* Tree view note items */
@@ -228,8 +240,10 @@
   transition: background-color 0.2s;
 }
 
-.noteTreeItem:hover {
-  background-color: var(--mui-palette-action-hover);
+@media (hover: hover) {
+  .noteTreeItem:hover {
+    background-color: var(--mui-palette-action-hover);
+  }
 }
 
 .noteTreeItemActive {
@@ -303,9 +317,11 @@
   touch-action: none;
 }
 
-.dragHandle:hover {
-  color: var(--mui-palette-text-secondary);
-  background-color: var(--mui-palette-action-hover);
+@media (hover: hover) {
+  .dragHandle:hover {
+    color: var(--mui-palette-text-secondary);
+    background-color: var(--mui-palette-action-hover);
+  }
 }
 
 .dragHandle:active {
@@ -414,10 +430,6 @@
     min-height: 3rem;
   }
 
-  .navItem:hover {
-    background-color: transparent;
-  }
-
   .navItem:active {
     background-color: var(--mui-palette-action-hover);
   }
@@ -425,10 +437,6 @@
   .folderItem {
     padding: 0.625rem 0.75rem;
     min-height: 2.75rem;
-  }
-
-  .folderItem:hover {
-    background-color: transparent;
   }
 
   .folderItem:active {
@@ -445,10 +453,6 @@
     min-height: 3rem;
   }
 
-  .addButton:hover {
-    background-color: transparent;
-  }
-
   .addButton:active {
     background-color: var(--mui-palette-action-hover);
   }
@@ -456,10 +460,6 @@
   .noteTreeItem {
     padding: 0.625rem 0.75rem;
     min-height: 2.75rem;
-  }
-
-  .noteTreeItem:hover {
-    background-color: transparent;
   }
 
   .noteTreeItem:active {
