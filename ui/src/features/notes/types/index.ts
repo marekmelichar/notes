@@ -6,6 +6,7 @@ export interface Note {
   tags: string[]; // Tag IDs
   isPinned: boolean;
   isDeleted: boolean;
+  deletedAt: number | null; // Timestamp when moved to trash
   sharedWith: SharedUser[];
   order: number; // Position order within folder
   createdAt: number;

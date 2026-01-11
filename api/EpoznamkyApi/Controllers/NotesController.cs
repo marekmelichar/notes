@@ -69,7 +69,11 @@ public class NotesController(DataService dataService) : BaseController
     [HttpDelete("{id}")]
     public async Task<ActionResult> Delete(string id)
     {
-        var note = await dataService.UpdateNoteAsync(id, UserId, n => n.IsDeleted = true);
+        var note = await dataService.UpdateNoteAsync(id, UserId, n =>
+        {
+            n.IsDeleted = true;
+            n.DeletedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        });
         if (note == null) return NotFound();
         return NoContent();
     }
@@ -84,7 +88,11 @@ public class NotesController(DataService dataService) : BaseController
     [HttpPost("{id}/restore")]
     public async Task<ActionResult<Note>> Restore(string id)
     {
-        var note = await dataService.UpdateNoteAsync(id, UserId, n => n.IsDeleted = false);
+        var note = await dataService.UpdateNoteAsync(id, UserId, n =>
+        {
+            n.IsDeleted = false;
+            n.DeletedAt = null;
+        });
         if (note == null) return NotFound();
         return note;
     }

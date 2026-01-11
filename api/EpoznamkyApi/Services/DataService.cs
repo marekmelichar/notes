@@ -91,6 +91,29 @@ public class DataService(AppDbContext db)
         return true;
     }
 
+    public async Task<int> CleanupOldTrashAsync(int retentionDays = 30)
+    {
+        var cutoffTime = DateTimeOffset.UtcNow.AddDays(-retentionDays).ToUnixTimeMilliseconds();
+
+        var notesToDelete = await db.Notes
+            .Where(n => n.IsDeleted && n.DeletedAt.HasValue && n.DeletedAt.Value < cutoffTime)
+            .ToListAsync();
+
+        if (notesToDelete.Count == 0) return 0;
+
+        // Remove related NoteTags and NoteShares
+        var noteIds = notesToDelete.Select(n => n.Id).ToList();
+        var tagsToRemove = await db.NoteTags.Where(nt => noteIds.Contains(nt.NoteId)).ToListAsync();
+        var sharesToRemove = await db.NoteShares.Where(ns => noteIds.Contains(ns.NoteId)).ToListAsync();
+
+        db.NoteTags.RemoveRange(tagsToRemove);
+        db.NoteShares.RemoveRange(sharesToRemove);
+        db.Notes.RemoveRange(notesToDelete);
+
+        await db.SaveChangesAsync();
+        return notesToDelete.Count;
+    }
+
     public async Task<Note?> ShareNoteAsync(string noteId, string userId, string email, string permission)
     {
         var note = await db.Notes.FirstOrDefaultAsync(n => n.Id == noteId && n.UserId == userId);
