@@ -1,7 +1,7 @@
 export interface Note {
   id: string;
   title: string;
-  content: string; // TipTap JSON stringified
+  content: string; // BlockNote JSON stringified
   folderId: string | null;
   tags: string[]; // Tag IDs
   isPinned: boolean;

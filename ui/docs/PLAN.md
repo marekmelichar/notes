@@ -10,7 +10,7 @@ A full-featured note-taking application with rich text editing, hierarchical org
 |-----------|------------|
 | Frontend | React 19 + TypeScript + MUI |
 | State Management | Redux Toolkit + React Query |
-| Rich Text Editor | TipTap |
+| Rich Text Editor | BlockNote |
 | Local Storage | IndexedDB (via Dexie.js) |
 | Backend API | REST API (Orval for generation) |
 | Authentication | Keycloak (existing) |
@@ -25,7 +25,7 @@ A full-featured note-taking application with rich text editing, hierarchical org
 interface Note {
   id: string;
   title: string;
-  content: string; // TipTap JSON or HTML
+  content: string; // BlockNote JSON
   folderId: string | null;
   tags: string[]; // Tag IDs
   isPinned: boolean;
@@ -81,7 +81,7 @@ interface SharedUser {
 
 ## Phase 2: Note Editor
 
-### 2.1 Install & Configure TipTap
+### 2.1 Install & Configure BlockNote
 
 Extensions to include:
 - Basic formatting (bold, italic, underline, strikethrough)
@@ -97,13 +97,13 @@ Extensions to include:
 
 - Formatting toolbar with icon buttons
 - Title input field
-- Content area with TipTap editor
+- Content area with BlockNote editor
 - Auto-save with debounce (2 second delay)
 - Word/character count
 - Last saved indicator
 
 ### Deliverables
-- [ ] Install TipTap packages
+- [x] Install BlockNote packages
 - [ ] `src/features/notes/components/NoteEditor/index.tsx`
 - [ ] `src/features/notes/components/NoteEditor/Toolbar.tsx`
 - [ ] `src/features/notes/components/NoteEditor/extensions.ts`
@@ -359,7 +359,7 @@ src/
 
 ```bash
 # Rich text editor
-npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-link @tiptap/extension-image @tiptap/extension-table @tiptap/extension-task-list @tiptap/extension-task-item @tiptap/extension-placeholder @tiptap/extension-highlight @tiptap/extension-code-block-lowlight lowlight
+npm install @blocknote/core @blocknote/react @blocknote/mantine
 
 # Local database
 npm install dexie dexie-react-hooks
@@ -387,7 +387,7 @@ npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
 ## Implementation Order
 
 1. **Phase 1** - Data types, IndexedDB setup, Redux slices
-2. **Phase 2** - TipTap editor with basic functionality
+2. **Phase 2** - BlockNote editor with basic functionality
 3. **Phase 4** - Note list and navigation (to see notes)
 4. **Phase 3** - Folders and tags
 5. **Phase 5** - Search, pinning, sharing, export
@@ -399,6 +399,6 @@ npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
 
 - The app follows offline-first architecture - all data is stored locally first
 - Sync happens in background when online
-- Rich text is stored as TipTap JSON for easy manipulation
+- Rich text is stored as BlockNote JSON for easy manipulation
 - All timestamps are Unix timestamps (milliseconds)
 - IDs are UUIDs generated client-side

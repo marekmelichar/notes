@@ -22,24 +22,13 @@ import { selectTagsByIds } from '../../store/tagsSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
 import styles from './index.module.css';
 
-// Parse content from storage - handles both BlockNote and legacy TipTap formats
+// Parse BlockNote content from storage
 function parseContent(content: string | undefined): PartialBlock[] | undefined {
   if (!content) return undefined;
 
   try {
     const parsed = JSON.parse(content);
-
-    // Check if it's BlockNote format (array of blocks)
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-
-    // Legacy TipTap format - return undefined to start fresh
-    if (parsed.type === 'doc' && parsed.content) {
-      return undefined;
-    }
-
-    return undefined;
+    return Array.isArray(parsed) ? parsed : undefined;
   } catch {
     return undefined;
   }

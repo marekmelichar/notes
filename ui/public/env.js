@@ -3,7 +3,7 @@
 // Update these values for each deployment environment
 
 // API Configuration
-window.API_URL = 'http://localhost:5000';
+window.API_URL = 'http://localhost:5001';
 
 // Keycloak Authentication
 window.KEYCLOAK_URL = 'http://localhost:8080';

@@ -39,11 +39,22 @@
 .editorContent {
   flex: 1;
   overflow-y: auto;
+  padding: 16px;
 }
 
 /* BlockNote editor fills the container */
-.editorContent > div {
+.editorContent > div,
+.editorContent :global(.bn-container),
+.editorContent :global(.bn-editor) {
   height: 100%;
+}
+
+.editorContent :global(.bn-editor) {
+  font-size: 1rem;
+  color: var(--mui-palette-text-primary);
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  padding-inline: 88px;
 }
 
 .footer {
@@ -100,6 +111,10 @@
     padding: 6px 12px;
     flex-wrap: wrap;
     gap: 8px;
+  }
+
+  .editorContent {
+    padding: 0 12px;
   }
 
   .emptyState {
