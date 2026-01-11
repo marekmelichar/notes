@@ -45,6 +45,8 @@ import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
@@ -74,6 +76,8 @@ import {
   selectAllTags,
   selectTagsLoading,
   createTag,
+  updateTag,
+  deleteTag,
 } from "../../store/tagsSlice";
 import type { Folder, Note } from "../../types";
 import styles from "./index.module.css";
@@ -331,9 +335,13 @@ export const NotesSidebar = () => {
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
+  const [isEditTagDialogOpen, setIsEditTagDialogOpen] = useState(false);
+  const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("#6366f1");
+  const [editTagName, setEditTagName] = useState("");
+  const [editTagColor, setEditTagColor] = useState("#6366f1");
   const [showTreeView, setShowTreeView] = useState(true);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [activeFolder, setActiveFolder] = useState<Folder | null>(null);
@@ -611,6 +619,45 @@ export const NotesSidebar = () => {
     }
   };
 
+  const handleOpenEditTag = (tagId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const tag = tags.find((t) => t.id === tagId);
+    if (tag) {
+      setEditingTagId(tagId);
+      setEditTagName(tag.name);
+      setEditTagColor(tag.color);
+      setIsEditTagDialogOpen(true);
+    }
+  };
+
+  const handleCloseEditTagDialog = () => {
+    setIsEditTagDialogOpen(false);
+    setEditingTagId(null);
+    setEditTagName("");
+    setEditTagColor("#6366f1");
+  };
+
+  const handleUpdateTag = () => {
+    if (editingTagId && editTagName.trim()) {
+      dispatch(
+        updateTag({
+          id: editingTagId,
+          updates: { name: editTagName.trim(), color: editTagColor },
+        })
+      );
+      handleCloseEditTagDialog();
+    }
+  };
+
+  const handleDeleteTag = (tagId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    dispatch(deleteTag(tagId));
+    // Remove the tag from filter if it was selected
+    if (filter.tagIds.includes(tagId)) {
+      dispatch(setFilter({ tagIds: filter.tagIds.filter((id) => id !== tagId) }));
+    }
+  };
+
   // Check if all folders are expanded
   const areAllFoldersExpanded =
     allFolders.length > 0 &&
@@ -800,25 +847,46 @@ export const NotesSidebar = () => {
             ) : (
               <>
                 {tags.map((tag) => (
-                  <Box
-                    key={tag.id}
-                    className={styles.tagItem}
-                    onClick={() => handleTagClick(tag.id)}
-                    sx={{
-                      backgroundColor: filter.tagIds.includes(tag.id)
-                        ? tag.color
-                        : "transparent",
-                      color: filter.tagIds.includes(tag.id)
-                        ? "white"
-                        : "inherit",
-                      border: `1px solid ${tag.color}`,
-                    }}
-                  >
-                    <span
-                      className={styles.tagDot}
-                      style={{ backgroundColor: tag.color }}
-                    />
-                    {tag.name}
+                  <Box key={tag.id} className={styles.tagItemWrapper}>
+                    <Box
+                      className={styles.tagItem}
+                      onClick={() => handleTagClick(tag.id)}
+                      sx={{
+                        backgroundColor: filter.tagIds.includes(tag.id)
+                          ? tag.color
+                          : "transparent",
+                        color: filter.tagIds.includes(tag.id)
+                          ? "white"
+                          : "inherit",
+                        border: `1px solid ${tag.color}`,
+                      }}
+                    >
+                      <span
+                        className={styles.tagDot}
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      {tag.name}
+                    </Box>
+                    <Box className={styles.tagActions}>
+                      <Tooltip title={t("Tags.EditTag")}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleOpenEditTag(tag.id, e)}
+                          className={styles.tagActionButton}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t("Tags.DeleteTag")}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleDeleteTag(tag.id, e)}
+                          className={styles.tagActionButton}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </Box>
                 ))}
 
@@ -875,6 +943,7 @@ export const NotesSidebar = () => {
               label={t("Tags.TagName")}
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCreateTag()}
               className={styles.dialogTextFieldWithMargin}
             />
             <Box className={styles.colorPickerRow}>
@@ -891,6 +960,37 @@ export const NotesSidebar = () => {
             <Button onClick={() => setIsTagDialogOpen(false)}>{t("Common.Cancel")}</Button>
             <Button onClick={handleCreateTag} variant="contained">
               {t("Common.Create")}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Tag Dialog */}
+        <Dialog open={isEditTagDialogOpen} onClose={handleCloseEditTagDialog}>
+          <DialogTitle>{t("Tags.EditTag")}</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              fullWidth
+              label={t("Tags.TagName")}
+              value={editTagName}
+              onChange={(e) => setEditTagName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleUpdateTag()}
+              className={styles.dialogTextFieldWithMargin}
+            />
+            <Box className={styles.colorPickerRow}>
+              <Typography>{t("Tags.Color")}</Typography>
+              <input
+                type="color"
+                value={editTagColor}
+                onChange={(e) => setEditTagColor(e.target.value)}
+                className={styles.colorPicker}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseEditTagDialog}>{t("Common.Cancel")}</Button>
+            <Button onClick={handleUpdateTag} variant="contained">
+              {t("Common.Save")}
             </Button>
           </DialogActions>
         </Dialog>

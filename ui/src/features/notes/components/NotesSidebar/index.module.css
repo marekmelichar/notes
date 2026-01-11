@@ -144,6 +144,17 @@
   text-overflow: ellipsis;
 }
 
+.tagItemWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tagItemWrapper:hover .tagActions {
+  opacity: 1;
+  visibility: visible;
+}
+
 .tagItem {
   display: inline-flex;
   align-items: center;
@@ -157,6 +168,24 @@
 
 .tagItem:hover {
   opacity: 0.8;
+}
+
+.tagActions {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  margin-left: 0.25rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.tagActionButton {
+  padding: 0.125rem;
+}
+
+.tagActionButton svg {
+  font-size: 0.875rem;
 }
 
 .tagDot {

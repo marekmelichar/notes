@@ -71,8 +71,13 @@
     "NewTag": "New Tag",
     "AddTag": "Add tag",
     "CreateTag": "Create Tag",
+    "EditTag": "Edit Tag",
+    "DeleteTag": "Delete tag",
     "TagName": "Tag name",
-    "Color": "Color:"
+    "Color": "Color:",
+    "ManageTags": "Manage tags",
+    "CreateNew": "Create new tag",
+    "NoTagsYet": "No tags yet"
   },
   "Sort": {
     "Sort": "Sort",

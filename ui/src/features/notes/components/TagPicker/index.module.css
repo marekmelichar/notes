@@ -1,0 +1,55 @@
+.container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.addButton {
+  padding: 0.25rem;
+}
+
+.menu {
+  min-width: 12.5rem;
+  max-height: 18.75rem;
+}
+
+.menuItem {
+  padding: 0.5rem 1rem;
+}
+
+.tagDot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+
+.createForm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.createInput {
+  flex: 1;
+}
+
+.createInput input {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.colorPicker {
+  width: 2rem;
+  height: 1.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.emptyState {
+  padding: 0.75rem 1rem;
+  text-align: center;
+}

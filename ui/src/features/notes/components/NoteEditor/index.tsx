@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef, useMemo } from 'react';
-import { Box, IconButton, Typography, Tooltip, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress } from '@mui/material';
+import { Box, IconButton, Typography, Tooltip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
@@ -19,8 +19,8 @@ import {
   deleteNote,
   selectSelectedNote,
 } from '../../store/notesSlice';
-import { selectTagsByIds } from '../../store/tagsSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
+import { TagPicker } from '../TagPicker';
 import styles from './index.module.css';
 
 // Parse BlockNote content from storage
@@ -104,14 +104,11 @@ const BlockNoteEditor = ({ initialContent, onSave, onChange }: BlockNoteEditorPr
   );
 };
 
-const EMPTY_TAGS: never[] = [];
-
 export const NoteEditor = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const note = useAppSelector(selectSelectedNote);
   const folders = useAppSelector(selectAllFolders);
-  const tags = useAppSelector((state) => (note ? selectTagsByIds(note.tags)(state) : EMPTY_TAGS));
   const [title, setTitle] = useState(note?.title || '');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [folderMenuAnchor, setFolderMenuAnchor] = useState<null | HTMLElement>(null);
@@ -225,6 +222,12 @@ export const NoteEditor = () => {
     setFolderMenuAnchor(null);
   }, [note, dispatch]);
 
+  const handleTagsChange = useCallback((tagIds: string[]) => {
+    if (note) {
+      dispatch(updateNote({ id: note.id, updates: { tags: tagIds } }));
+    }
+  }, [note, dispatch]);
+
   const currentFolder = folders.find(f => f.id === note?.folderId);
 
   if (!note) {
@@ -289,14 +292,10 @@ export const NoteEditor = () => {
               </MenuItem>
             ))}
           </Menu>
-          {tags.map((tag) => (
-            <Chip
-              key={tag.id}
-              label={tag.name}
-              size="small"
-              sx={{ backgroundColor: tag.color, color: 'white' }}
-            />
-          ))}
+          <TagPicker
+            selectedTagIds={note.tags}
+            onTagsChange={handleTagsChange}
+          />
           <Tooltip title={t("Notes.SaveShortcut")}>
             <Button
               size="small"

@@ -71,8 +71,13 @@
     "NewTag": "Nový štítek",
     "AddTag": "Přidat",
     "CreateTag": "Nový štítek",
+    "EditTag": "Upravit štítek",
+    "DeleteTag": "Smazat štítek",
     "TagName": "Název",
-    "Color": "Barva:"
+    "Color": "Barva:",
+    "ManageTags": "Spravovat štítky",
+    "CreateNew": "Vytvořit nový štítek",
+    "NoTagsYet": "Zatím žádné štítky"
   },
   "Sort": {
     "Sort": "Řadit",
