@@ -85,7 +85,7 @@ services:
     image: ghcr.io/${GITHUB_REPOSITORY:-local}/frontend:latest
     container_name: epoznamky-frontend
     environment:
-      API_URL: "https://epoznamky.cz/api"
+      API_URL: ""
       KEYCLOAK_URL: "https://epoznamky.cz"
       KEYCLOAK_REALM: "epoznamky"
       KEYCLOAK_CLIENT_ID: "epoznamky-frontend"
