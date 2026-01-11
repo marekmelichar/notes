@@ -5,7 +5,6 @@
  * Add your mock API endpoints here.
  */
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { http, HttpResponse, delay } from 'msw';
 
 // Simulate network delay (configurable)

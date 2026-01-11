@@ -167,7 +167,7 @@ export const NoteList = () => {
             <NoteOutlinedIcon className={styles.emptyStateIcon} />
             <Typography variant="h6">No notes yet</Typography>
             <Typography variant="body2">
-              Click "New Note" to create your first note
+              Click &quot;New Note&quot; to create your first note
             </Typography>
             <Button
               variant="outlined"

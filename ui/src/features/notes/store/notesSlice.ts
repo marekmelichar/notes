@@ -269,7 +269,7 @@ const selectNotesState = (state: { notes: NotesState }) => state.notes;
 export const selectFilteredNotes = createSelector(
   [selectNotesState],
   ({ notes, filter, sortBy, sortOrder }) => {
-    let filtered = notes.filter((note) => {
+    const filtered = notes.filter((note) => {
       // Filter by deleted status
       if (note.isDeleted !== filter.isDeleted) return false;
 
