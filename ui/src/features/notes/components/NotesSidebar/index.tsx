@@ -40,6 +40,8 @@ import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
+import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AddIcon from "@mui/icons-material/Add";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
@@ -60,9 +62,12 @@ import {
   selectChildFolders,
   selectExpandedFolderIds,
   selectFoldersLoading,
+  selectAllFolders,
   toggleFolderExpanded,
   expandFolder,
+  setExpandedFolders,
   createFolder,
+  updateFolder,
 } from "../../store/foldersSlice";
 import { selectAllTags, selectTagsLoading, createTag } from "../../store/tagsSlice";
 import type { Folder, Note } from "../../types";
@@ -93,9 +98,10 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: 12 + level * 20,
+    paddingLeft: level > 0 ? 24 + level * 20 : 12,
     opacity: isDragging ? 0.5 : 1,
-  };
+    '--indent-level': level,
+  } as React.CSSProperties;
 
   const handleClick = () => {
     // Only select the note - don't change the filter
@@ -106,7 +112,7 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
   return (
     <Box
       ref={setNodeRef}
-      className={`${styles.noteTreeItem} ${isSelected ? styles.noteTreeItemActive : ""} ${isDragging ? styles.dragging : ""}`}
+      className={`${styles.noteTreeItem} ${level > 0 ? styles.nestedItem : ""} ${isSelected ? styles.noteTreeItemActive : ""} ${isDragging ? styles.dragging : ""}`}
       style={style}
       onClick={handleClick}
     >
@@ -128,21 +134,35 @@ interface DroppableFolderProps {
   folder: Folder;
   level?: number;
   showNotes?: boolean;
+  onAddSubfolder: (parentId: string) => void;
 }
 
 const DroppableFolder = ({
   folder,
   level = 0,
   showNotes = false,
+  onAddSubfolder,
 }: DroppableFolderProps) => {
   const dispatch = useAppDispatch();
   const expandedIds = useAppSelector(selectExpandedFolderIds);
   const childFolders = useAppSelector(selectChildFolders(folder.id));
   const notes = useAppSelector(selectAllNotes);
 
-  const { isOver, setNodeRef } = useDroppable({
+  const { isOver, setNodeRef: setDroppableRef } = useDroppable({
     id: `folder-${folder.id}`,
-    data: { type: "folder", folderId: folder.id },
+    data: { type: "folder", folderId: folder.id, folder },
+  });
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: `draggable-folder-${folder.id}`,
+    data: { type: "draggable-folder", folder },
   });
 
   const isExpanded = expandedIds.includes(folder.id);
@@ -179,14 +199,35 @@ const DroppableFolder = ({
     dispatch(toggleFolderExpanded(folder.id));
   };
 
+  const handleAddSubfolder = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onAddSubfolder(folder.id);
+  };
+
+  // Combine refs for both droppable and sortable
+  const setNodeRef = (node: HTMLElement | null) => {
+    setDroppableRef(node);
+    setSortableRef(node);
+  };
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    paddingLeft: level > 0 ? 24 + level * 20 : 12,
+    '--indent-level': level,
+  } as React.CSSProperties;
+
   return (
     <>
       <Box
         ref={setNodeRef}
-        className={`${styles.folderItem} ${isOver ? styles.dropTarget : ""}`}
-        style={{ paddingLeft: 12 + level * 20 }}
+        className={`${styles.folderItem} ${level > 0 ? styles.nestedItem : ""} ${isOver ? styles.dropTarget : ""} ${isDragging ? styles.folderDragging : ""}`}
+        style={style}
         onClick={handleClick}
       >
+        <Box {...listeners} {...attributes} className={styles.folderDragHandle}>
+          <DragIndicatorIcon fontSize="small" />
+        </Box>
         <Box className={styles.folderItemIcon}>
           {hasChildren ? (
             <IconButton size="small" onClick={handleToggleExpand} className={styles.expandButton}>
@@ -209,17 +250,19 @@ const DroppableFolder = ({
         {folderNotes.length > 0 && (
           <span className={styles.navItemCount}>{folderNotes.length}</span>
         )}
+        <Tooltip title="Add subfolder">
+          <IconButton
+            size="small"
+            className={styles.addSubfolderButton}
+            onClick={handleAddSubfolder}
+          >
+            <AddIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <Collapse in={isExpanded}>
-        {childFolders.map((child) => (
-          <DroppableFolder
-            key={child.id}
-            folder={child}
-            level={level + 1}
-            showNotes={showNotes}
-          />
-        ))}
+        {/* Notes appear first, directly under parent folder */}
         {showNotes && (
           <SortableContext
             items={noteIds}
@@ -230,6 +273,16 @@ const DroppableFolder = ({
             ))}
           </SortableContext>
         )}
+        {/* Then child folders */}
+        {childFolders.map((child) => (
+          <DroppableFolder
+            key={child.id}
+            folder={child}
+            level={level + 1}
+            showNotes={showNotes}
+            onAddSubfolder={onAddSubfolder}
+          />
+        ))}
       </Collapse>
     </>
   );
@@ -256,7 +309,9 @@ export const NotesSidebar = () => {
   const dispatch = useAppDispatch();
   const filter = useAppSelector(selectNotesFilter);
   const notes = useAppSelector(selectAllNotes);
+  const allFolders = useAppSelector(selectAllFolders);
   const rootFolders = useAppSelector(selectRootFolders);
+  const expandedIds = useAppSelector(selectExpandedFolderIds);
   const tags = useAppSelector(selectAllTags);
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const isFoldersLoading = useAppSelector(selectFoldersLoading);
@@ -269,6 +324,23 @@ export const NotesSidebar = () => {
   const [newTagColor, setNewTagColor] = useState("#6366f1");
   const [showTreeView, setShowTreeView] = useState(true);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
+  const [activeFolder, setActiveFolder] = useState<Folder | null>(null);
+  const [parentFolderIdForCreate, setParentFolderIdForCreate] = useState<string | null>(null);
+
+  // Helper to check if targetId is a descendant of folderId (circular reference check)
+  const isDescendantOf = (folderId: string, targetId: string): boolean => {
+    const children = allFolders.filter((f) => f.parentId === folderId);
+    for (const child of children) {
+      if (child.id === targetId) return true;
+      if (isDescendantOf(child.id, targetId)) return true;
+    }
+    return false;
+  };
+
+  // Get parent folder name for dialog
+  const parentFolderForCreate = parentFolderIdForCreate
+    ? allFolders.find((f) => f.id === parentFolderIdForCreate)
+    : null;
 
   const unfiledNotes = useMemo(() => {
     return notes
@@ -294,31 +366,88 @@ export const NotesSidebar = () => {
     })
   );
 
+  // Expand all ancestor folders when a note is selected
   useEffect(() => {
     if (selectedNoteId) {
       const selectedNote = notes.find((n) => n.id === selectedNoteId);
       if (selectedNote?.folderId) {
-        dispatch(expandFolder(selectedNote.folderId));
+        // Find and expand all ancestor folders
+        const expandAncestors = (folderId: string) => {
+          dispatch(expandFolder(folderId));
+          const folder = allFolders.find((f) => f.id === folderId);
+          if (folder?.parentId) {
+            expandAncestors(folder.parentId);
+          }
+        };
+        expandAncestors(selectedNote.folderId);
       }
     }
-  }, [selectedNoteId, notes, dispatch]);
+  }, [selectedNoteId, notes, allFolders, dispatch]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     if (active.data.current?.type === "note") {
       setActiveNote(active.data.current.note);
+      setActiveFolder(null);
+    } else if (active.data.current?.type === "draggable-folder") {
+      setActiveFolder(active.data.current.folder);
+      setActiveNote(null);
     }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveNote(null);
+    setActiveFolder(null);
 
     if (!over) return;
 
     const activeData = active.data.current;
     const overData = over.data.current;
 
+    // Handle folder drag
+    if (activeData?.type === "draggable-folder") {
+      const draggedFolder = activeData.folder as Folder;
+
+      // Check if dropping on another folder
+      if (overData?.type === "folder") {
+        const targetFolderId = overData.folderId as string;
+
+        // Prevent dropping on itself
+        if (draggedFolder.id === targetFolderId) return;
+
+        // Prevent dropping on a descendant (circular reference)
+        if (isDescendantOf(draggedFolder.id, targetFolderId)) return;
+
+        // Prevent dropping if already a child of target
+        if (draggedFolder.parentId === targetFolderId) return;
+
+        // Move folder to new parent
+        dispatch(
+          updateFolder({
+            id: draggedFolder.id,
+            updates: { parentId: targetFolderId },
+          })
+        );
+        dispatch(expandFolder(targetFolderId));
+        return;
+      }
+
+      // Check if dropping on unfiled zone (move to root)
+      if (overData?.type === "unfiled") {
+        if (draggedFolder.parentId !== null) {
+          dispatch(
+            updateFolder({
+              id: draggedFolder.id,
+              updates: { parentId: null },
+            })
+          );
+        }
+        return;
+      }
+    }
+
+    // Handle note drag
     if (activeData?.type === "note") {
       const note = activeData.note as Note;
       const activeId = active.id as string;
@@ -432,10 +561,29 @@ export const NotesSidebar = () => {
 
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
-      dispatch(createFolder({ name: newFolderName.trim() }));
+      dispatch(createFolder({
+        name: newFolderName.trim(),
+        parentId: parentFolderIdForCreate,
+      }));
       setNewFolderName("");
+      setParentFolderIdForCreate(null);
       setIsFolderDialogOpen(false);
+      // Expand parent folder to show new subfolder
+      if (parentFolderIdForCreate) {
+        dispatch(expandFolder(parentFolderIdForCreate));
+      }
     }
+  };
+
+  const handleOpenSubfolderDialog = (parentId: string) => {
+    setParentFolderIdForCreate(parentId);
+    setIsFolderDialogOpen(true);
+  };
+
+  const handleCloseFolderDialog = () => {
+    setNewFolderName("");
+    setParentFolderIdForCreate(null);
+    setIsFolderDialogOpen(false);
   };
 
   const handleCreateTag = () => {
@@ -444,6 +592,20 @@ export const NotesSidebar = () => {
       setNewTagName("");
       setNewTagColor("#6366f1");
       setIsTagDialogOpen(false);
+    }
+  };
+
+  // Check if all folders are expanded
+  const areAllFoldersExpanded = allFolders.length > 0 &&
+    allFolders.every((f) => expandedIds.includes(f.id));
+
+  const handleToggleExpandAll = () => {
+    if (areAllFoldersExpanded) {
+      // Collapse all
+      dispatch(setExpandedFolders([]));
+    } else {
+      // Expand all
+      dispatch(setExpandedFolders(allFolders.map((f) => f.id)));
     }
   };
 
@@ -497,6 +659,19 @@ export const NotesSidebar = () => {
           <Box className={styles.sectionHeader}>
             <Typography className={styles.sectionTitle}>Folders</Typography>
             <Box className={styles.sectionActions}>
+              <Tooltip title={areAllFoldersExpanded ? "Collapse all" : "Expand all"}>
+                <IconButton
+                  size="small"
+                  onClick={handleToggleExpandAll}
+                  disabled={allFolders.length === 0}
+                >
+                  {areAllFoldersExpanded ? (
+                    <UnfoldLessIcon fontSize="small" />
+                  ) : (
+                    <UnfoldMoreIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
               <Tooltip
                 title={
                   showTreeView ? "Show folders only" : "Show tree with notes"
@@ -534,6 +709,7 @@ export const NotesSidebar = () => {
                 key={folder.id}
                 folder={folder}
                 showNotes={showTreeView}
+                onAddSubfolder={handleOpenSubfolderDialog}
               />
             ))
           )}
@@ -640,9 +816,13 @@ export const NotesSidebar = () => {
         {/* Create Folder Dialog */}
         <Dialog
           open={isFolderDialogOpen}
-          onClose={() => setIsFolderDialogOpen(false)}
+          onClose={handleCloseFolderDialog}
         >
-          <DialogTitle>Create Folder</DialogTitle>
+          <DialogTitle>
+            {parentFolderForCreate
+              ? `Create folder in "${parentFolderForCreate.name}"`
+              : "Create Folder"}
+          </DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -655,7 +835,7 @@ export const NotesSidebar = () => {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsFolderDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCloseFolderDialog}>Cancel</Button>
             <Button onClick={handleCreateFolder} variant="contained">
               Create
             </Button>
@@ -702,6 +882,12 @@ export const NotesSidebar = () => {
           <Box className={styles.dragOverlay}>
             <DescriptionOutlinedIcon fontSize="small" />
             <Typography noWrap>{activeNote.title || "Untitled"}</Typography>
+          </Box>
+        )}
+        {activeFolder && (
+          <Box className={styles.folderDragOverlay}>
+            <FolderOutlinedIcon fontSize="small" sx={{ color: activeFolder.color }} />
+            <Typography noWrap>{activeFolder.name}</Typography>
           </Box>
         )}
       </DragOverlay>
