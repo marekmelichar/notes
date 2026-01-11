@@ -103,11 +103,13 @@ const BlockNoteEditor = ({ initialContent, onSave, onChange }: BlockNoteEditorPr
   );
 };
 
+const EMPTY_TAGS: never[] = [];
+
 export const NoteEditor = () => {
   const dispatch = useAppDispatch();
   const note = useAppSelector(selectSelectedNote);
   const folders = useAppSelector(selectAllFolders);
-  const tags = useAppSelector((state) => (note ? selectTagsByIds(note.tags)(state) : []));
+  const tags = useAppSelector((state) => (note ? selectTagsByIds(note.tags)(state) : EMPTY_TAGS));
   const [title, setTitle] = useState(note?.title || '');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [folderMenuAnchor, setFolderMenuAnchor] = useState<null | HTMLElement>(null);

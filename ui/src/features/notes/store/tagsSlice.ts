@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import { tagsApi } from '../services/notesApi';
 import { showSuccess, showError } from '@/store/notificationsSlice';
 import type { Tag, TagsState } from '../types';
@@ -113,8 +113,21 @@ export const selectAllTags = (state: { tags: TagsState }) => state.tags.tags;
 export const selectTagById = (id: string) => (state: { tags: TagsState }) =>
   state.tags.tags.find((t) => t.id === id);
 
-export const selectTagsByIds = (ids: string[]) => (state: { tags: TagsState }) =>
-  state.tags.tags.filter((t) => ids.includes(t.id));
+// Memoized selector factory for tags by IDs
+const tagsByIdsCache = new Map<string, ReturnType<typeof createSelector>>();
+export const selectTagsByIds = (ids: string[]) => {
+  const cacheKey = [...ids].sort().join(',');
+  if (!tagsByIdsCache.has(cacheKey)) {
+    tagsByIdsCache.set(
+      cacheKey,
+      createSelector(
+        [selectAllTags],
+        (tags) => tags.filter((t) => ids.includes(t.id))
+      )
+    );
+  }
+  return tagsByIdsCache.get(cacheKey)!;
+};
 
 export const selectTagsLoading = (state: { tags: TagsState }) => state.tags.isLoading;
 export const selectTagsError = (state: { tags: TagsState }) => state.tags.error;

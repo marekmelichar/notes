@@ -1,6 +1,7 @@
 import {
   createSlice,
   createAsyncThunk,
+  createSelector,
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import { notesApi } from "../services/notesApi";
@@ -263,82 +264,85 @@ export const {
 export const selectAllNotes = (state: { notes: NotesState }) =>
   state.notes.notes;
 
-export const selectFilteredNotes = (state: { notes: NotesState }) => {
-  const { notes, filter, sortBy, sortOrder } = state.notes;
+const selectNotesState = (state: { notes: NotesState }) => state.notes;
 
-  let filtered = notes.filter((note) => {
-    // Filter by deleted status
-    if (note.isDeleted !== filter.isDeleted) return false;
+export const selectFilteredNotes = createSelector(
+  [selectNotesState],
+  ({ notes, filter, sortBy, sortOrder }) => {
+    let filtered = notes.filter((note) => {
+      // Filter by deleted status
+      if (note.isDeleted !== filter.isDeleted) return false;
 
-    // Filter by folder
-    if (filter.folderId !== null && note.folderId !== filter.folderId)
-      return false;
+      // Filter by folder
+      if (filter.folderId !== null && note.folderId !== filter.folderId)
+        return false;
 
-    // Filter by tags
-    if (
-      filter.tagIds.length > 0 &&
-      !filter.tagIds.some((tagId) => note.tags.includes(tagId))
-    ) {
-      return false;
-    }
-
-    // Filter by pinned
-    if (filter.isPinned !== null && note.isPinned !== filter.isPinned)
-      return false;
-
-    // Filter by search query
-    if (filter.searchQuery) {
-      const query = filter.searchQuery.toLowerCase();
+      // Filter by tags
       if (
-        !note.title.toLowerCase().includes(query) &&
-        !note.content.toLowerCase().includes(query)
+        filter.tagIds.length > 0 &&
+        !filter.tagIds.some((tagId) => note.tags.includes(tagId))
       ) {
         return false;
       }
-    }
 
-    return true;
-  });
+      // Filter by pinned
+      if (filter.isPinned !== null && note.isPinned !== filter.isPinned)
+        return false;
 
-  // Sort
-  filtered.sort((a, b) => {
-    let comparison = 0;
-    switch (sortBy) {
-      case "title":
-        comparison = a.title.localeCompare(b.title);
-        break;
-      case "createdAt":
-        comparison = a.createdAt - b.createdAt;
-        break;
-      case "updatedAt":
-      default:
-        comparison = a.updatedAt - b.updatedAt;
-        break;
-    }
-    return sortOrder === "asc" ? comparison : -comparison;
-  });
+      // Filter by search query
+      if (filter.searchQuery) {
+        const query = filter.searchQuery.toLowerCase();
+        if (
+          !note.title.toLowerCase().includes(query) &&
+          !note.content.toLowerCase().includes(query)
+        ) {
+          return false;
+        }
+      }
 
-  // Sort by order within the same folder (for manual reordering)
-  // This is a secondary sort that preserves the order field when notes are in the same folder
-  filtered.sort((a, b) => {
-    // Only apply order sort when both notes are in the same folder
-    if (a.folderId === b.folderId) {
-      const orderA = a.order ?? a.createdAt;
-      const orderB = b.order ?? b.createdAt;
-      return orderA - orderB;
-    }
-    return 0;
-  });
+      return true;
+    });
 
-  // Pinned notes first
-  filtered.sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return 0;
-  });
+    // Sort
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortBy) {
+        case "title":
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case "createdAt":
+          comparison = a.createdAt - b.createdAt;
+          break;
+        case "updatedAt":
+        default:
+          comparison = a.updatedAt - b.updatedAt;
+          break;
+      }
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
 
-  return filtered;
-};
+    // Sort by order within the same folder (for manual reordering)
+    // This is a secondary sort that preserves the order field when notes are in the same folder
+    filtered.sort((a, b) => {
+      // Only apply order sort when both notes are in the same folder
+      if (a.folderId === b.folderId) {
+        const orderA = a.order ?? a.createdAt;
+        const orderB = b.order ?? b.createdAt;
+        return orderA - orderB;
+      }
+      return 0;
+    });
+
+    // Pinned notes first
+    filtered.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    });
+
+    return filtered;
+  }
+);
 
 export const selectSelectedNote = (state: { notes: NotesState }) => {
   const { notes, selectedNoteId } = state.notes;

@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction, createSelector } from '@reduxjs/toolkit';
 import { foldersApi } from '../services/notesApi';
 import { showSuccess, showError } from '@/store/notificationsSlice';
 import type { Folder, FoldersState } from '../types';
@@ -151,11 +151,25 @@ export const { toggleFolderExpanded, expandFolder, setExpandedFolders, clearErro
 // Selectors
 export const selectAllFolders = (state: { folders: FoldersState }) => state.folders.folders;
 
-export const selectRootFolders = (state: { folders: FoldersState }) =>
-  state.folders.folders.filter((f) => f.parentId === null).sort((a, b) => a.order - b.order);
+export const selectRootFolders = createSelector(
+  [selectAllFolders],
+  (folders) => folders.filter((f) => f.parentId === null).sort((a, b) => a.order - b.order)
+);
 
-export const selectChildFolders = (parentId: string) => (state: { folders: FoldersState }) =>
-  state.folders.folders.filter((f) => f.parentId === parentId).sort((a, b) => a.order - b.order);
+// Memoized selector factory for child folders
+const childFoldersCache = new Map<string, ReturnType<typeof createSelector>>();
+export const selectChildFolders = (parentId: string) => {
+  if (!childFoldersCache.has(parentId)) {
+    childFoldersCache.set(
+      parentId,
+      createSelector(
+        [selectAllFolders],
+        (folders) => folders.filter((f) => f.parentId === parentId).sort((a, b) => a.order - b.order)
+      )
+    );
+  }
+  return childFoldersCache.get(parentId)!;
+};
 
 export const selectFolderById = (id: string) => (state: { folders: FoldersState }) =>
   state.folders.folders.find((f) => f.id === id);

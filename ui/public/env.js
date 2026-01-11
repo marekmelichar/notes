@@ -3,8 +3,9 @@
 // Update these values for each deployment environment
 
 // API Configuration
-// Empty string = relative URLs. Vite proxy handles /api in dev, nginx in production.
-window.API_URL = '';
+// Local dev: http://localhost:5001
+// Production: https://epoznamky.cz
+window.API_URL = 'http://localhost:5001';
 
 // Keycloak Authentication
 window.KEYCLOAK_URL = 'http://localhost:8080';

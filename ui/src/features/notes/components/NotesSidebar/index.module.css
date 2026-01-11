@@ -125,31 +125,6 @@
   padding-left: 2rem;
 }
 
-/* Visual indicator for nested items - indent guides */
-.nestedItem {
-  position: relative;
-}
-
-/* Draw indent guide lines for each nesting level */
-.nestedItem::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: calc(24px + var(--indent-level, 0) * 20px);
-  pointer-events: none;
-  /* Guides at 24px, then every 20px (44px, 64px, etc.) */
-  background-image: repeating-linear-gradient(
-    to right,
-    transparent 0px,
-    transparent 19px,
-    var(--mui-palette-divider) 19px,
-    var(--mui-palette-divider) 20px
-  );
-  background-size: 20px 100%;
-  background-position: 4px 0;
-}
 
 .folderItemIcon {
   width: 1.25rem;

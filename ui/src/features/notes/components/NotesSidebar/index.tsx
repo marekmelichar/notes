@@ -69,7 +69,11 @@ import {
   createFolder,
   updateFolder,
 } from "../../store/foldersSlice";
-import { selectAllTags, selectTagsLoading, createTag } from "../../store/tagsSlice";
+import {
+  selectAllTags,
+  selectTagsLoading,
+  createTag,
+} from "../../store/tagsSlice";
 import type { Folder, Note } from "../../types";
 import styles from "./index.module.css";
 
@@ -98,9 +102,9 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: level > 0 ? 24 + level * 20 : 12,
+    paddingLeft: level > 0 ? 34 + level * 20 : 12,
     opacity: isDragging ? 0.5 : 1,
-    '--indent-level': level,
+    "--indent-level": level,
   } as React.CSSProperties;
 
   const handleClick = () => {
@@ -112,7 +116,7 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
   return (
     <Box
       ref={setNodeRef}
-      className={`${styles.noteTreeItem} ${level > 0 ? styles.nestedItem : ""} ${isSelected ? styles.noteTreeItemActive : ""} ${isDragging ? styles.dragging : ""}`}
+      className={`${styles.noteTreeItem} ${isSelected ? styles.noteTreeItemActive : ""} ${isDragging ? styles.dragging : ""}`}
       style={style}
       onClick={handleClick}
     >
@@ -214,14 +218,14 @@ const DroppableFolder = ({
     transform: CSS.Transform.toString(transform),
     transition,
     paddingLeft: level > 0 ? 24 + level * 20 : 12,
-    '--indent-level': level,
+    "--indent-level": level,
   } as React.CSSProperties;
 
   return (
     <>
       <Box
         ref={setNodeRef}
-        className={`${styles.folderItem} ${level > 0 ? styles.nestedItem : ""} ${isOver ? styles.dropTarget : ""} ${isDragging ? styles.folderDragging : ""}`}
+        className={`${styles.folderItem} ${isOver ? styles.dropTarget : ""} ${isDragging ? styles.folderDragging : ""}`}
         style={style}
         onClick={handleClick}
       >
@@ -230,7 +234,11 @@ const DroppableFolder = ({
         </Box>
         <Box className={styles.folderItemIcon}>
           {hasChildren ? (
-            <IconButton size="small" onClick={handleToggleExpand} className={styles.expandButton}>
+            <IconButton
+              size="small"
+              onClick={handleToggleExpand}
+              className={styles.expandButton}
+            >
               {isExpanded ? (
                 <ExpandMoreIcon fontSize="small" />
               ) : (
@@ -325,7 +333,9 @@ export const NotesSidebar = () => {
   const [showTreeView, setShowTreeView] = useState(true);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [activeFolder, setActiveFolder] = useState<Folder | null>(null);
-  const [parentFolderIdForCreate, setParentFolderIdForCreate] = useState<string | null>(null);
+  const [parentFolderIdForCreate, setParentFolderIdForCreate] = useState<
+    string | null
+  >(null);
 
   // Helper to check if targetId is a descendant of folderId (circular reference check)
   const isDescendantOf = (folderId: string, targetId: string): boolean => {
@@ -486,7 +496,7 @@ export const NotesSidebar = () => {
           dispatch(
             updateNote({
               id: note.id,
-              updates: { folderId: overNote.folderId ?? '' },
+              updates: { folderId: overNote.folderId ?? "" },
             })
           );
           if (overNote.folderId) {
@@ -512,7 +522,7 @@ export const NotesSidebar = () => {
       if (overData?.type === "unfiled") {
         if (note.folderId !== null) {
           // Use empty string to clear folder (null means "don't change" in the API)
-          dispatch(updateNote({ id: note.id, updates: { folderId: '' } }));
+          dispatch(updateNote({ id: note.id, updates: { folderId: "" } }));
         }
         return;
       }
@@ -561,10 +571,12 @@ export const NotesSidebar = () => {
 
   const handleCreateFolder = () => {
     if (newFolderName.trim()) {
-      dispatch(createFolder({
-        name: newFolderName.trim(),
-        parentId: parentFolderIdForCreate,
-      }));
+      dispatch(
+        createFolder({
+          name: newFolderName.trim(),
+          parentId: parentFolderIdForCreate,
+        })
+      );
       setNewFolderName("");
       setParentFolderIdForCreate(null);
       setIsFolderDialogOpen(false);
@@ -596,7 +608,8 @@ export const NotesSidebar = () => {
   };
 
   // Check if all folders are expanded
-  const areAllFoldersExpanded = allFolders.length > 0 &&
+  const areAllFoldersExpanded =
+    allFolders.length > 0 &&
     allFolders.every((f) => expandedIds.includes(f.id));
 
   const handleToggleExpandAll = () => {
@@ -659,18 +672,22 @@ export const NotesSidebar = () => {
           <Box className={styles.sectionHeader}>
             <Typography className={styles.sectionTitle}>Folders</Typography>
             <Box className={styles.sectionActions}>
-              <Tooltip title={areAllFoldersExpanded ? "Collapse all" : "Expand all"}>
-                <IconButton
-                  size="small"
-                  onClick={handleToggleExpandAll}
-                  disabled={allFolders.length === 0}
-                >
-                  {areAllFoldersExpanded ? (
-                    <UnfoldLessIcon fontSize="small" />
-                  ) : (
-                    <UnfoldMoreIcon fontSize="small" />
-                  )}
-                </IconButton>
+              <Tooltip
+                title={areAllFoldersExpanded ? "Collapse all" : "Expand all"}
+              >
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={handleToggleExpandAll}
+                    disabled={allFolders.length === 0}
+                  >
+                    {areAllFoldersExpanded ? (
+                      <UnfoldLessIcon fontSize="small" />
+                    ) : (
+                      <UnfoldMoreIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                </span>
               </Tooltip>
               <Tooltip
                 title={
@@ -787,7 +804,9 @@ export const NotesSidebar = () => {
                       backgroundColor: filter.tagIds.includes(tag.id)
                         ? tag.color
                         : "transparent",
-                      color: filter.tagIds.includes(tag.id) ? "white" : "inherit",
+                      color: filter.tagIds.includes(tag.id)
+                        ? "white"
+                        : "inherit",
                       border: `1px solid ${tag.color}`,
                     }}
                   >
@@ -814,10 +833,7 @@ export const NotesSidebar = () => {
         </Box>
 
         {/* Create Folder Dialog */}
-        <Dialog
-          open={isFolderDialogOpen}
-          onClose={handleCloseFolderDialog}
-        >
+        <Dialog open={isFolderDialogOpen} onClose={handleCloseFolderDialog}>
           <DialogTitle>
             {parentFolderForCreate
               ? `Create folder in "${parentFolderForCreate.name}"`
@@ -886,7 +902,10 @@ export const NotesSidebar = () => {
         )}
         {activeFolder && (
           <Box className={styles.folderDragOverlay}>
-            <FolderOutlinedIcon fontSize="small" sx={{ color: activeFolder.color }} />
+            <FolderOutlinedIcon
+              fontSize="small"
+              sx={{ color: activeFolder.color }}
+            />
             <Typography noWrap>{activeFolder.name}</Typography>
           </Box>
         )}
