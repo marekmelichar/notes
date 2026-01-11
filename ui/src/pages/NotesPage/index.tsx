@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Box } from '@mui/material';
 import { useAppDispatch, useAppSelector, setMobileView } from '@/store';
-import { loadNotes } from '@/features/notes/store/notesSlice';
+import { loadNotes, selectSelectedNote } from '@/features/notes/store/notesSlice';
 import { loadFolders } from '@/features/notes/store/foldersSlice';
 import { loadTags } from '@/features/notes/store/tagsSlice';
 import { checkPendingChanges, setOnlineStatus } from '@/features/notes/store/syncSlice';
@@ -9,6 +9,8 @@ import { NotesSidebar } from '@/features/notes/components/NotesSidebar';
 import { NoteList } from '@/features/notes/components/NoteList';
 import { NoteEditor } from '@/features/notes/components/NoteEditor';
 import styles from './index.module.css';
+
+const DEFAULT_TITLE = 'epoznamky - Note Taking App';
 
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 400;
@@ -20,6 +22,7 @@ const NotesPage = () => {
   const isMobile = useAppSelector((state) => state.ui.isMobile);
   const mobileView = useAppSelector((state) => state.ui.mobileView);
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
+  const selectedNote = useAppSelector(selectSelectedNote);
 
   // Sidebar resize state
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -50,6 +53,19 @@ const NotesPage = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, [dispatch]);
+
+  // Update page title based on selected note
+  useEffect(() => {
+    if (selectedNote?.title) {
+      document.title = `${selectedNote.title} - epoznamky`;
+    } else {
+      document.title = DEFAULT_TITLE;
+    }
+
+    return () => {
+      document.title = DEFAULT_TITLE;
+    };
+  }, [selectedNote?.title]);
 
   // Track previous selected note to detect new selections
   const prevSelectedNoteId = useRef<string | null>(null);
