@@ -11,12 +11,10 @@ declare module '@mui/material/Button' {
 // Global window interface extensions
 declare global {
   interface Window {
-    EVP_LEGACY_API_URL: string;
-    NAVADMIN_API_URL?: string;
-    ENVIRONMENT: string;
-    APP_VERSION: string;
+    API_URL: string;
     KEYCLOAK_URL: string;
     KEYCLOAK_REALM: string;
     KEYCLOAK_CLIENT_ID: string;
+    MOCK_MODE: boolean;
   }
 }
