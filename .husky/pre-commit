@@ -1,0 +1,11 @@
+#!/bin/sh
+
+cd ui
+
+echo "Running lint..."
+npm run lint || exit 1
+
+echo "Running build..."
+npm run build || exit 1
+
+echo "Pre-commit checks passed!"

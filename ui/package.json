@@ -28,7 +28,7 @@
     "msw:init": "npx msw init public --save",
     "api:generate": "orval",
     "api:generate:watch": "orval --watch",
-    "prepare": "husky"
+    "prepare": "cd .. && husky"
   },
   "dependencies": {
     "@blocknote/core": "^0.46.1",
