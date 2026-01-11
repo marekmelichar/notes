@@ -22,9 +22,15 @@ if (fs.existsSync(envPath)) {
   );
   content = content.replace(/window\.MOCK_MODE\s*=\s*true/, 'window.MOCK_MODE = false');
   content = content.replace(/window\.ENVIRONMENT\s*=\s*'mock'/, "window.ENVIRONMENT = 'dev'");
+  // Restore API_URL for local development
+  content = content.replace(
+    /window\.API_URL\s*=\s*''/,
+    "window.API_URL = 'http://localhost:5001'",
+  );
   fs.writeFileSync(envPath, content);
   console.log('✅ Disabled MOCK_MODE in env.js');
   console.log('✅ Set ENVIRONMENT to dev');
+  console.log('✅ Restored API_URL for local development');
 } else {
   console.error('❌ Error: env.js not found!');
   process.exit(1);

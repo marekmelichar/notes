@@ -25,8 +25,14 @@ if (fs.existsSync(envPath)) {
     /window\.ENVIRONMENT\s*=\s*'(dev|development)'/,
     "window.ENVIRONMENT = 'mock'",
   );
+  // Clear API_URL for mock mode so MSW can intercept relative URLs
+  content = content.replace(
+    /window\.API_URL\s*=\s*['"][^'"]*['"]/,
+    "window.API_URL = ''",
+  );
   fs.writeFileSync(envPath, content);
   console.log('✅ Enabled MOCK_MODE in env.js');
+  console.log('✅ Cleared API_URL for MSW interception');
 } else {
   console.error('❌ Error: env.js not found!');
   process.exit(1);
