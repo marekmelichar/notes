@@ -70,19 +70,15 @@ export const NoteCard = ({ note, tags, isSelected, onClick }: NoteCardProps) => 
               key={tag.id}
               label={tag.name}
               size="small"
-              sx={{
-                height: 20,
-                fontSize: '0.65rem',
-                backgroundColor: tag.color,
-                color: 'white',
-              }}
+              className={styles.tagChip}
+              sx={{ backgroundColor: tag.color, color: 'white' }}
             />
           ))}
           {tags.length > 3 && (
             <Chip
               label={`+${tags.length - 3}`}
               size="small"
-              sx={{ height: 20, fontSize: '0.65rem' }}
+              className={styles.tagChip}
             />
           )}
         </Box>

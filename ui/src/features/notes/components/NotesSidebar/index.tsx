@@ -189,7 +189,7 @@ const DroppableFolder = ({
       >
         <Box className={styles.folderItemIcon}>
           {hasChildren ? (
-            <IconButton size="small" onClick={handleToggleExpand} sx={{ p: 0 }}>
+            <IconButton size="small" onClick={handleToggleExpand} className={styles.expandButton}>
               {isExpanded ? (
                 <ExpandMoreIcon fontSize="small" />
               ) : (
@@ -496,7 +496,7 @@ export const NotesSidebar = () => {
         <Box className={styles.section}>
           <Box className={styles.sectionHeader}>
             <Typography className={styles.sectionTitle}>Folders</Typography>
-            <Box sx={{ display: "flex", gap: 0.5 }}>
+            <Box className={styles.sectionActions}>
               <Tooltip
                 title={
                   showTreeView ? "Show folders only" : "Show tree with notes"
@@ -525,7 +525,7 @@ export const NotesSidebar = () => {
           </Box>
 
           {isFoldersLoading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+            <Box className={styles.loadingContainer}>
               <CircularProgress size={24} />
             </Box>
           ) : (
@@ -597,7 +597,7 @@ export const NotesSidebar = () => {
 
           <Box className={styles.tagsContainer}>
             {isTagsLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 1, width: '100%' }}>
+              <Box className={styles.loadingContainerSmall}>
                 <CircularProgress size={20} />
               </Box>
             ) : (
@@ -651,7 +651,7 @@ export const NotesSidebar = () => {
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
-              sx={{ mt: 1 }}
+              className={styles.dialogTextField}
             />
           </DialogContent>
           <DialogActions>
@@ -675,20 +675,15 @@ export const NotesSidebar = () => {
               label="Tag name"
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
-              sx={{ mt: 1, mb: 2 }}
+              className={styles.dialogTextFieldWithMargin}
             />
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box className={styles.colorPickerRow}>
               <Typography>Color:</Typography>
               <input
                 type="color"
                 value={newTagColor}
                 onChange={(e) => setNewTagColor(e.target.value)}
-                style={{
-                  width: 50,
-                  height: 30,
-                  border: "none",
-                  cursor: "pointer",
-                }}
+                className={styles.colorPicker}
               />
             </Box>
           </DialogContent>

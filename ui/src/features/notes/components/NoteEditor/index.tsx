@@ -253,7 +253,7 @@ export const NoteEditor = () => {
               size="small"
               variant="outlined"
               onClick={handleFolderMenuOpen}
-              sx={{ cursor: 'pointer' }}
+              className={styles.folderChip}
             />
           </Tooltip>
           <Menu
@@ -299,7 +299,7 @@ export const NoteEditor = () => {
               onClick={handleSave}
               disabled={isSaving}
               startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon fontSize="small" />}
-              sx={{ minWidth: 'auto', px: 1.5 }}
+              className={styles.saveButton}
             >
               {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save' : 'Saved'}
             </Button>

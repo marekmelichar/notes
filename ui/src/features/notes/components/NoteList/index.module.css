@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 1rem;
   border-bottom: 1px solid var(--mui-palette-divider);
 }
 
@@ -19,25 +19,25 @@
 .headerActions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .listContainer {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 1rem;
 }
 
 .gridView {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(15.625rem, 1fr));
+  gap: 1rem;
 }
 
 .listView {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .loadingState {
@@ -46,8 +46,8 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 16px;
-  padding: 32px;
+  gap: 1rem;
+  padding: 2rem;
 }
 
 .emptyState {
@@ -57,20 +57,20 @@
   justify-content: center;
   height: 100%;
   color: var(--mui-palette-text-secondary);
-  gap: 16px;
-  padding: 32px;
+  gap: 1rem;
+  padding: 2rem;
   text-align: center;
 }
 
 .emptyStateIcon {
-  font-size: 64px;
+  font-size: 4rem;
   opacity: 0.5;
 }
 
 .noteCard {
   background-color: var(--mui-palette-background-paper);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 0.5rem;
+  padding: 1rem;
   cursor: pointer;
   transition: box-shadow 0.2s, transform 0.2s;
   border: 1px solid var(--mui-palette-divider);
@@ -94,7 +94,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 0.5rem;
 }
 
 .noteCardTitle {
@@ -117,7 +117,7 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   line-height: 1.5;
-  margin-bottom: 12px;
+  margin-bottom: 0.75rem;
 }
 
 .noteCardFooter {
@@ -130,16 +130,16 @@
 
 .noteCardTags {
   display: flex;
-  gap: 4px;
+  gap: 0.25rem;
   flex-wrap: wrap;
 }
 
 .noteListItem {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   background-color: var(--mui-palette-background-paper);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   cursor: pointer;
   transition: background-color 0.2s;
   border: 1px solid var(--mui-palette-divider);
@@ -177,28 +177,37 @@
 .noteListItemMeta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-left: 16px;
+  gap: 0.5rem;
+  margin-left: 1rem;
   flex-shrink: 0;
 }
 
+.tagChip {
+  height: 1.25rem;
+  font-size: 0.65rem;
+}
+
+.pinnedIcon {
+  margin-right: 0.5rem;
+}
+
 /* Mobile responsive styles */
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
   .header {
-    padding: 12px;
+    padding: 0.75rem;
   }
 
   .listContainer {
-    padding: 12px;
+    padding: 0.75rem;
   }
 
   .gridView {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 0.75rem;
   }
 
   .noteCard {
-    padding: 12px;
+    padding: 0.75rem;
   }
 
   .noteCard:hover {
@@ -210,8 +219,8 @@
   }
 
   .noteListItem {
-    padding: 12px;
-    min-height: 64px;
+    padding: 0.75rem;
+    min-height: 4rem;
   }
 
   .noteListItem:hover {
@@ -223,14 +232,14 @@
   }
 
   .noteListItemMeta {
-    margin-left: 8px;
+    margin-left: 0.5rem;
   }
 
   .emptyState {
-    padding: 24px;
+    padding: 1.5rem;
   }
 
   .emptyStateIcon {
-    font-size: 48px;
+    font-size: 3rem;
   }
 }

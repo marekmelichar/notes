@@ -41,7 +41,7 @@ export const NoteListItem = ({ note, tags, isSelected, onClick }: NoteListItemPr
       className={`${styles.noteListItem} ${isSelected ? styles.noteListItemSelected : ''}`}
       onClick={onClick}
     >
-      {note.isPinned && <PushPinIcon fontSize="small" color="primary" sx={{ mr: 1 }} />}
+      {note.isPinned && <PushPinIcon fontSize="small" color="primary" className={styles.pinnedIcon} />}
 
       <Box className={styles.noteListItemContent}>
         <Typography className={styles.noteListItemTitle}>
@@ -60,12 +60,8 @@ export const NoteListItem = ({ note, tags, isSelected, onClick }: NoteListItemPr
             key={tag.id}
             label={tag.name}
             size="small"
-            sx={{
-              height: 20,
-              fontSize: '0.65rem',
-              backgroundColor: tag.color,
-              color: 'white',
-            }}
+            className={styles.tagChip}
+            sx={{ backgroundColor: tag.color, color: 'white' }}
           />
         ))}
         <Typography variant="caption" color="text.secondary">

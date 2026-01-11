@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100%;
   background-color: var(--mui-palette-background-paper);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   overflow: hidden;
 }
 
@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--mui-palette-divider);
 }
 
@@ -33,13 +33,13 @@
 .headerActions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .editorContent {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 1rem;
 }
 
 /* BlockNote editor fills the container */
@@ -54,21 +54,21 @@
   color: var(--mui-palette-text-primary);
   padding-top: 2rem;
   padding-bottom: 2rem;
-  padding-inline: 88px;
+  padding-inline: 5.5rem;
 }
 
 .footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: 0.5rem 1rem;
   border-top: 1px solid var(--mui-palette-divider);
   font-size: 0.75rem;
   color: var(--mui-palette-text-secondary);
 }
 
 .lastSaved {
-  padding: 4px 16px;
+  padding: 0.25rem 1rem;
   font-size: 0.75rem;
   color: var(--mui-palette-text-secondary);
   text-align: right;
@@ -81,21 +81,31 @@
   justify-content: center;
   height: 100%;
   color: var(--mui-palette-text-secondary);
-  gap: 16px;
+  gap: 1rem;
 }
 
 .emptyStateIcon {
-  font-size: 64px;
+  font-size: 4rem;
   opacity: 0.5;
 }
 
+.folderChip {
+  cursor: pointer;
+}
+
+.saveButton {
+  min-width: auto;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
 /* Mobile responsive styles */
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
   .header {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
   }
 
   .titleInput {
@@ -104,25 +114,25 @@
 
   .headerActions {
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 0.375rem;
   }
 
   .footer {
-    padding: 6px 12px;
+    padding: 0.375rem 0.75rem;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   .editorContent {
-    padding: 0 12px;
+    padding: 0 0.75rem;
   }
 
   .emptyState {
-    padding: 24px;
+    padding: 1.5rem;
     text-align: center;
   }
 
   .emptyStateIcon {
-    font-size: 48px;
+    font-size: 3rem;
   }
 }

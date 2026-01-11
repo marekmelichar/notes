@@ -7,14 +7,14 @@
 }
 
 .section {
-  padding: 8px;
+  padding: 0.5rem;
 }
 
 .sectionHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 0.5rem 0.75rem;
 }
 
 .sectionTitle {
@@ -28,9 +28,9 @@
 .navItem {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -56,16 +56,16 @@
   font-size: 0.75rem;
   color: var(--mui-palette-text-secondary);
   background-color: var(--mui-palette-action-hover);
-  padding: 2px 8px;
-  border-radius: 10px;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.625rem;
 }
 
 .folderItem {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 6px;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -80,11 +80,11 @@
 }
 
 .folderItemNested {
-  padding-left: 32px;
+  padding-left: 2rem;
 }
 
 .folderItemIcon {
-  width: 20px;
+  width: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,9 +101,9 @@
 .tagItem {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 16px;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 1rem;
   cursor: pointer;
   transition: opacity 0.2s;
   font-size: 0.8rem;
@@ -114,24 +114,24 @@
 }
 
 .tagDot {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
 }
 
 .tagsContainer {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
 }
 
 .addButton {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
   cursor: pointer;
   color: var(--mui-palette-text-secondary);
   transition: background-color 0.2s;
@@ -146,9 +146,9 @@
 .noteTreeItem {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 12px;
-  border-radius: 4px;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -160,7 +160,7 @@
 .noteTreeItemActive {
   background-color: transparent;
   border-left: 3px solid var(--mui-palette-primary-main);
-  padding-left: 9px;
+  padding-left: 0.5625rem;
 }
 
 .noteTreeIcon {
@@ -181,9 +181,9 @@
 .unfiledHeader {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  margin-top: 8px;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  margin-top: 0.5rem;
   color: var(--mui-palette-text-secondary);
 }
 
@@ -215,8 +215,8 @@
   justify-content: center;
   cursor: grab;
   color: var(--mui-palette-text-disabled);
-  padding: 2px;
-  border-radius: 4px;
+  padding: 0.125rem;
+  border-radius: 0.25rem;
   transition: color 0.2s, background-color 0.2s;
   touch-action: none;
 }
@@ -233,10 +233,10 @@
 .dragOverlay {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
   background-color: var(--mui-palette-background-paper);
-  border-radius: 6px;
+  border-radius: 0.375rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--mui-palette-primary-main);
   font-size: 0.8125rem;
@@ -244,35 +244,79 @@
 }
 
 .unfiledSection {
-  margin-top: 8px;
-  padding: 8px;
-  border-radius: 6px;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
   transition: background-color 0.2s;
-  min-height: 60px;
+  min-height: 3.75rem;
 }
 
 .unfiledDropHint {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+  padding: 0.75rem;
   color: var(--mui-palette-text-disabled);
   font-size: 0.75rem;
   font-style: italic;
   border: 1px dashed var(--mui-palette-divider);
-  border-radius: 6px;
-  margin: 4px 0;
+  border-radius: 0.375rem;
+  margin: 0.25rem 0;
+}
+
+.expandButton {
+  padding: 0;
+}
+
+.sectionActions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.loadingContainerSmall {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+  width: 100%;
+}
+
+.dialogTextField {
+  margin-top: 0.5rem;
+}
+
+.dialogTextFieldWithMargin {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.colorPickerRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.colorPicker {
+  width: 3.125rem;
+  height: 1.875rem;
+  border: none;
+  cursor: pointer;
 }
 
 /* Mobile responsive styles */
-@media (max-width: 768px) {
+@media (max-width: 48rem) {
   .sidebar {
     border-right: none;
   }
 
   .navItem {
-    padding: 12px;
-    min-height: 48px;
+    padding: 0.75rem;
+    min-height: 3rem;
   }
 
   .navItem:hover {
@@ -284,8 +328,8 @@
   }
 
   .folderItem {
-    padding: 10px 12px;
-    min-height: 44px;
+    padding: 0.625rem 0.75rem;
+    min-height: 2.75rem;
   }
 
   .folderItem:hover {
@@ -297,13 +341,13 @@
   }
 
   .tagItem {
-    padding: 8px 12px;
-    min-height: 36px;
+    padding: 0.5rem 0.75rem;
+    min-height: 2.25rem;
   }
 
   .addButton {
-    padding: 12px;
-    min-height: 48px;
+    padding: 0.75rem;
+    min-height: 3rem;
   }
 
   .addButton:hover {
@@ -315,8 +359,8 @@
   }
 
   .noteTreeItem {
-    padding: 10px 12px;
-    min-height: 44px;
+    padding: 0.625rem 0.75rem;
+    min-height: 2.75rem;
   }
 
   .noteTreeItem:hover {

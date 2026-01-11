@@ -59,7 +59,7 @@ export const Header = () => {
   return (
     <Box data-testid="header" className={styles.header}>
       <Link to={ROUTE_HOME} data-testid="header-logo-link" className={styles.logoLink}>
-        <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
+        <Typography variant="h6" component="span" className={styles.logoTitle}>
           epoznamky
         </Typography>
       </Link>
