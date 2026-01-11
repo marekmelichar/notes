@@ -292,10 +292,6 @@ export const NoteEditor = () => {
               </MenuItem>
             ))}
           </Menu>
-          <TagPicker
-            selectedTagIds={note.tags}
-            onTagsChange={handleTagsChange}
-          />
           <Tooltip title={t("Notes.SaveShortcut")}>
             <Button
               size="small"
@@ -309,6 +305,10 @@ export const NoteEditor = () => {
               {isSaving ? t("Common.Saving") : hasUnsavedChanges ? t("Common.Save") : t("Common.Saved")}
             </Button>
           </Tooltip>
+          <TagPicker
+            selectedTagIds={note.tags}
+            onTagsChange={handleTagsChange}
+          />
           <Tooltip title={note.isPinned ? t("Notes.Unpin") : t("Notes.Pin")}>
             <IconButton size="small" onClick={handleTogglePin}>
               {note.isPinned ? (
