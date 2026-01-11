@@ -18,6 +18,14 @@ export default defineConfig({
   define: {
     'import.meta.env.PACKAGE_VERSION': JSON.stringify(packageJson.version),
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      },
+    },
+  },
   build: {
     outDir: 'build',
     target: 'esnext',
