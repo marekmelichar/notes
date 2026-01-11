@@ -71,6 +71,9 @@ namespace EpoznamkyApi.Migrations
                     b.Property<long>("CreatedAt")
                         .HasColumnType("bigint");
 
+                    b.Property<long?>("DeletedAt")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("FolderId")
                         .HasColumnType("text");
 
@@ -98,6 +101,8 @@ namespace EpoznamkyApi.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeletedAt");
 
                     b.HasIndex("FolderId");
 

@@ -10,6 +10,7 @@ public class Note
     public string? FolderId { get; set; }
     public bool IsPinned { get; set; }
     public bool IsDeleted { get; set; }
+    public long? DeletedAt { get; set; }
     public int Order { get; set; }
     public long CreatedAt { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     public long UpdatedAt { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();

@@ -25,6 +25,7 @@ let mockNotes: Note[] = [
     tags: ['tag-1'],
     isPinned: true,
     isDeleted: false,
+    deletedAt: null,
     sharedWith: [],
     order: 0,
     createdAt: Date.now() - 86400000,
@@ -44,6 +45,7 @@ let mockNotes: Note[] = [
     tags: [],
     isPinned: false,
     isDeleted: false,
+    deletedAt: null,
     sharedWith: [],
     order: 1,
     createdAt: Date.now() - 172800000,
@@ -63,6 +65,7 @@ let mockNotes: Note[] = [
     tags: ['tag-2'],
     isPinned: false,
     isDeleted: false,
+    deletedAt: null,
     sharedWith: [],
     order: 0,
     createdAt: Date.now() - 259200000,
@@ -152,6 +155,7 @@ export const handlers = [
       tags: body.tags || [],
       isPinned: body.isPinned || false,
       isDeleted: false,
+      deletedAt: null,
       sharedWith: [],
       order: mockNotes.length,
       createdAt: Date.now(),
@@ -186,6 +190,7 @@ export const handlers = [
       return new HttpResponse(null, { status: 404 });
     }
     mockNotes[index].isDeleted = true;
+    mockNotes[index].deletedAt = Date.now();
     mockNotes[index].updatedAt = Date.now();
     return new HttpResponse(null, { status: 204 });
   }),
@@ -205,6 +210,7 @@ export const handlers = [
       return new HttpResponse(null, { status: 404 });
     }
     mockNotes[index].isDeleted = false;
+    mockNotes[index].deletedAt = null;
     mockNotes[index].updatedAt = Date.now();
     return HttpResponse.json(mockNotes[index]);
   }),

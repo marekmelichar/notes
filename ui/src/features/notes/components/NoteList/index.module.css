@@ -138,6 +138,12 @@
   flex-wrap: wrap;
 }
 
+.trashCountdown {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .noteListItem {
   display: flex;
   align-items: center;

@@ -2,12 +2,23 @@ import React from 'react';
 import { Box, Typography, Chip, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import PushPinIcon from '@mui/icons-material/PushPin';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import type { Note, Tag } from '../../types';
 import styles from './index.module.css';
 
 dayjs.extend(relativeTime);
+
+const TRASH_RETENTION_DAYS = 30;
+
+const getDaysUntilPermanentDelete = (deletedAt: number | null): number | null => {
+  if (!deletedAt) return null;
+  const deletedDate = dayjs(deletedAt);
+  const expirationDate = deletedDate.add(TRASH_RETENTION_DAYS, 'day');
+  const daysRemaining = expirationDate.diff(dayjs(), 'day');
+  return Math.max(0, daysRemaining);
+};
 
 interface NoteCardProps {
   note: Note;
@@ -37,6 +48,7 @@ const stripHtmlTags = (html: string): string => {
 export const NoteCard = ({ note, tags, isSelected, onClick }: NoteCardProps) => {
   const { t } = useTranslation();
   const contentPreview = stripHtmlTags(note.content).slice(0, 150);
+  const daysRemaining = note.isDeleted ? getDaysUntilPermanentDelete(note.deletedAt) : null;
 
   return (
     <Box
@@ -63,9 +75,22 @@ export const NoteCard = ({ note, tags, isSelected, onClick }: NoteCardProps) => 
       )}
 
       <Box className={styles.noteCardFooter}>
-        <Typography variant="caption">
-          {dayjs(note.updatedAt).fromNow()}
-        </Typography>
+        {daysRemaining !== null ? (
+          <Tooltip title={t("Notes.WillBeDeleted")}>
+            <Box className={styles.trashCountdown}>
+              <DeleteForeverIcon fontSize="small" color="error" />
+              <Typography variant="caption" color="error">
+                {daysRemaining === 0
+                  ? t("Notes.DeletedToday")
+                  : t("Notes.DaysRemaining", { days: daysRemaining })}
+              </Typography>
+            </Box>
+          </Tooltip>
+        ) : (
+          <Typography variant="caption">
+            {dayjs(note.updatedAt).fromNow()}
+          </Typography>
+        )}
         <Box className={styles.noteCardTags}>
           {tags.slice(0, 3).map((tag) => (
             <Chip
