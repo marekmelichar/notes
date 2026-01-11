@@ -1,5 +1,6 @@
 import React, { useCallback, useState, useRef, useMemo } from 'react';
 import { Box, IconButton, Typography, Tooltip, Chip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { Block, PartialBlock } from '@blocknote/core';
@@ -106,6 +107,7 @@ const BlockNoteEditor = ({ initialContent, onSave, onChange }: BlockNoteEditorPr
 const EMPTY_TAGS: never[] = [];
 
 export const NoteEditor = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const note = useAppSelector(selectSelectedNote);
   const folders = useAppSelector(selectAllFolders);
@@ -229,9 +231,9 @@ export const NoteEditor = () => {
     return (
       <Box className={styles.emptyState}>
         <NoteOutlinedIcon className={styles.emptyStateIcon} />
-        <Typography variant="h6">Select a note or create a new one</Typography>
+        <Typography variant="h6">{t("Notes.SelectNote")}</Typography>
         <Typography variant="body2">
-          Your notes will appear here when you select them from the list
+          {t("Notes.SelectNoteHint")}
         </Typography>
       </Box>
     );
@@ -245,10 +247,10 @@ export const NoteEditor = () => {
           className={styles.titleInput}
           value={title}
           onChange={handleTitleChange}
-          placeholder="Untitled"
+          placeholder={t("Common.Untitled")}
         />
         <Box className={styles.headerActions}>
-          <Tooltip title="Move to folder">
+          <Tooltip title={t("Notes.MoveToFolder")}>
             <Button
               size="small"
               variant="outlined"
@@ -257,7 +259,7 @@ export const NoteEditor = () => {
               startIcon={<FolderIcon fontSize="small" />}
               className={styles.folderButton}
             >
-              {currentFolder?.name || 'No folder'}
+              {currentFolder?.name || t("Notes.NoFolder")}
             </Button>
           </Tooltip>
           <Menu
@@ -272,7 +274,7 @@ export const NoteEditor = () => {
               <ListItemIcon>
                 <FolderOpenIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText>No folder</ListItemText>
+              <ListItemText>{t("Notes.NoFolder")}</ListItemText>
             </MenuItem>
             {folders.map((folder) => (
               <MenuItem
@@ -295,7 +297,7 @@ export const NoteEditor = () => {
               sx={{ backgroundColor: tag.color, color: 'white' }}
             />
           ))}
-          <Tooltip title="Save (Ctrl+S)">
+          <Tooltip title={t("Notes.SaveShortcut")}>
             <Button
               size="small"
               variant={hasUnsavedChanges ? 'contained' : 'outlined'}
@@ -305,10 +307,10 @@ export const NoteEditor = () => {
               startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon fontSize="small" />}
               className={styles.saveButton}
             >
-              {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save' : 'Saved'}
+              {isSaving ? t("Common.Saving") : hasUnsavedChanges ? t("Common.Save") : t("Common.Saved")}
             </Button>
           </Tooltip>
-          <Tooltip title={note.isPinned ? 'Unpin' : 'Pin'}>
+          <Tooltip title={note.isPinned ? t("Notes.Unpin") : t("Notes.Pin")}>
             <IconButton size="small" onClick={handleTogglePin}>
               {note.isPinned ? (
                 <PushPinIcon fontSize="small" color="primary" />
@@ -317,7 +319,7 @@ export const NoteEditor = () => {
               )}
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete">
+          <Tooltip title={t("Common.Delete")}>
             <IconButton size="small" onClick={handleDelete}>
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
@@ -336,7 +338,7 @@ export const NoteEditor = () => {
       {lastSaved && (
         <Box className={styles.lastSaved}>
           <Typography variant="caption">
-            Last saved: {lastSaved.toLocaleTimeString()}
+            {t("Notes.LastSaved")} {lastSaved.toLocaleTimeString()}
           </Typography>
         </Box>
       )}

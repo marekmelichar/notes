@@ -1,13 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
-import { lightTheme } from './lightTheme';
-import { darkTheme } from './darkTheme';
+import { createDynamicTheme } from './createDynamicTheme';
+import { DEFAULT_PRIMARY_COLOR, isValidHexColor } from './colorUtils';
 
 type ColorMode = 'light' | 'dark';
 
 interface ThemeContextType {
   mode: ColorMode;
   toggleColorMode: () => void;
+  primaryColor: string;
+  setPrimaryColor: (color: string) => void;
+  resetPrimaryColor: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -31,20 +34,46 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   };
 
+  const getInitialPrimaryColor = (): string => {
+    const saved = localStorage.getItem('primaryColor');
+    if (saved && isValidHexColor(saved)) return saved;
+    return DEFAULT_PRIMARY_COLOR;
+  };
+
   const [mode, setMode] = useState<ColorMode>(getInitialMode);
+  const [primaryColor, setPrimaryColorState] = useState<string>(getInitialPrimaryColor);
 
   useEffect(() => {
     localStorage.setItem('theme', mode);
   }, [mode]);
 
+  useEffect(() => {
+    localStorage.setItem('primaryColor', primaryColor);
+  }, [primaryColor]);
+
   const toggleColorMode = () => {
     setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  const theme = mode === 'light' ? lightTheme : darkTheme;
+  const setPrimaryColor = (color: string) => {
+    if (isValidHexColor(color)) {
+      setPrimaryColorState(color);
+    }
+  };
+
+  const resetPrimaryColor = () => {
+    setPrimaryColorState(DEFAULT_PRIMARY_COLOR);
+  };
+
+  const theme = useMemo(
+    () => createDynamicTheme(mode, primaryColor),
+    [mode, primaryColor]
+  );
 
   return (
-    <ThemeContext.Provider value={{ mode, toggleColorMode }}>
+    <ThemeContext.Provider
+      value={{ mode, toggleColorMode, primaryColor, setPrimaryColor, resetPrimaryColor }}
+    >
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
         {children}

@@ -7,9 +7,9 @@ import {
   Menu,
   MenuItem,
   Button,
-  Divider,
   CircularProgress,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import AddIcon from '@mui/icons-material/Add';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
@@ -36,6 +36,7 @@ import { NoteListItem } from './NoteListItem';
 import styles from './index.module.css';
 
 export const NoteList = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const notes = useAppSelector(selectFilteredNotes);
   const allTags = useAppSelector(selectAllTags);
@@ -84,18 +85,18 @@ export const NoteList = () => {
 
   const getSortLabel = () => {
     const labels: Record<NotesSortBy, string> = {
-      updatedAt: 'Modified',
-      createdAt: 'Created',
-      title: 'Title',
+      updatedAt: t("Sort.Modified"),
+      createdAt: t("Sort.Created"),
+      title: t("Sort.Title"),
     };
     return `${labels[sortBy]} ${sortOrder === 'asc' ? '↑' : '↓'}`;
   };
 
   const getTitle = () => {
-    if (filter.isDeleted) return 'Trash';
-    if (filter.isPinned) return 'Favorites';
-    if (filter.searchQuery) return `Search: "${filter.searchQuery}"`;
-    return 'All Notes';
+    if (filter.isDeleted) return t("Notes.Trash");
+    if (filter.isPinned) return t("Notes.Favorites");
+    if (filter.searchQuery) return `${t("Common.Search")} "${filter.searchQuery}"`;
+    return t("Notes.AllNotes");
   };
 
   return (
@@ -111,9 +112,9 @@ export const NoteList = () => {
             startIcon={<AddIcon />}
             onClick={handleCreateNote}
           >
-            New Note
+            {t("Notes.NewNote")}
           </Button>
-          <Tooltip title="Sort">
+          <Tooltip title={t("Sort.Sort")}>
             <IconButton size="small" onClick={handleSortClick}>
               <SortIcon fontSize="small" />
             </IconButton>
@@ -127,22 +128,22 @@ export const NoteList = () => {
               onClick={() => handleSortChange('updatedAt')}
               selected={sortBy === 'updatedAt'}
             >
-              Modified {sortBy === 'updatedAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+              {t("Sort.Modified")} {sortBy === 'updatedAt' && (sortOrder === 'asc' ? '↑' : '↓')}
             </MenuItem>
             <MenuItem
               onClick={() => handleSortChange('createdAt')}
               selected={sortBy === 'createdAt'}
             >
-              Created {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+              {t("Sort.Created")} {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
             </MenuItem>
             <MenuItem
               onClick={() => handleSortChange('title')}
               selected={sortBy === 'title'}
             >
-              Title {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
+              {t("Sort.Title")} {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
             </MenuItem>
           </Menu>
-          <Tooltip title={viewMode === 'grid' ? 'List view' : 'Grid view'}>
+          <Tooltip title={viewMode === 'grid' ? t("View.ListView") : t("View.GridView")}>
             <IconButton size="small" onClick={handleToggleViewMode}>
               {viewMode === 'grid' ? (
                 <ViewListIcon fontSize="small" />
@@ -159,22 +160,22 @@ export const NoteList = () => {
           <Box className={styles.loadingState}>
             <CircularProgress size={40} />
             <Typography variant="body2" color="text.secondary">
-              Loading notes...
+              {t("Notes.LoadingNotes")}
             </Typography>
           </Box>
         ) : notes.length === 0 ? (
           <Box className={styles.emptyState}>
             <NoteOutlinedIcon className={styles.emptyStateIcon} />
-            <Typography variant="h6">No notes yet</Typography>
+            <Typography variant="h6">{t("Notes.NoNotesYet")}</Typography>
             <Typography variant="body2">
-              Click &quot;New Note&quot; to create your first note
+              {t("Notes.NoNotesHint")}
             </Typography>
             <Button
               variant="outlined"
               startIcon={<AddIcon />}
               onClick={handleCreateNote}
             >
-              Create Note
+              {t("Notes.CreateNote")}
             </Button>
           </Box>
         ) : (

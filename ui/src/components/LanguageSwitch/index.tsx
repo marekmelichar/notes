@@ -1,15 +1,18 @@
 import React, { useRef, useState } from 'react';
 import { Box, Button, IconButton, Popover, Stack, Typography } from '@mui/material';
-import LanguageIcon from '@mui/icons-material/Language';
+import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import styles from './index.module.css';
+import gbFlag from './flags/gb.svg';
+import czFlag from './flags/cz.svg';
 
 const languages = [
-  { code: 'en', label: 'English' },
-  { code: 'cs', label: 'Čeština' },
+  { code: 'en', label: 'English', flag: gbFlag },
+  { code: 'cs', label: 'Čeština', flag: czFlag },
 ];
 
 export const LanguageSwitch = () => {
+  const { t } = useTranslation();
   const anchorElRef = useRef<HTMLElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState(i18n.language);
@@ -35,11 +38,11 @@ export const LanguageSwitch = () => {
       <IconButton
         onClick={handleToggle}
         className={styles.button}
-        aria-label="Switch language"
+        aria-label={t("Common.SwitchLanguage")}
         data-testid="language-switch-button"
         data-language={currentLang?.code}
       >
-        <LanguageIcon />
+        <img src={currentLang?.flag} alt="" className={styles.flagButton} />
       </IconButton>
 
       <Popover
@@ -54,7 +57,7 @@ export const LanguageSwitch = () => {
         data-testid="language-switch-popover"
       >
         <Stack>
-          {languages.map(({ code, label }) => {
+          {languages.map(({ code, label, flag }) => {
             const isSelected = i18n.language.startsWith(code);
 
             return (
@@ -66,6 +69,7 @@ export const LanguageSwitch = () => {
                 data-testid={`language-option-${code}`}
                 data-selected={isSelected}
               >
+                <img src={flag} alt="" className={styles.flagIcon} />
                 <Typography className={styles.languageLabel}>{label}</Typography>
               </Button>
             );

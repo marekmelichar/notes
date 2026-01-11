@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Chip } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -34,6 +35,7 @@ const stripHtmlTags = (html: string): string => {
 };
 
 export const NoteListItem = ({ note, tags, isSelected, onClick }: NoteListItemProps) => {
+  const { t } = useTranslation();
   const contentPreview = stripHtmlTags(note.content).slice(0, 80);
 
   return (
@@ -45,7 +47,7 @@ export const NoteListItem = ({ note, tags, isSelected, onClick }: NoteListItemPr
 
       <Box className={styles.noteListItemContent}>
         <Typography className={styles.noteListItemTitle}>
-          {note.title || 'Untitled'}
+          {note.title || t("Common.Untitled")}
         </Typography>
         {contentPreview && (
           <Typography className={styles.noteListItemPreview}>

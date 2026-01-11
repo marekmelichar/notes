@@ -10,32 +10,102 @@
       "Editor": "Editor"
     },
     "Loading": "Načítám...",
-    "ErrorLoadingData": "Chyba při načítání dat",
+    "ErrorLoadingData": "Chyba načítání",
     "Login": "Přihlásit",
     "Save": "Uložit",
+    "Saved": "Uloženo",
+    "Saving": "Ukládám...",
     "Cancel": "Zrušit",
     "Submit": "Odeslat",
     "Add": "Přidat",
     "Delete": "Smazat",
+    "Create": "Vytvořit",
+    "Edit": "Upravit",
     "Search": "Hledat...",
-    "ClearSearch": "Smazat hledání",
-    "NoResults": "Žádné výsledky",
-    "SessionExpired": "Vaše relace vypršela. Prosím přihlaste se znovu.",
+    "ClearSearch": "Smazat",
+    "NoResults": "Nic nenalezeno",
+    "SessionExpired": "Relace vypršela. Přihlaste se znovu.",
     "DarkMode": "Tmavý režim",
     "Logout": "Odhlásit",
     "Version": "Verze",
-    "Welcome": "Vítejte"
+    "Welcome": "Vítejte",
+    "Untitled": "Bez názvu",
+    "SwitchLanguage": "Změnit jazyk"
+  },
+  "Notes": {
+    "AllNotes": "Všechny",
+    "Favorites": "Oblíbené",
+    "Trash": "Koš",
+    "Unfiled": "Nezařazené",
+    "NewNote": "Nová",
+    "CreateNote": "Vytvořit",
+    "SelectNote": "Vyberte nebo vytvořte poznámku",
+    "SelectNoteHint": "Poznámky se zobrazí po výběru ze seznamu",
+    "NoNotesYet": "Žádné poznámky",
+    "NoNotesHint": "Vytvořte první poznámku",
+    "LoadingNotes": "Načítám...",
+    "Pin": "Připnout",
+    "Unpin": "Odepnout",
+    "Pinned": "Připnuto",
+    "MoveToFolder": "Do složky",
+    "NoFolder": "Bez složky",
+    "DropToRemoveFromFolder": "Přetáhněte sem pro odebrání",
+    "LastSaved": "Uloženo:",
+    "SaveShortcut": "Uložit (Ctrl+S)"
+  },
+  "Folders": {
+    "Folders": "Složky",
+    "NewFolder": "Nová složka",
+    "AddFolder": "Přidat",
+    "AddSubfolder": "Podsložka",
+    "CreateFolder": "Nová složka",
+    "EditFolder": "Upravit",
+    "FolderName": "Název",
+    "CollapseAll": "Sbalit",
+    "ExpandAll": "Rozbalit",
+    "ShowFoldersOnly": "Jen složky",
+    "ShowTreeWithNotes": "S poznámkami"
+  },
+  "Tags": {
+    "Tags": "Štítky",
+    "NewTag": "Nový štítek",
+    "AddTag": "Přidat",
+    "CreateTag": "Nový štítek",
+    "TagName": "Název",
+    "Color": "Barva:"
+  },
+  "Sort": {
+    "Sort": "Řadit",
+    "Modified": "Upraveno",
+    "Created": "Vytvořeno",
+    "Title": "Název"
+  },
+  "View": {
+    "ListView": "Seznam",
+    "GridView": "Mřížka"
+  },
+  "Colors": {
+    "Blue": "Modrá",
+    "Purple": "Fialová",
+    "Green": "Zelená",
+    "Orange": "Oranžová",
+    "Pink": "Růžová",
+    "Teal": "Tyrkysová"
   },
   "HomePage": {
-    "Description": "Toto je váš startovací šablona. Začněte budovat svou aplikaci!"
+    "Description": "Začněte budovat svou aplikaci!"
   },
   "SettingsPage": {
-    "Description": "Zde můžete konfigurovat nastavení aplikace."
+    "Description": "Nastavení aplikace.",
+    "Appearance": "Vzhled",
+    "PrimaryColor": "Barva",
+    "CustomColor": "Vlastní",
+    "ResetToDefault": "Výchozí"
   },
   "ErrorPage": {
     "Title": "Něco se pokazilo",
-    "Message": "Došlo k neočekávané chybě. Zkuste prosím obnovit stránku.",
-    "ReloadPage": "Obnovit stránku",
-    "GoHome": "Jít domů"
+    "Message": "Došlo k chybě. Zkuste obnovit stránku.",
+    "ReloadPage": "Obnovit",
+    "GoHome": "Domů"
   }
 }

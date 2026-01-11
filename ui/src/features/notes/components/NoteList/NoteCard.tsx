@@ -1,5 +1,6 @@
 import React from 'react';
-import { Box, Typography, Chip, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, Chip, Tooltip } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -34,6 +35,7 @@ const stripHtmlTags = (html: string): string => {
 };
 
 export const NoteCard = ({ note, tags, isSelected, onClick }: NoteCardProps) => {
+  const { t } = useTranslation();
   const contentPreview = stripHtmlTags(note.content).slice(0, 150);
 
   return (
@@ -45,10 +47,10 @@ export const NoteCard = ({ note, tags, isSelected, onClick }: NoteCardProps) => 
     >
       <Box className={styles.noteCardHeader}>
         <Typography className={styles.noteCardTitle}>
-          {note.title || 'Untitled'}
+          {note.title || t("Common.Untitled")}
         </Typography>
         {note.isPinned && (
-          <Tooltip title="Pinned">
+          <Tooltip title={t("Notes.Pinned")}>
             <PushPinIcon fontSize="small" color="primary" />
           </Tooltip>
         )}

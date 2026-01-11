@@ -48,7 +48,6 @@ const getComponents = (palette: any) => ({
           color: palette.primary.contrastText,
           border: `1px solid ${palette.primary.main}`,
           backgroundColor: palette.primary.main,
-          borderRadius: '5rem',
         },
         '&.MuiButton-outlined': {
           color: palette.text.secondary,

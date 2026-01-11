@@ -4,6 +4,8 @@
 
 .button {
   color: var(--mui-palette-text-primary);
+  border-radius: 50%;
+  aspect-ratio: 1;
 }
 
 .flagImage {
@@ -47,8 +49,18 @@
   background-color: var(--mui-palette-background-paper3) !important;
 }
 
+.flagButton {
+  width: 1.5rem;
+  height: 1.125rem;
+  border-radius: 0.125rem;
+  object-fit: cover;
+}
+
 .flagIcon {
   width: 1.5rem;
+  height: 1.125rem;
+  border-radius: 0.125rem;
+  object-fit: cover;
 }
 
 .languageLabel {

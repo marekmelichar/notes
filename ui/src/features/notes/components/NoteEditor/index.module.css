@@ -126,10 +126,6 @@
     gap: 0.5rem;
   }
 
-  .editorContent {
-    padding: 0 0.75rem;
-  }
-
   .emptyState {
     padding: 1.5rem;
     text-align: center;
@@ -137,5 +133,13 @@
 
   .emptyStateIcon {
     font-size: 3rem;
+  }
+
+  .editorContent :global(.bn-editor) {
+    font-size: 1rem;
+    color: var(--mui-palette-text-primary);
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    padding-inline: 4rem;
   }
 }

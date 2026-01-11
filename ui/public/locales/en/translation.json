@@ -13,10 +13,14 @@
     "ErrorLoadingData": "Error loading data",
     "Login": "Login",
     "Save": "Save",
+    "Saved": "Saved",
+    "Saving": "Saving...",
     "Cancel": "Cancel",
     "Submit": "Submit",
     "Add": "Add",
     "Delete": "Delete",
+    "Create": "Create",
+    "Edit": "Edit",
     "Search": "Search...",
     "ClearSearch": "Clear search",
     "NoResults": "No results",
@@ -24,13 +28,79 @@
     "DarkMode": "Dark mode",
     "Logout": "Logout",
     "Version": "Version",
-    "Welcome": "Welcome"
+    "Welcome": "Welcome",
+    "Untitled": "Untitled",
+    "SwitchLanguage": "Switch language"
+  },
+  "Notes": {
+    "AllNotes": "All Notes",
+    "Favorites": "Favorites",
+    "Trash": "Trash",
+    "Unfiled": "Unfiled",
+    "NewNote": "New Note",
+    "CreateNote": "Create Note",
+    "SelectNote": "Select a note or create a new one",
+    "SelectNoteHint": "Your notes will appear here when you select them from the list",
+    "NoNotesYet": "No notes yet",
+    "NoNotesHint": "Click \"New Note\" to create your first note",
+    "LoadingNotes": "Loading notes...",
+    "Pin": "Pin",
+    "Unpin": "Unpin",
+    "Pinned": "Pinned",
+    "MoveToFolder": "Move to folder",
+    "NoFolder": "No folder",
+    "DropToRemoveFromFolder": "Drop here to remove from folder",
+    "LastSaved": "Last saved:",
+    "SaveShortcut": "Save (Ctrl+S)"
+  },
+  "Folders": {
+    "Folders": "Folders",
+    "NewFolder": "New Folder",
+    "AddFolder": "Add folder",
+    "AddSubfolder": "Add subfolder",
+    "CreateFolder": "Create Folder",
+    "EditFolder": "Edit Folder",
+    "FolderName": "Folder name",
+    "CollapseAll": "Collapse all",
+    "ExpandAll": "Expand all",
+    "ShowFoldersOnly": "Show folders only",
+    "ShowTreeWithNotes": "Show tree with notes"
+  },
+  "Tags": {
+    "Tags": "Tags",
+    "NewTag": "New Tag",
+    "AddTag": "Add tag",
+    "CreateTag": "Create Tag",
+    "TagName": "Tag name",
+    "Color": "Color:"
+  },
+  "Sort": {
+    "Sort": "Sort",
+    "Modified": "Modified",
+    "Created": "Created",
+    "Title": "Title"
+  },
+  "View": {
+    "ListView": "List view",
+    "GridView": "Grid view"
+  },
+  "Colors": {
+    "Blue": "Blue",
+    "Purple": "Purple",
+    "Green": "Green",
+    "Orange": "Orange",
+    "Pink": "Pink",
+    "Teal": "Teal"
   },
   "HomePage": {
     "Description": "This is your starter template. Start building your app!"
   },
   "SettingsPage": {
-    "Description": "Configure your application settings here."
+    "Description": "Configure your application settings here.",
+    "Appearance": "Appearance",
+    "PrimaryColor": "Primary Color",
+    "CustomColor": "Custom Color",
+    "ResetToDefault": "Reset to Default"
   },
   "ErrorPage": {
     "Title": "Something went wrong",

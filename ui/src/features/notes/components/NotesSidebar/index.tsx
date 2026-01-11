@@ -13,6 +13,7 @@ import {
   Tooltip,
   CircularProgress,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import {
   DndContext,
   DragOverlay,
@@ -83,6 +84,7 @@ interface SortableNoteProps {
 }
 
 const SortableNote = ({ note, level }: SortableNoteProps) => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const isSelected = selectedNoteId === note.id;
@@ -128,7 +130,7 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
         className={styles.noteTreeIcon}
       />
       <Typography className={styles.noteTreeLabel} noWrap>
-        {note.title || "Untitled"}
+        {note.title || t("Common.Untitled")}
       </Typography>
     </Box>
   );
@@ -147,6 +149,7 @@ const DroppableFolder = ({
   showNotes = false,
   onAddSubfolder,
 }: DroppableFolderProps) => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const expandedIds = useAppSelector(selectExpandedFolderIds);
   const childFolders = useAppSelector(selectChildFolders(folder.id));
@@ -258,7 +261,7 @@ const DroppableFolder = ({
         {folderNotes.length > 0 && (
           <span className={styles.navItemCount}>{folderNotes.length}</span>
         )}
-        <Tooltip title="Add subfolder">
+        <Tooltip title={t("Folders.AddSubfolder")}>
           <IconButton
             size="small"
             className={styles.addSubfolderButton}
@@ -314,6 +317,7 @@ const UnfiledDropZone = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const NotesSidebar = () => {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const filter = useAppSelector(selectNotesFilter);
   const notes = useAppSelector(selectAllNotes);
@@ -641,7 +645,7 @@ export const NotesSidebar = () => {
             onClick={handleAllNotes}
           >
             <NoteOutlinedIcon fontSize="small" className={styles.navItemIcon} />
-            <Typography className={styles.navItemLabel}>All Notes</Typography>
+            <Typography className={styles.navItemLabel}>{t("Notes.AllNotes")}</Typography>
             <span className={styles.navItemCount}>{allNotesCount}</span>
           </Box>
 
@@ -650,7 +654,7 @@ export const NotesSidebar = () => {
             onClick={handleFavorites}
           >
             <StarOutlineIcon fontSize="small" className={styles.navItemIcon} />
-            <Typography className={styles.navItemLabel}>Favorites</Typography>
+            <Typography className={styles.navItemLabel}>{t("Notes.Favorites")}</Typography>
             <span className={styles.navItemCount}>{favoritesCount}</span>
           </Box>
 
@@ -662,7 +666,7 @@ export const NotesSidebar = () => {
               fontSize="small"
               className={styles.navItemIcon}
             />
-            <Typography className={styles.navItemLabel}>Trash</Typography>
+            <Typography className={styles.navItemLabel}>{t("Notes.Trash")}</Typography>
             <span className={styles.navItemCount}>{trashCount}</span>
           </Box>
         </Box>
@@ -670,10 +674,10 @@ export const NotesSidebar = () => {
         {/* Folders */}
         <Box className={styles.section}>
           <Box className={styles.sectionHeader}>
-            <Typography className={styles.sectionTitle}>Folders</Typography>
+            <Typography className={styles.sectionTitle}>{t("Folders.Folders")}</Typography>
             <Box className={styles.sectionActions}>
               <Tooltip
-                title={areAllFoldersExpanded ? "Collapse all" : "Expand all"}
+                title={areAllFoldersExpanded ? t("Folders.CollapseAll") : t("Folders.ExpandAll")}
               >
                 <span>
                   <IconButton
@@ -691,7 +695,7 @@ export const NotesSidebar = () => {
               </Tooltip>
               <Tooltip
                 title={
-                  showTreeView ? "Show folders only" : "Show tree with notes"
+                  showTreeView ? t("Folders.ShowFoldersOnly") : t("Folders.ShowTreeWithNotes")
                 }
               >
                 <IconButton
@@ -705,7 +709,7 @@ export const NotesSidebar = () => {
                   )}
                 </IconButton>
               </Tooltip>
-              <Tooltip title="New Folder">
+              <Tooltip title={t("Folders.NewFolder")}>
                 <IconButton
                   size="small"
                   onClick={() => setIsFolderDialogOpen(true)}
@@ -742,7 +746,7 @@ export const NotesSidebar = () => {
                       className={styles.unfiledIcon}
                     />
                     <Typography className={styles.unfiledLabel}>
-                      Unfiled
+                      {t("Notes.Unfiled")}
                     </Typography>
                     <span className={styles.navItemCount}>
                       {unfiledNotes.length}
@@ -760,7 +764,7 @@ export const NotesSidebar = () => {
               )}
               {unfiledNotes.length === 0 && rootFolders.length > 0 && (
                 <Box className={styles.unfiledDropHint}>
-                  Drop here to remove from folder
+                  {t("Notes.DropToRemoveFromFolder")}
                 </Box>
               )}
             </UnfiledDropZone>
@@ -772,7 +776,7 @@ export const NotesSidebar = () => {
               onClick={() => setIsFolderDialogOpen(true)}
             >
               <AddIcon fontSize="small" />
-              <span>Add folder</span>
+              <span>{t("Folders.AddFolder")}</span>
             </Box>
           )}
         </Box>
@@ -780,8 +784,8 @@ export const NotesSidebar = () => {
         {/* Tags */}
         <Box className={styles.section}>
           <Box className={styles.sectionHeader}>
-            <Typography className={styles.sectionTitle}>Tags</Typography>
-            <Tooltip title="New Tag">
+            <Typography className={styles.sectionTitle}>{t("Tags.Tags")}</Typography>
+            <Tooltip title={t("Tags.NewTag")}>
               <IconButton size="small" onClick={() => setIsTagDialogOpen(true)}>
                 <AddIcon fontSize="small" />
               </IconButton>
@@ -824,7 +828,7 @@ export const NotesSidebar = () => {
                     onClick={() => setIsTagDialogOpen(true)}
                   >
                     <LocalOfferOutlinedIcon fontSize="small" />
-                    <span>Add tag</span>
+                    <span>{t("Tags.AddTag")}</span>
                   </Box>
                 )}
               </>
@@ -836,14 +840,14 @@ export const NotesSidebar = () => {
         <Dialog open={isFolderDialogOpen} onClose={handleCloseFolderDialog}>
           <DialogTitle>
             {parentFolderForCreate
-              ? `Create folder in "${parentFolderForCreate.name}"`
-              : "Create Folder"}
+              ? `${t("Folders.CreateFolder")} - ${parentFolderForCreate.name}`
+              : t("Folders.CreateFolder")}
           </DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
               fullWidth
-              label="Folder name"
+              label={t("Folders.FolderName")}
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
@@ -851,9 +855,9 @@ export const NotesSidebar = () => {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseFolderDialog}>Cancel</Button>
+            <Button onClick={handleCloseFolderDialog}>{t("Common.Cancel")}</Button>
             <Button onClick={handleCreateFolder} variant="contained">
-              Create
+              {t("Common.Create")}
             </Button>
           </DialogActions>
         </Dialog>
@@ -863,18 +867,18 @@ export const NotesSidebar = () => {
           open={isTagDialogOpen}
           onClose={() => setIsTagDialogOpen(false)}
         >
-          <DialogTitle>Create Tag</DialogTitle>
+          <DialogTitle>{t("Tags.CreateTag")}</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
               fullWidth
-              label="Tag name"
+              label={t("Tags.TagName")}
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
               className={styles.dialogTextFieldWithMargin}
             />
             <Box className={styles.colorPickerRow}>
-              <Typography>Color:</Typography>
+              <Typography>{t("Tags.Color")}</Typography>
               <input
                 type="color"
                 value={newTagColor}
@@ -884,9 +888,9 @@ export const NotesSidebar = () => {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsTagDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => setIsTagDialogOpen(false)}>{t("Common.Cancel")}</Button>
             <Button onClick={handleCreateTag} variant="contained">
-              Create
+              {t("Common.Create")}
             </Button>
           </DialogActions>
         </Dialog>
@@ -897,7 +901,7 @@ export const NotesSidebar = () => {
         {activeNote && (
           <Box className={styles.dragOverlay}>
             <DescriptionOutlinedIcon fontSize="small" />
-            <Typography noWrap>{activeNote.title || "Untitled"}</Typography>
+            <Typography noWrap>{activeNote.title || t("Common.Untitled")}</Typography>
           </Box>
         )}
         {activeFolder && (
