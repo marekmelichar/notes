@@ -97,6 +97,7 @@ export const TagPicker = ({ selectedTagIds, onTagsChange }: TagPickerProps) => {
             color: 'white',
             '& .MuiChip-deleteIcon': {
               color: 'rgba(255, 255, 255, 0.7)',
+              marginLeft: '0.125rem',
               '&:hover': {
                 color: 'white',
               },
