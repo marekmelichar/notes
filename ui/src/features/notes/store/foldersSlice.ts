@@ -157,8 +157,9 @@ export const selectRootFolders = createSelector(
 );
 
 // Memoized selector factory for child folders
-const childFoldersCache = new Map<string, ReturnType<typeof createSelector>>();
-export const selectChildFolders = (parentId: string) => {
+type ChildFoldersSelector = (state: { folders: FoldersState }) => Folder[];
+const childFoldersCache = new Map<string, ChildFoldersSelector>();
+export const selectChildFolders = (parentId: string): ChildFoldersSelector => {
   if (!childFoldersCache.has(parentId)) {
     childFoldersCache.set(
       parentId,

@@ -114,8 +114,9 @@ export const selectTagById = (id: string) => (state: { tags: TagsState }) =>
   state.tags.tags.find((t) => t.id === id);
 
 // Memoized selector factory for tags by IDs
-const tagsByIdsCache = new Map<string, ReturnType<typeof createSelector>>();
-export const selectTagsByIds = (ids: string[]) => {
+type TagsByIdsSelector = (state: { tags: TagsState }) => Tag[];
+const tagsByIdsCache = new Map<string, TagsByIdsSelector>();
+export const selectTagsByIds = (ids: string[]): TagsByIdsSelector => {
   const cacheKey = [...ids].sort().join(',');
   if (!tagsByIdsCache.has(cacheKey)) {
     tagsByIdsCache.set(
