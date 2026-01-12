@@ -40,6 +40,11 @@
 .noteList {
   border-right: 1px solid var(--mui-palette-divider);
   overflow: hidden;
+  transition: width 0.2s ease;
+}
+
+.noteListCollapsed {
+  overflow: hidden;
 }
 
 .editor {

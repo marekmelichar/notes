@@ -4,6 +4,37 @@
   height: 100%;
 }
 
+/* Collapsed note list styles */
+.containerCollapsed {
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.collapsedHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--mui-palette-divider);
+  width: 100%;
+}
+
+.collapsedList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.collapsedNoteActive {
+  background-color: var(--mui-palette-action-selected);
+  color: var(--mui-palette-primary-main);
+}
+
 .header {
   display: flex;
   align-items: center;

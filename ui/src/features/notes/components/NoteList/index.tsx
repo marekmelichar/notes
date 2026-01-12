@@ -15,7 +15,10 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import SortIcon from '@mui/icons-material/Sort';
 import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
-import { useAppDispatch, useAppSelector } from '@/store';
+import MenuIcon from '@mui/icons-material/Menu';
+import MenuOpenIcon from '@mui/icons-material/MenuOpen';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import { useAppDispatch, useAppSelector, toggleNoteListCollapsed } from '@/store';
 import {
   selectFilteredNotes,
   selectNotesViewMode,
@@ -35,7 +38,11 @@ import { NoteCard } from './NoteCard';
 import { NoteListItem } from './NoteListItem';
 import styles from './index.module.css';
 
-export const NoteList = () => {
+interface NoteListProps {
+  collapsed?: boolean;
+}
+
+export const NoteList = ({ collapsed = false }: NoteListProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const notes = useAppSelector(selectFilteredNotes);
@@ -99,6 +106,43 @@ export const NoteList = () => {
     return t("Notes.AllNotes");
   };
 
+  const handleToggleCollapse = () => {
+    dispatch(toggleNoteListCollapsed());
+  };
+
+  // Collapsed view - compact note list
+  if (collapsed) {
+    return (
+      <Box className={`${styles.container} ${styles.containerCollapsed}`}>
+        <Box className={styles.collapsedHeader}>
+          <Tooltip title={t("Common.ExpandNoteList")} placement="right">
+            <IconButton size="small" onClick={handleToggleCollapse}>
+              <MenuIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("Notes.NewNote")} placement="right">
+            <IconButton size="small" onClick={handleCreateNote}>
+              <AddIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Box className={styles.collapsedList}>
+          {notes.map((note) => (
+            <Tooltip key={note.id} title={note.title || t("Common.Untitled")} placement="right">
+              <IconButton
+                size="small"
+                onClick={() => handleSelectNote(note.id)}
+                className={note.id === selectedNoteId ? styles.collapsedNoteActive : ''}
+              >
+                <DescriptionOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ))}
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box className={styles.container}>
       <Box className={styles.header}>
@@ -150,6 +194,11 @@ export const NoteList = () => {
               ) : (
                 <ViewModuleIcon fontSize="small" />
               )}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("Common.CollapseNoteList")}>
+            <IconButton size="small" onClick={handleToggleCollapse}>
+              <MenuOpenIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         </Box>

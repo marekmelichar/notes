@@ -32,7 +32,9 @@
     "Untitled": "Bez názvu",
     "SwitchLanguage": "Změnit jazyk",
     "CollapseSidebar": "Sbalit panel",
-    "ExpandSidebar": "Rozbalit panel"
+    "ExpandSidebar": "Rozbalit panel",
+    "CollapseNoteList": "Sbalit seznam",
+    "ExpandNoteList": "Rozbalit seznam"
   },
   "Notes": {
     "AllNotes": "Všechny",

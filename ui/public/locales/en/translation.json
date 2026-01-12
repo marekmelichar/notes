@@ -32,7 +32,9 @@
     "Untitled": "Untitled",
     "SwitchLanguage": "Switch language",
     "CollapseSidebar": "Collapse sidebar",
-    "ExpandSidebar": "Expand sidebar"
+    "ExpandSidebar": "Expand sidebar",
+    "CollapseNoteList": "Collapse note list",
+    "ExpandNoteList": "Expand note list"
   },
   "Notes": {
     "AllNotes": "All Notes",

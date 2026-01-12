@@ -10,14 +10,17 @@ interface UiState {
   mobileView: MobileView;
   isMobile: boolean;
   sidebarCollapsed: boolean;
+  noteListCollapsed: boolean;
 }
 
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
+const NOTELIST_COLLAPSED_KEY = 'notelist-collapsed';
 
 const initialState: UiState = {
   mobileView: 'list',
   isMobile: window.innerWidth <= 768,
   sidebarCollapsed: localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true',
+  noteListCollapsed: localStorage.getItem(NOTELIST_COLLAPSED_KEY) === 'true',
 };
 
 export const uiSlice = createSlice({
@@ -38,7 +41,15 @@ export const uiSlice = createSlice({
       state.sidebarCollapsed = !state.sidebarCollapsed;
       localStorage.setItem(SIDEBAR_COLLAPSED_KEY, state.sidebarCollapsed.toString());
     },
+    setNoteListCollapsed: (state, action: PayloadAction<boolean>) => {
+      state.noteListCollapsed = action.payload;
+      localStorage.setItem(NOTELIST_COLLAPSED_KEY, action.payload.toString());
+    },
+    toggleNoteListCollapsed: (state) => {
+      state.noteListCollapsed = !state.noteListCollapsed;
+      localStorage.setItem(NOTELIST_COLLAPSED_KEY, state.noteListCollapsed.toString());
+    },
   },
 });
 
-export const { setMobileView, setIsMobile, setSidebarCollapsed, toggleSidebarCollapsed } = uiSlice.actions;
+export const { setMobileView, setIsMobile, setSidebarCollapsed, toggleSidebarCollapsed, setNoteListCollapsed, toggleNoteListCollapsed } = uiSlice.actions;

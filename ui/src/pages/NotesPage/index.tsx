@@ -16,6 +16,8 @@ const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 400;
 const SIDEBAR_DEFAULT_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 60;
+const NOTELIST_WIDTH = 350;
+const NOTELIST_COLLAPSED_WIDTH = 60;
 const STORAGE_KEY = 'notes-sidebar-width';
 const MEDIUM_BREAKPOINT = 1024;
 
@@ -24,6 +26,7 @@ const NotesPage = () => {
   const isMobile = useAppSelector((state) => state.ui.isMobile);
   const mobileView = useAppSelector((state) => state.ui.mobileView);
   const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
+  const noteListCollapsed = useAppSelector((state) => state.ui.noteListCollapsed);
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const selectedNote = useAppSelector(selectSelectedNote);
 
@@ -148,9 +151,10 @@ const NotesPage = () => {
   };
 
   const effectiveSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth;
+  const effectiveNoteListWidth = noteListCollapsed ? NOTELIST_COLLAPSED_WIDTH : NOTELIST_WIDTH;
   const gridStyle = isMobile
     ? undefined
-    : { gridTemplateColumns: `${effectiveSidebarWidth}px 350px 1fr` };
+    : { gridTemplateColumns: `${effectiveSidebarWidth}px ${effectiveNoteListWidth}px 1fr` };
 
   return (
     <Box ref={containerRef} className={styles.container} style={gridStyle}>
@@ -164,8 +168,8 @@ const NotesPage = () => {
           onMouseDown={handleResizeStart}
         />
       )}
-      <Box className={`${styles.noteList} ${getPanelClass('list')}`}>
-        <NoteList />
+      <Box className={`${styles.noteList} ${getPanelClass('list')} ${noteListCollapsed ? styles.noteListCollapsed : ''}`}>
+        <NoteList collapsed={noteListCollapsed} />
       </Box>
       <Box className={`${styles.editor} ${getPanelClass('editor')}`}>
         <NoteEditor />
