@@ -105,19 +105,36 @@
 /* Mobile responsive styles */
 @media (max-width: 48rem) {
   .header {
-    flex-direction: column;
-    align-items: stretch;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
   }
 
   .titleInput {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
+    min-width: 0;
   }
 
   .headerActions {
-    flex-wrap: wrap;
-    gap: 0.375rem;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+
+  .folderButton {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .folderButton :global(.MuiButton-startIcon) {
+    margin-right: 0.25rem;
+  }
+
+  .saveButton {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .saveButton :global(.MuiButton-startIcon) {
+    margin-right: 0.25rem;
   }
 
   .footer {
@@ -135,11 +152,15 @@
     font-size: 3rem;
   }
 
+  .editorContent {
+    padding: 0.5rem;
+  }
+
   .editorContent :global(.bn-editor) {
     font-size: 1rem;
     color: var(--mui-palette-text-primary);
-    padding-top: 1rem;
+    padding-top: 0.5rem;
     padding-bottom: 1rem;
-    padding-inline: 4rem;
+    padding-inline: 2.5rem;
   }
 }
