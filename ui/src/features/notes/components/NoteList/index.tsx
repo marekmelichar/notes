@@ -53,6 +53,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   const filter = useAppSelector(selectNotesFilter);
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const isLoading = useAppSelector(selectNotesLoading);
+  const isMobile = useAppSelector((state) => state.ui.isMobile);
 
   const [sortAnchorEl, setSortAnchorEl] = React.useState<null | HTMLElement>(null);
 
@@ -115,11 +116,13 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
     return (
       <Box className={`${styles.container} ${styles.containerCollapsed}`}>
         <Box className={styles.collapsedHeader}>
-          <Tooltip title={t("Common.ExpandNoteList")} placement="right">
-            <IconButton size="small" onClick={handleToggleCollapse}>
-              <MenuIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {!isMobile && (
+            <Tooltip title={t("Common.ExpandNoteList")} placement="right">
+              <IconButton size="small" onClick={handleToggleCollapse}>
+                <MenuIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title={t("Notes.NewNote")} placement="right">
             <IconButton size="small" onClick={handleCreateNote}>
               <AddIcon fontSize="small" />
@@ -196,11 +199,13 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
               )}
             </IconButton>
           </Tooltip>
-          <Tooltip title={t("Common.CollapseNoteList")}>
-            <IconButton size="small" onClick={handleToggleCollapse}>
-              <MenuOpenIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {!isMobile && (
+            <Tooltip title={t("Common.CollapseNoteList")}>
+              <IconButton size="small" onClick={handleToggleCollapse}>
+                <MenuOpenIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
 
