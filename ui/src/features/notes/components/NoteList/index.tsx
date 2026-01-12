@@ -32,6 +32,7 @@ import {
   createNote,
 } from '../../store/notesSlice';
 import { selectAllTags } from '../../store/tagsSlice';
+import { selectAllFolders } from '../../store/foldersSlice';
 import { selectNotesFilter } from '../../store/notesSlice';
 import type { NotesSortBy, NotesSortOrder } from '../../types';
 import { NoteCard } from './NoteCard';
@@ -47,6 +48,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   const dispatch = useAppDispatch();
   const notes = useAppSelector(selectFilteredNotes);
   const allTags = useAppSelector(selectAllTags);
+  const allFolders = useAppSelector(selectAllFolders);
   const viewMode = useAppSelector(selectNotesViewMode);
   const sortBy = useAppSelector(selectNotesSortBy);
   const sortOrder = useAppSelector(selectNotesSortOrder);
@@ -104,6 +106,10 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
     if (filter.isDeleted) return t("Notes.Trash");
     if (filter.isPinned) return t("Notes.Favorites");
     if (filter.searchQuery) return `${t("Common.Search")} "${filter.searchQuery}"`;
+    if (filter.folderId) {
+      const folder = allFolders.find((f) => f.id === filter.folderId);
+      return folder?.name || t("Notes.AllNotes");
+    }
     return t("Notes.AllNotes");
   };
 
