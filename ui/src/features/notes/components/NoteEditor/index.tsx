@@ -96,7 +96,6 @@ const BlockNoteEditor = ({ initialContent, onChange, isMobile }: BlockNoteEditor
           editor={editor}
           theme={mode}
           onChange={handleChange}
-          sideMenu={!isMobile}
         />
       </Box>
       <Box className={styles.footer}>
@@ -249,7 +248,8 @@ export const NoteEditor = () => {
 
   return (
     <Box className={styles.editorContainer}>
-      <Box className={styles.header}>
+      <Box className={`${styles.header} ${isMobile ? styles.headerMobile : ''}`}>
+        {/* Row 1: Title */}
         <input
           type="text"
           className={styles.titleInput}
@@ -257,6 +257,8 @@ export const NoteEditor = () => {
           onChange={handleTitleChange}
           placeholder={t("Common.Untitled")}
         />
+
+        {/* Row 2: Actions */}
         <Box className={styles.headerActions}>
           <Tooltip title={t("Notes.MoveToFolder")}>
             <Button
@@ -310,10 +312,6 @@ export const NoteEditor = () => {
               {isSaving ? t("Common.Saving") : hasUnsavedChanges ? t("Common.Save") : t("Common.Saved")}
             </Button>
           </Tooltip>
-          <TagPicker
-            selectedTagIds={note.tags}
-            onTagsChange={handleTagsChange}
-          />
           <Tooltip title={note.isPinned ? t("Notes.Unpin") : t("Notes.Pin")}>
             <IconButton size="small" onClick={handleTogglePin}>
               {note.isPinned ? (
@@ -329,6 +327,26 @@ export const NoteEditor = () => {
             </IconButton>
           </Tooltip>
         </Box>
+
+        {/* Row 3: Tags (mobile only - on desktop tags are in row 2) */}
+        {isMobile && (
+          <Box className={styles.headerTags}>
+            <TagPicker
+              selectedTagIds={note.tags}
+              onTagsChange={handleTagsChange}
+            />
+          </Box>
+        )}
+
+        {/* Desktop: Tags inline with other actions */}
+        {!isMobile && (
+          <Box className={styles.headerActions}>
+            <TagPicker
+              selectedTagIds={note.tags}
+              onTagsChange={handleTagsChange}
+            />
+          </Box>
+        )}
       </Box>
 
       {/* Key forces remount when note changes */}
