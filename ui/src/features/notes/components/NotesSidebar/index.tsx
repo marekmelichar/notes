@@ -338,6 +338,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const isFoldersLoading = useAppSelector(selectFoldersLoading);
   const isTagsLoading = useAppSelector(selectTagsLoading);
+  const isMobile = useAppSelector((state) => state.ui.isMobile);
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
@@ -692,13 +693,15 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   if (collapsed) {
     return (
       <Box className={`${styles.sidebar} ${styles.sidebarCollapsed}`}>
-        <Box className={styles.collapseToggle}>
-          <Tooltip title={t("Common.ExpandSidebar")} placement="right">
-            <IconButton size="small" onClick={handleToggleCollapse}>
-              <MenuIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        {!isMobile && (
+          <Box className={styles.collapseToggle}>
+            <Tooltip title={t("Common.ExpandSidebar")} placement="right">
+              <IconButton size="small" onClick={handleToggleCollapse}>
+                <MenuIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
         <Box className={styles.collapsedNav}>
           <Tooltip title={t("Notes.AllNotes")} placement="right">
             <IconButton
@@ -752,14 +755,16 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
       onDragEnd={handleDragEnd}
     >
       <Box className={styles.sidebar}>
-        {/* Collapse Toggle */}
-        <Box className={styles.collapseToggle}>
-          <Tooltip title={t("Common.CollapseSidebar")}>
-            <IconButton size="small" onClick={handleToggleCollapse}>
-              <MenuOpenIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        {/* Collapse Toggle - hidden on mobile */}
+        {!isMobile && (
+          <Box className={styles.collapseToggle}>
+            <Tooltip title={t("Common.CollapseSidebar")}>
+              <IconButton size="small" onClick={handleToggleCollapse}>
+                <MenuOpenIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
 
         {/* Quick Filters */}
         <Box className={styles.section}>
