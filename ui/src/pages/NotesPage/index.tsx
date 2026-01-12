@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Box } from '@mui/material';
-import { useAppDispatch, useAppSelector, setMobileView } from '@/store';
+import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed } from '@/store';
 import { loadNotes, selectSelectedNote } from '@/features/notes/store/notesSlice';
 import { loadFolders } from '@/features/notes/store/foldersSlice';
 import { loadTags } from '@/features/notes/store/tagsSlice';
@@ -15,12 +15,15 @@ const DEFAULT_TITLE = 'epoznamky - Note Taking App';
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 400;
 const SIDEBAR_DEFAULT_WIDTH = 240;
+const SIDEBAR_COLLAPSED_WIDTH = 60;
 const STORAGE_KEY = 'notes-sidebar-width';
+const MEDIUM_BREAKPOINT = 1024;
 
 const NotesPage = () => {
   const dispatch = useAppDispatch();
   const isMobile = useAppSelector((state) => state.ui.isMobile);
   const mobileView = useAppSelector((state) => state.ui.mobileView);
+  const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const selectedNote = useAppSelector(selectSelectedNote);
 
@@ -29,6 +32,25 @@ const NotesPage = () => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? parseInt(saved, 10) : SIDEBAR_DEFAULT_WIDTH;
   });
+
+  // Auto-collapse sidebar at medium breakpoint
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      // Auto-collapse when entering medium breakpoint, auto-expand when leaving
+      if (width <= MEDIUM_BREAKPOINT && width > 768 && !sidebarCollapsed) {
+        dispatch(setSidebarCollapsed(true));
+      }
+    };
+
+    // Check on mount
+    if (window.innerWidth <= MEDIUM_BREAKPOINT && window.innerWidth > 768) {
+      dispatch(setSidebarCollapsed(true));
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [dispatch, sidebarCollapsed]);
   const [isResizing, setIsResizing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -125,16 +147,17 @@ const NotesPage = () => {
     return mobileView === panel ? styles.mobileVisible : styles.mobileHidden;
   };
 
+  const effectiveSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth;
   const gridStyle = isMobile
     ? undefined
-    : { gridTemplateColumns: `${sidebarWidth}px 350px 1fr` };
+    : { gridTemplateColumns: `${effectiveSidebarWidth}px 350px 1fr` };
 
   return (
     <Box ref={containerRef} className={styles.container} style={gridStyle}>
-      <Box className={`${styles.sidebar} ${getPanelClass('sidebar')}`}>
-        <NotesSidebar />
+      <Box className={`${styles.sidebar} ${getPanelClass('sidebar')} ${sidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
+        <NotesSidebar collapsed={sidebarCollapsed} />
       </Box>
-      {!isMobile && (
+      {!isMobile && !sidebarCollapsed && (
         <Box
           className={`${styles.resizeHandle} ${isResizing ? styles.resizeHandleActive : ''}`}
           style={{ left: sidebarWidth - 2 }}

@@ -30,7 +30,9 @@
     "Version": "Version",
     "Welcome": "Welcome",
     "Untitled": "Untitled",
-    "SwitchLanguage": "Switch language"
+    "SwitchLanguage": "Switch language",
+    "CollapseSidebar": "Collapse sidebar",
+    "ExpandSidebar": "Expand sidebar"
   },
   "Notes": {
     "AllNotes": "All Notes",

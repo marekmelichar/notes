@@ -9,6 +9,11 @@
 .sidebar {
   overflow-y: auto;
   border-right: none;
+  transition: width 0.2s ease;
+}
+
+.sidebarCollapsed {
+  overflow: hidden;
 }
 
 .resizeHandle {

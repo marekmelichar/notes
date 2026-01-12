@@ -30,7 +30,9 @@
     "Version": "Verze",
     "Welcome": "Vítejte",
     "Untitled": "Bez názvu",
-    "SwitchLanguage": "Změnit jazyk"
+    "SwitchLanguage": "Změnit jazyk",
+    "CollapseSidebar": "Sbalit panel",
+    "ExpandSidebar": "Rozbalit panel"
   },
   "Notes": {
     "AllNotes": "Všechny",

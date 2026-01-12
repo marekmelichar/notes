@@ -50,7 +50,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import { useAppDispatch, useAppSelector } from "@/store";
+import MenuIcon from "@mui/icons-material/Menu";
+import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import { useAppDispatch, useAppSelector, toggleSidebarCollapsed } from "@/store";
 import {
   setFilter,
   resetFilter,
@@ -320,7 +322,11 @@ const UnfiledDropZone = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const NotesSidebar = () => {
+interface NotesSidebarProps {
+  collapsed?: boolean;
+}
+
+export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const filter = useAppSelector(selectNotesFilter);
@@ -678,6 +684,67 @@ export const NotesSidebar = () => {
   const isFavoritesActive = filter.isPinned === true && !filter.isDeleted;
   const isTrashActive = filter.isDeleted;
 
+  const handleToggleCollapse = () => {
+    dispatch(toggleSidebarCollapsed());
+  };
+
+  // Collapsed view - icons only
+  if (collapsed) {
+    return (
+      <Box className={`${styles.sidebar} ${styles.sidebarCollapsed}`}>
+        <Box className={styles.collapseToggle}>
+          <Tooltip title={t("Common.ExpandSidebar")} placement="right">
+            <IconButton size="small" onClick={handleToggleCollapse}>
+              <MenuIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Box className={styles.collapsedNav}>
+          <Tooltip title={t("Notes.AllNotes")} placement="right">
+            <IconButton
+              size="small"
+              onClick={handleAllNotes}
+              className={isAllNotesActive ? styles.collapsedNavActive : ""}
+            >
+              <NoteOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("Notes.Favorites")} placement="right">
+            <IconButton
+              size="small"
+              onClick={handleFavorites}
+              className={isFavoritesActive ? styles.collapsedNavActive : ""}
+            >
+              <StarOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("Notes.Trash")} placement="right">
+            <IconButton
+              size="small"
+              onClick={handleTrash}
+              className={isTrashActive ? styles.collapsedNavActive : ""}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Box className={styles.collapsedDivider} />
+        <Box className={styles.collapsedNav}>
+          <Tooltip title={t("Folders.Folders")} placement="right">
+            <IconButton size="small" onClick={() => setIsFolderDialogOpen(true)}>
+              <FolderOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={t("Tags.Tags")} placement="right">
+            <IconButton size="small" onClick={() => setIsTagDialogOpen(true)}>
+              <LocalOfferOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -685,6 +752,15 @@ export const NotesSidebar = () => {
       onDragEnd={handleDragEnd}
     >
       <Box className={styles.sidebar}>
+        {/* Collapse Toggle */}
+        <Box className={styles.collapseToggle}>
+          <Tooltip title={t("Common.CollapseSidebar")}>
+            <IconButton size="small" onClick={handleToggleCollapse}>
+              <MenuOpenIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+
         {/* Quick Filters */}
         <Box className={styles.section}>
           <Box

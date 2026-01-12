@@ -6,6 +6,44 @@
   border-right: 1px solid var(--mui-palette-divider);
 }
 
+/* Collapsed sidebar styles */
+.sidebarCollapsed {
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.collapseToggle {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.25rem 0.5rem;
+  width: 100%;
+}
+
+.sidebarCollapsed .collapseToggle {
+  justify-content: center;
+  padding: 0.25rem 0;
+}
+
+.collapsedNav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+}
+
+.collapsedNavActive {
+  background-color: var(--mui-palette-action-selected);
+  color: var(--mui-palette-primary-main);
+}
+
+.collapsedDivider {
+  width: 2rem;
+  height: 1px;
+  background-color: var(--mui-palette-divider);
+  margin: 0.5rem 0;
+}
+
 .section {
   padding: 0.5rem;
 }
