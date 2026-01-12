@@ -14,6 +14,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { useColorMode } from '@/theme/ThemeProvider';
 import {
   updateNote,
   deleteNote,
@@ -43,6 +44,7 @@ interface BlockNoteEditorProps {
 }
 
 const BlockNoteEditor = ({ initialContent, onSave, onChange }: BlockNoteEditorProps) => {
+  const { mode } = useColorMode();
   const editor = useCreateBlockNote({
     initialContent,
   });
@@ -91,7 +93,7 @@ const BlockNoteEditor = ({ initialContent, onSave, onChange }: BlockNoteEditorPr
       <Box className={styles.editorContent}>
         <BlockNoteView
           editor={editor}
-          theme="dark"
+          theme={mode}
           onChange={handleChange}
         />
       </Box>
