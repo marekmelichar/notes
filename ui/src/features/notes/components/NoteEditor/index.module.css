@@ -106,7 +106,7 @@
 @media (max-width: 48rem) {
   .header {
     gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.625rem 0.75rem;
   }
 
   .titleInput {
@@ -115,7 +115,7 @@
   }
 
   .headerActions {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 0.25rem;
   }
 
@@ -161,6 +161,6 @@
     color: var(--mui-palette-text-primary);
     padding-top: 0.5rem;
     padding-bottom: 1rem;
-    padding-inline: 2.5rem;
+    padding-inline: 4rem;
   }
 }
