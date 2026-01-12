@@ -18,7 +18,7 @@ const getComponents = (palette: any) => ({
           color: palette.primary.main,
           border: '1px solid transparent',
           backgroundColor: alpha(palette.secondaryContainer.main, 0.16),
-          borderRadius: '0.5rem',
+          borderRadius: '0.375rem',
           '&:hover': {
             backgroundColor: alpha(palette.secondaryContainer.main, 0.24),
           },
@@ -29,7 +29,7 @@ const getComponents = (palette: any) => ({
       root: {
         textTransform: 'none',
         boxShadow: 'none',
-        borderRadius: '0.5rem',
+        borderRadius: '0.375rem',
         fontWeight: 600,
         '&:hover': {
           boxShadow: 'none',
@@ -74,7 +74,7 @@ const getComponents = (palette: any) => ({
   MuiChip: {
     styleOverrides: {
       root: {
-        borderRadius: '4px',
+        borderRadius: '0.375rem',
         border: '1px solid transparent',
         '& .MuiChip-deleteIcon': {
           '&:hover': {
@@ -100,6 +100,13 @@ const getComponents = (palette: any) => ({
           fontSize: '11px',
           padding: 0,
         },
+      },
+    },
+  },
+  MuiIconButton: {
+    styleOverrides: {
+      root: {
+        borderRadius: '0.375rem',
       },
     },
   },
