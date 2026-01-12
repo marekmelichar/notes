@@ -166,4 +166,14 @@
     padding-bottom: 1rem;
     padding-inline: 4rem;
   }
+
+  /* When side menu is hidden on mobile, reduce padding */
+  .editorContentMobile :global(.bn-editor) {
+    padding-inline: 1rem;
+  }
+
+  /* Hide the side menu placeholder space on mobile */
+  .editorContentMobile :global(.bn-side-menu) {
+    display: none;
+  }
 }
