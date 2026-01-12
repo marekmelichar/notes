@@ -481,6 +481,10 @@
     background-color: var(--mui-palette-action-hover);
   }
 
+  .folderDragHandle {
+    opacity: 1;
+  }
+
   .tagItem {
     padding: 0.5rem 0.75rem;
     min-height: 2.25rem;
