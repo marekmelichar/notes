@@ -122,6 +122,18 @@
     justify-content: flex-start;
   }
 
+  .headerActions :global(.MuiButton-root) {
+    border-radius: 0.375rem;
+  }
+
+  .headerActions :global(.MuiChip-root) {
+    border-radius: 0.375rem;
+  }
+
+  .headerActions :global(.MuiIconButton-root) {
+    border-radius: 0.375rem;
+  }
+
   .folderButton {
     padding: 0.375rem 0.625rem;
     font-size: 0.8125rem;
