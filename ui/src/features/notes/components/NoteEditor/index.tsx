@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef, useMemo } from 'react';
-import { Box, IconButton, Typography, Tooltip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress } from '@mui/material';
+import { Box, IconButton, Typography, Tooltip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress, useMediaQuery } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
@@ -41,9 +41,10 @@ interface BlockNoteEditorProps {
   initialContent: PartialBlock[] | undefined;
   onSave: (content: string) => void;
   onChange: () => void;
+  isMobile: boolean;
 }
 
-const BlockNoteEditor = ({ initialContent, onSave, onChange }: BlockNoteEditorProps) => {
+const BlockNoteEditor = ({ initialContent, onChange, isMobile }: BlockNoteEditorProps) => {
   const { mode } = useColorMode();
   const editor = useCreateBlockNote({
     initialContent,
@@ -90,11 +91,12 @@ const BlockNoteEditor = ({ initialContent, onSave, onChange }: BlockNoteEditorPr
 
   return (
     <>
-      <Box className={styles.editorContent}>
+      <Box className={`${styles.editorContent} ${isMobile ? styles.editorContentMobile : ''}`}>
         <BlockNoteView
           editor={editor}
           theme={mode}
           onChange={handleChange}
+          sideMenu={!isMobile}
         />
       </Box>
       <Box className={styles.footer}>
@@ -111,6 +113,7 @@ export const NoteEditor = () => {
   const dispatch = useAppDispatch();
   const note = useAppSelector(selectSelectedNote);
   const folders = useAppSelector(selectAllFolders);
+  const isMobile = useMediaQuery('(max-width: 48rem)');
   const [title, setTitle] = useState(note?.title || '');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [folderMenuAnchor, setFolderMenuAnchor] = useState<null | HTMLElement>(null);
@@ -334,6 +337,7 @@ export const NoteEditor = () => {
         initialContent={initialContent}
         onSave={handleSave}
         onChange={handleEditorChange}
+        isMobile={isMobile}
       />
 
       {lastSaved && (
