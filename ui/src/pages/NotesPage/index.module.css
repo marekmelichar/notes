@@ -53,7 +53,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
   .container {
     display: block;
     position: relative;

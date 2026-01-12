@@ -9,7 +9,9 @@ import { useAppDispatch, setIsMobile } from '@/store';
 
 const MainLayout = () => {
   const dispatch = useAppDispatch();
-  const isMobile = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT}px)`);
+  const isMobileWidth = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT}px)`);
+  const isLandscapeMobile = useMediaQuery('(max-height: 500px) and (orientation: landscape)');
+  const isMobile = isMobileWidth || isLandscapeMobile;
 
   useEffect(() => {
     dispatch(setIsMobile(isMobile));
