@@ -327,13 +327,26 @@ When styling a component, follow this decision tree:
    // ❌ Bad
    const theme = useTheme();
    <Box sx={{ color: theme.palette.text.secondary }} />
-   
+
    // ✅ Good
    <Box className={styles.text} />
    ```
    ```css
    .text {
      color: var(--mui-palette-text-secondary);
+   }
+   ```
+
+5. **Don't use transform on hover**
+   ```css
+   /* ❌ Bad - Avoid transform effects on hover */
+   .card:hover {
+     transform: translateY(-2px);
+   }
+
+   /* ✅ Good - Use background-color or other subtle effects instead */
+   .card:hover {
+     background-color: var(--mui-palette-action-hover);
    }
    ```
 
