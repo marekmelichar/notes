@@ -175,6 +175,6 @@
     color: var(--mui-palette-text-primary);
     padding-top: 0.25rem;
     padding-bottom: 1rem;
-    padding-inline: 0.5rem;
+    padding-inline: 1rem;
   }
 }
