@@ -96,6 +96,7 @@ const BlockNoteEditor = ({ initialContent, onChange, isMobile }: BlockNoteEditor
           editor={editor}
           theme={mode}
           onChange={handleChange}
+          sideMenu={false}
         />
       </Box>
       <Box className={styles.footer}>
