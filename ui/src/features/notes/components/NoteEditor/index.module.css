@@ -53,9 +53,9 @@
 .editorContent :global(.bn-editor) {
   font-size: 1rem;
   color: var(--mui-palette-text-primary);
-  padding-top: 1rem;
+  padding-top: 0.5rem;
   padding-bottom: 2rem;
-  padding-inline: 0;
+  padding-inline: 1rem;
 }
 
 .footer {
@@ -173,8 +173,8 @@
   .editorContent :global(.bn-editor) {
     font-size: 1rem;
     color: var(--mui-palette-text-primary);
-    padding-top: 0.5rem;
+    padding-top: 0.25rem;
     padding-bottom: 1rem;
-    padding-inline: 0;
+    padding-inline: 0.5rem;
   }
 }
