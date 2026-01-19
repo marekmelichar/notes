@@ -53,9 +53,9 @@
 .editorContent :global(.bn-editor) {
   font-size: 1rem;
   color: var(--mui-palette-text-primary);
-  padding-top: 2rem;
+  padding-top: 1rem;
   padding-bottom: 2rem;
-  padding-inline: 5.5rem;
+  padding-inline: 0;
 }
 
 .footer {
@@ -175,23 +175,6 @@
     color: var(--mui-palette-text-primary);
     padding-top: 0.5rem;
     padding-bottom: 1rem;
-    padding-inline: 4rem;
-  }
-
-  /* Mobile: Show side menu always (not on hover) and increase touch targets */
-  .editorContentMobile :global(.bn-side-menu) {
-    opacity: 1 !important;
-  }
-
-  /* Larger touch targets for side menu buttons on mobile */
-  .editorContentMobile :global(.bn-side-menu button) {
-    min-width: 2rem;
-    min-height: 2rem;
-    padding: 0.25rem;
-  }
-
-  /* Make drag handle more visible on mobile */
-  .editorContentMobile :global(.bn-drag-handle) {
-    opacity: 0.7;
+    padding-inline: 0;
   }
 }
