@@ -42,9 +42,11 @@ interface BlockNoteEditorProps {
   onSave: (content: string) => void;
   onChange: () => void;
   isMobile: boolean;
+  lastSaved: Date | null;
+  lastSavedLabel: string;
 }
 
-const BlockNoteEditor = ({ initialContent, onChange, isMobile }: BlockNoteEditorProps) => {
+const BlockNoteEditor = ({ initialContent, onChange, isMobile, lastSaved, lastSavedLabel }: BlockNoteEditorProps) => {
   const { mode } = useColorMode();
   const editor = useCreateBlockNote({
     initialContent,
@@ -103,6 +105,11 @@ const BlockNoteEditor = ({ initialContent, onChange, isMobile }: BlockNoteEditor
         <Typography variant="caption">
           {wordCount} words | {charCount} characters
         </Typography>
+        {lastSaved && (
+          <Typography variant="caption">
+            {lastSavedLabel} {lastSaved.toLocaleTimeString()}
+          </Typography>
+        )}
       </Box>
     </>
   );
@@ -357,15 +364,9 @@ export const NoteEditor = () => {
         onSave={handleSave}
         onChange={handleEditorChange}
         isMobile={isMobile}
+        lastSaved={lastSaved}
+        lastSavedLabel={t("Notes.LastSaved")}
       />
-
-      {lastSaved && (
-        <Box className={styles.lastSaved}>
-          <Typography variant="caption">
-            {t("Notes.LastSaved")} {lastSaved.toLocaleTimeString()}
-          </Typography>
-        </Box>
-      )}
     </Box>
   );
 };
