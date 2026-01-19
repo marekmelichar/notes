@@ -158,8 +158,8 @@ const NotesPage = () => {
 
   return (
     <Box ref={containerRef} className={styles.container} style={gridStyle}>
-      <Box className={`${styles.sidebar} ${getPanelClass('sidebar')} ${sidebarCollapsed ? styles.sidebarCollapsed : ''}`}>
-        <NotesSidebar collapsed={sidebarCollapsed} />
+      <Box className={`${styles.sidebar} ${getPanelClass('sidebar')} ${sidebarCollapsed && !isMobile ? styles.sidebarCollapsed : ''}`}>
+        <NotesSidebar collapsed={sidebarCollapsed && !isMobile} />
       </Box>
       {!isMobile && !sidebarCollapsed && (
         <Box
