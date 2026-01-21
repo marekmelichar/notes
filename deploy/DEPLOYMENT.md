@@ -232,12 +232,60 @@ docker image prune -f
 
 ### Database Backup
 
+#### Manual Backup
+
 ```bash
 # Backup
 docker exec epoznamky-db pg_dump -U postgres epoznamky > backup_$(date +%Y%m%d).sql
 
 # Restore
 docker exec -i epoznamky-db psql -U postgres epoznamky < backup_20240101.sql
+```
+
+#### Automated Daily Backups
+
+A backup script is included at `deploy/backup.sh`. It backs up:
+- **epoznamky database** - notes, folders, tags (daily, 7-day retention)
+- **keycloak database** - users, realms, sessions (daily, 7-day retention)
+- **.env file** - credentials and configuration (daily, 7-day retention)
+- **SSL certificates** - Let's Encrypt certs (weekly on Sundays, 30-day retention)
+- **uploads directory** - user uploaded files, if exists (daily, 7-day retention)
+
+To set up automated daily backups:
+
+```bash
+# 1. Create backup directory
+sudo mkdir -p /var/backups/epoznamky
+
+# 2. Make script executable
+chmod +x /opt/epoznamky/deploy/backup.sh
+
+# 3. Add to crontab (runs daily at 3 AM)
+crontab -e
+```
+
+Add this line to crontab:
+```
+0 3 * * * /opt/epoznamky/deploy/backup.sh /var/backups/epoznamky >> /var/log/epoznamky-backup.log 2>&1
+```
+
+#### Restore from Backup
+
+```bash
+# Restore epoznamky database
+gunzip -c /var/backups/epoznamky/epoznamky-YYYYMMDD-HHMMSS.sql.gz | docker exec -i epoznamky-db psql -U postgres epoznamky
+
+# Restore keycloak database
+gunzip -c /var/backups/epoznamky/keycloak-YYYYMMDD-HHMMSS.sql.gz | docker exec -i epoznamky-db psql -U postgres keycloak
+
+# Restore .env file
+cp /var/backups/epoznamky/env-YYYYMMDD-HHMMSS.backup /opt/epoznamky/.env
+
+# Restore SSL certificates
+tar -xzf /var/backups/epoznamky/ssl-certs-YYYYMMDD-HHMMSS.tar.gz -C /opt/epoznamky/deploy/certbot
+
+# Restore uploads (if applicable)
+tar -xzf /var/backups/epoznamky/uploads-YYYYMMDD-HHMMSS.tar.gz -C /opt/epoznamky
 ```
 
 ### SSL Certificate Renewal
