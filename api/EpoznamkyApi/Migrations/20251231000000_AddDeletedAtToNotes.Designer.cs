@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EpoznamkyApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250111000000_AddDeletedAtToNotes")]
+    [Migration("20251231000000_AddDeletedAtToNotes")]
     partial class AddDeletedAtToNotes
     {
         /// <inheritdoc />
