@@ -55,6 +55,7 @@ services:
       KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
       KC_HOSTNAME: https://epoznamky.cz
+      KC_HOSTNAME_ADMIN: https://keycloak.epoznamky.cz
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: "true"
     command: start --import-realm
