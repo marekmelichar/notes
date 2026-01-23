@@ -20,7 +20,6 @@ export const filesApi = {
     const response = await apiManager.post<FileUploadResponse>(
       `${API_BASE}/files`,
       formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
     );
     return response.data;
   },
