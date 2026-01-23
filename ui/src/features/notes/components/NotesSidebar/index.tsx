@@ -52,6 +52,7 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useAppDispatch, useAppSelector, toggleSidebarCollapsed } from "@/store";
 import {
   setFilter,
@@ -369,6 +370,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const [editTagName, setEditTagName] = useState("");
   const [editTagColor, setEditTagColor] = useState("#6366f1");
   const [showTreeView, setShowTreeView] = useState(true);
+  const [recentExpanded, setRecentExpanded] = useState(true);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [activeFolder, setActiveFolder] = useState<Folder | null>(null);
   const [parentFolderIdForCreate, setParentFolderIdForCreate] = useState<
@@ -389,6 +391,13 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const parentFolderForCreate = parentFolderIdForCreate
     ? allFolders.find((f) => f.id === parentFolderIdForCreate)
     : null;
+
+  const recentNotes = useMemo(() => {
+    return [...notes]
+      .filter((n) => !n.isDeleted)
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, 18);
+  }, [notes]);
 
   const unfiledNotes = useMemo(() => {
     return notes
@@ -820,6 +829,39 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
             <Typography className={styles.navItemLabel}>{t("Notes.Trash")}</Typography>
             <span className={styles.navItemCount}>{trashCount}</span>
           </Box>
+        </Box>
+
+        {/* Recent */}
+        <Box className={styles.section}>
+          <Box className={styles.sectionHeader}>
+            <Typography className={styles.sectionTitle}>{t("Notes.Recent")}</Typography>
+            <IconButton
+              size="small"
+              onClick={() => setRecentExpanded(!recentExpanded)}
+            >
+              {recentExpanded ? (
+                <ExpandLessIcon fontSize="small" />
+              ) : (
+                <ExpandMoreIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Box>
+          <Collapse in={recentExpanded}>
+            <Box className={styles.recentList}>
+              {recentNotes.map((note) => (
+                <Box
+                  key={note.id}
+                  className={`${styles.navItem} ${selectedNoteId === note.id ? styles.navItemActive : ""}`}
+                  onClick={() => dispatch(setSelectedNote(note.id))}
+                >
+                  <AccessTimeIcon fontSize="small" className={styles.navItemIcon} />
+                  <Typography className={styles.navItemLabel} noWrap>
+                    {note.title || t("Common.Untitled")}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Collapse>
         </Box>
 
         {/* Folders */}

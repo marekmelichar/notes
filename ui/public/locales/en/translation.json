@@ -58,7 +58,8 @@
     "SaveShortcut": "Save (Ctrl+S)",
     "DaysRemaining": "{{days}} days left",
     "DeletedToday": "Deleted today",
-    "WillBeDeleted": "Will be permanently deleted after 30 days in trash"
+    "WillBeDeleted": "Will be permanently deleted after 30 days in trash",
+    "Recent": "Recent"
   },
   "Folders": {
     "Folders": "Folders",

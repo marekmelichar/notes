@@ -67,6 +67,16 @@
   letter-spacing: 0.5px;
 }
 
+.recentList {
+  max-height: 11.25rem;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.recentList::-webkit-scrollbar {
+  display: none;
+}
+
 .navItem {
   display: flex;
   align-items: center;

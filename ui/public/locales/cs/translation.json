@@ -58,7 +58,8 @@
     "SaveShortcut": "Uložit (Ctrl+S)",
     "DaysRemaining": "{{days}} dní",
     "DeletedToday": "Smazáno dnes",
-    "WillBeDeleted": "Bude trvale smazáno po 30 dnech v koši"
+    "WillBeDeleted": "Bude trvale smazáno po 30 dnech v koši",
+    "Recent": "Nedávné"
   },
   "Folders": {
     "Folders": "Složky",
