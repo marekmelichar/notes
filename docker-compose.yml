@@ -50,8 +50,11 @@ services:
       Keycloak__Authority: "http://keycloak:8080/realms/epoznamky"
       ASPNETCORE_ENVIRONMENT: Development
       Logging__LogLevel__Microsoft.AspNetCore.Authentication: Debug
+      FileStorage__UploadDirectory: "/app/uploads"
     ports:
       - "5001:8080"
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,3 +81,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:

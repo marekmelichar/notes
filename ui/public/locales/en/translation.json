@@ -114,6 +114,11 @@
     "CustomColor": "Custom Color",
     "ResetToDefault": "Reset to Default"
   },
+  "Files": {
+    "OfflineError": "Cannot upload files while offline",
+    "TooLarge": "File is too large (max 100 MB)",
+    "UploadError": "Failed to upload file"
+  },
   "ErrorPage": {
     "Title": "Something went wrong",
     "Message": "An unexpected error occurred. Please try reloading the page.",

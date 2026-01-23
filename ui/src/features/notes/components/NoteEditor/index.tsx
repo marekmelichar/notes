@@ -1,6 +1,7 @@
 import React, { useCallback, useState, useRef, useMemo } from 'react';
 import { Box, IconButton, Typography, Tooltip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress, useMediaQuery } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { enqueueSnackbar } from 'notistack';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { Block, PartialBlock } from '@blocknote/core';
@@ -22,6 +23,7 @@ import {
 } from '../../store/notesSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
 import { TagPicker } from '../TagPicker';
+import { filesApi } from '../../services/filesApi';
 import styles from './index.module.css';
 
 // Validate a block has minimum required structure for BlockNote
@@ -74,9 +76,12 @@ class EditorErrorBoundary extends React.Component<EditorErrorBoundaryProps, Edit
   }
 }
 
+const MAX_FILE_SIZE = 104_857_600; // 100 MB
+
 // Separate component for the BlockNote editor to handle remounting on note change
 interface BlockNoteEditorProps {
   initialContent: PartialBlock[] | undefined;
+  noteId?: string;
   onSave: (content: string) => void;
   onChange: () => void;
   isMobile: boolean;
@@ -84,10 +89,28 @@ interface BlockNoteEditorProps {
   lastSavedLabel: string;
 }
 
-const BlockNoteEditor = ({ initialContent, onChange, isMobile, lastSaved, lastSavedLabel }: BlockNoteEditorProps) => {
+const BlockNoteEditor = ({ initialContent, noteId, onChange, isMobile, lastSaved, lastSavedLabel }: BlockNoteEditorProps) => {
+  const { t } = useTranslation();
   const { mode } = useColorMode();
   const editor = useCreateBlockNote({
     initialContent,
+    uploadFile: async (file: File) => {
+      if (!navigator.onLine) {
+        enqueueSnackbar(t('Files.OfflineError'), { variant: 'error' });
+        throw new Error('Offline');
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        enqueueSnackbar(t('Files.TooLarge'), { variant: 'error' });
+        throw new Error('File too large');
+      }
+      try {
+        const response = await filesApi.upload(file, noteId);
+        return response.url;
+      } catch (err) {
+        enqueueSnackbar(t('Files.UploadError'), { variant: 'error' });
+        throw err;
+      }
+    },
   });
 
   // Calculate word count from blocks
@@ -401,6 +424,7 @@ export const NoteEditor = () => {
         fallback={
           <BlockNoteEditor
             initialContent={undefined}
+            noteId={note.id}
             onSave={handleSave}
             onChange={handleEditorChange}
             isMobile={isMobile}
@@ -411,6 +435,7 @@ export const NoteEditor = () => {
       >
         <BlockNoteEditor
           initialContent={initialContent}
+          noteId={note.id}
           onSave={handleSave}
           onChange={handleEditorChange}
           isMobile={isMobile}

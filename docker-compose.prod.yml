@@ -74,6 +74,9 @@ services:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=epoznamky;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
       Keycloak__Authority: "http://keycloak:8080/realms/epoznamky"
       ASPNETCORE_ENVIRONMENT: Production
+      FileStorage__UploadDirectory: "/app/uploads"
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,3 +101,4 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:

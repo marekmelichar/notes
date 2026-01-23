@@ -114,6 +114,11 @@
     "CustomColor": "Vlastní",
     "ResetToDefault": "Výchozí"
   },
+  "Files": {
+    "OfflineError": "Nelze nahrát soubory bez připojení",
+    "TooLarge": "Soubor je příliš velký (max 100 MB)",
+    "UploadError": "Nahrání souboru se nezdařilo"
+  },
   "ErrorPage": {
     "Title": "Něco se pokazilo",
     "Message": "Došlo k chybě. Zkuste obnovit stránku.",

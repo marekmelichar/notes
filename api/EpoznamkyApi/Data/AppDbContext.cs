@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<NoteTag> NoteTags => Set<NoteTag>();
     public DbSet<NoteShare> NoteShares => Set<NoteShare>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<FileUpload> FileUploads => Set<FileUpload>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -77,6 +78,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany()
                 .HasForeignKey(e => e.NoteId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // FileUpload
+        modelBuilder.Entity<FileUpload>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.NoteId);
         });
 
         // User
