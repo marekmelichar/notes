@@ -43,19 +43,19 @@
   padding: 1rem;
 }
 
-/* BlockNote editor fills the container */
+/* BlockNote editor fills the container but can grow with content */
 .editorContent > div,
 .editorContent :global(.bn-container),
 .editorContent :global(.bn-editor) {
-  height: 100%;
+  min-height: 100%;
 }
 
 .editorContent :global(.bn-editor) {
   font-size: 1rem;
   color: var(--mui-palette-text-primary);
-  padding-top: 0.5rem;
+  padding-top: 2rem;
   padding-bottom: 2rem;
-  padding-inline: 1rem;
+  padding-inline: 2.5rem;
 }
 
 .footer {
@@ -166,8 +166,8 @@
   .editorContent :global(.bn-editor) {
     font-size: 1rem;
     color: var(--mui-palette-text-primary);
-    padding-top: 0.5rem;
+    padding-top: 1rem;
     padding-bottom: 1rem;
-    padding-inline: 1rem;
+    padding-inline: 1.5rem;
   }
 }

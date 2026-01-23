@@ -13,12 +13,15 @@ import styles from './index.module.css';
 const DEFAULT_TITLE = 'epoznamky - Note Taking App';
 
 const SIDEBAR_MIN_WIDTH = 180;
-const SIDEBAR_MAX_WIDTH = 400;
+const SIDEBAR_MAX_WIDTH = 800;
 const SIDEBAR_DEFAULT_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 60;
-const NOTELIST_WIDTH = 350;
+const NOTELIST_MIN_WIDTH = 200;
+const NOTELIST_MAX_WIDTH = 600;
+const NOTELIST_DEFAULT_WIDTH = 350;
 const NOTELIST_COLLAPSED_WIDTH = 60;
-const STORAGE_KEY = 'notes-sidebar-width';
+const SIDEBAR_STORAGE_KEY = 'notes-sidebar-width';
+const NOTELIST_STORAGE_KEY = 'notes-notelist-width';
 const MEDIUM_BREAKPOINT = 1024;
 
 const NotesPage = () => {
@@ -30,10 +33,14 @@ const NotesPage = () => {
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const selectedNote = useAppSelector(selectSelectedNote);
 
-  // Sidebar resize state
+  // Resize state
   const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
     return saved ? parseInt(saved, 10) : SIDEBAR_DEFAULT_WIDTH;
+  });
+  const [noteListWidth, setNoteListWidth] = useState(() => {
+    const saved = localStorage.getItem(NOTELIST_STORAGE_KEY);
+    return saved ? parseInt(saved, 10) : NOTELIST_DEFAULT_WIDTH;
   });
 
   // Auto-collapse sidebar at medium breakpoint
@@ -54,7 +61,7 @@ const NotesPage = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [dispatch, sidebarCollapsed]);
-  const [isResizing, setIsResizing] = useState(false);
+  const [resizingPanel, setResizingPanel] = useState<'sidebar' | 'notelist' | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Load data on mount
@@ -104,32 +111,46 @@ const NotesPage = () => {
     prevSelectedNoteId.current = selectedNoteId;
   }, [dispatch, isMobile, selectedNoteId, mobileView]);
 
-  // Sidebar resize handlers
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+  // Resize handlers
+  const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    setIsResizing(true);
+    setResizingPanel('sidebar');
+  }, []);
+
+  const handleNoteListResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setResizingPanel('notelist');
   }, []);
 
   const handleResizeMove = useCallback((e: MouseEvent) => {
-    if (!isResizing || !containerRef.current) return;
+    if (!resizingPanel || !containerRef.current) return;
 
     const containerRect = containerRef.current.getBoundingClientRect();
-    const newWidth = e.clientX - containerRect.left;
-    const clampedWidth = Math.min(Math.max(newWidth, SIDEBAR_MIN_WIDTH), SIDEBAR_MAX_WIDTH);
+    const x = e.clientX - containerRect.left;
 
-    setSidebarWidth(clampedWidth);
-  }, [isResizing]);
+    if (resizingPanel === 'sidebar') {
+      const clampedWidth = Math.min(Math.max(x, SIDEBAR_MIN_WIDTH), SIDEBAR_MAX_WIDTH);
+      setSidebarWidth(clampedWidth);
+    } else {
+      const currentSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth;
+      const newWidth = x - currentSidebarWidth;
+      const clampedWidth = Math.min(Math.max(newWidth, NOTELIST_MIN_WIDTH), NOTELIST_MAX_WIDTH);
+      setNoteListWidth(clampedWidth);
+    }
+  }, [resizingPanel, sidebarCollapsed, sidebarWidth]);
 
   const handleResizeEnd = useCallback(() => {
-    if (isResizing) {
-      setIsResizing(false);
-      localStorage.setItem(STORAGE_KEY, sidebarWidth.toString());
+    if (resizingPanel === 'sidebar') {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, sidebarWidth.toString());
+    } else if (resizingPanel === 'notelist') {
+      localStorage.setItem(NOTELIST_STORAGE_KEY, noteListWidth.toString());
     }
-  }, [isResizing, sidebarWidth]);
+    setResizingPanel(null);
+  }, [resizingPanel, sidebarWidth, noteListWidth]);
 
   // Attach global mouse events for resize
   useEffect(() => {
-    if (isResizing) {
+    if (resizingPanel) {
       document.addEventListener('mousemove', handleResizeMove);
       document.addEventListener('mouseup', handleResizeEnd);
       document.body.style.cursor = 'col-resize';
@@ -142,7 +163,7 @@ const NotesPage = () => {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
-  }, [isResizing, handleResizeMove, handleResizeEnd]);
+  }, [resizingPanel, handleResizeMove, handleResizeEnd]);
 
   // Helper to get panel visibility class
   const getPanelClass = (panel: 'sidebar' | 'list' | 'editor') => {
@@ -151,7 +172,7 @@ const NotesPage = () => {
   };
 
   const effectiveSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth;
-  const effectiveNoteListWidth = noteListCollapsed ? NOTELIST_COLLAPSED_WIDTH : NOTELIST_WIDTH;
+  const effectiveNoteListWidth = noteListCollapsed ? NOTELIST_COLLAPSED_WIDTH : noteListWidth;
   const gridStyle = isMobile
     ? undefined
     : { gridTemplateColumns: `${effectiveSidebarWidth}px ${effectiveNoteListWidth}px 1fr` };
@@ -163,14 +184,21 @@ const NotesPage = () => {
       </Box>
       {!isMobile && !sidebarCollapsed && (
         <Box
-          className={`${styles.resizeHandle} ${isResizing ? styles.resizeHandleActive : ''}`}
-          style={{ left: sidebarWidth - 2 }}
-          onMouseDown={handleResizeStart}
+          className={`${styles.resizeHandle} ${resizingPanel === 'sidebar' ? styles.resizeHandleActive : ''}`}
+          style={{ left: effectiveSidebarWidth - 2 }}
+          onMouseDown={handleSidebarResizeStart}
         />
       )}
       <Box className={`${styles.noteList} ${getPanelClass('list')} ${noteListCollapsed ? styles.noteListCollapsed : ''}`}>
         <NoteList collapsed={noteListCollapsed} />
       </Box>
+      {!isMobile && !noteListCollapsed && (
+        <Box
+          className={`${styles.resizeHandle} ${resizingPanel === 'notelist' ? styles.resizeHandleActive : ''}`}
+          style={{ left: effectiveSidebarWidth + effectiveNoteListWidth - 2 }}
+          onMouseDown={handleNoteListResizeStart}
+        />
+      )}
       <Box className={`${styles.editor} ${getPanelClass('editor')}`}>
         <NoteEditor />
       </Box>

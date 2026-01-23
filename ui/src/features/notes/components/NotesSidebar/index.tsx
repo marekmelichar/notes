@@ -84,6 +84,9 @@ import {
 import type { Folder, Note } from "../../types";
 import styles from "./index.module.css";
 
+// Module-level flag to skip Collapse animations during programmatic expansion
+let skipCollapseAnimation = false;
+
 interface SortableNoteProps {
   note: Note;
   level: number;
@@ -94,6 +97,7 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
   const dispatch = useAppDispatch();
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const isSelected = selectedNoteId === note.id;
+  const elementRef = React.useRef<HTMLDivElement | null>(null);
 
   const {
     attributes,
@@ -107,10 +111,25 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
     data: { type: "note", note },
   });
 
+  const combinedRef = React.useCallback((node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    elementRef.current = node;
+  }, [setNodeRef]);
+
+  // Scroll into view when selected
+  React.useEffect(() => {
+    if (!isSelected) return;
+    // Small delay for DOM to update after instant folder expansion
+    const timer = requestAnimationFrame(() => {
+      elementRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [isSelected]);
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: level > 0 ? 34 + level * 20 : 12,
+    paddingLeft: level > 0 ? 30 + level * 30 : 12,
     opacity: isDragging ? 0.5 : 1,
     "--indent-level": level,
   } as React.CSSProperties;
@@ -123,7 +142,7 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
 
   return (
     <Box
-      ref={setNodeRef}
+      ref={combinedRef}
       className={`${styles.noteTreeItem} ${isSelected ? styles.noteTreeItemActive : ""} ${isDragging ? styles.dragging : ""}`}
       style={style}
       onClick={handleClick}
@@ -226,7 +245,7 @@ const DroppableFolder = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: level > 0 ? 24 + level * 20 : 12,
+    paddingLeft: level > 0 ? 30 + level * 30 : 12,
     "--indent-level": level,
   } as React.CSSProperties;
 
@@ -278,7 +297,7 @@ const DroppableFolder = ({
         </Tooltip>
       </Box>
 
-      <Collapse in={isExpanded}>
+      <Collapse in={isExpanded} timeout={skipCollapseAnimation ? 0 : "auto"}>
         {/* Notes appear first, directly under parent folder */}
         {showNotes && (
           <SortableContext
@@ -395,12 +414,12 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
     })
   );
 
-  // Expand all ancestor folders when a note is selected
+  // Expand all ancestor folders when a note is selected (instant, no animation)
   useEffect(() => {
     if (selectedNoteId) {
       const selectedNote = notes.find((n) => n.id === selectedNoteId);
       if (selectedNote?.folderId) {
-        // Find and expand all ancestor folders
+        skipCollapseAnimation = true;
         const expandAncestors = (folderId: string) => {
           dispatch(expandFolder(folderId));
           const folder = allFolders.find((f) => f.id === folderId);
@@ -409,6 +428,10 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
           }
         };
         expandAncestors(selectedNote.folderId);
+        // Reset after the render applies
+        requestAnimationFrame(() => {
+          skipCollapseAnimation = false;
+        });
       }
     }
   }, [selectedNoteId, notes, allFolders, dispatch]);

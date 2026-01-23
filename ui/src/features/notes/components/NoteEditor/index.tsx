@@ -24,15 +24,53 @@ import { selectAllFolders } from '../../store/foldersSlice';
 import { TagPicker } from '../TagPicker';
 import styles from './index.module.css';
 
+// Validate a block has minimum required structure for BlockNote
+function isValidBlock(block: unknown): boolean {
+  if (!block || typeof block !== 'object') return false;
+  const b = block as Record<string, unknown>;
+  if (typeof b.type !== 'string') return false;
+  if (b.content !== undefined && !Array.isArray(b.content)) return false;
+  if (b.children !== undefined && !Array.isArray(b.children)) return false;
+  return true;
+}
+
 // Parse BlockNote content from storage
 function parseContent(content: string | undefined): PartialBlock[] | undefined {
   if (!content) return undefined;
 
   try {
     const parsed = JSON.parse(content);
-    return Array.isArray(parsed) ? parsed : undefined;
+    if (!Array.isArray(parsed) || parsed.length === 0) return undefined;
+    // Validate each top-level block has required structure
+    if (!parsed.every(isValidBlock)) return undefined;
+    return parsed;
   } catch {
     return undefined;
+  }
+}
+
+// Error boundary to catch BlockNote initialization errors (e.g., invalid content format)
+interface EditorErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+}
+
+interface EditorErrorBoundaryState {
+  hasError: boolean;
+}
+
+class EditorErrorBoundary extends React.Component<EditorErrorBoundaryProps, EditorErrorBoundaryState> {
+  state: EditorErrorBoundaryState = { hasError: false };
+
+  static getDerivedStateFromError(): EditorErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
   }
 }
 
@@ -358,15 +396,28 @@ export const NoteEditor = () => {
       </Box>
 
       {/* Key forces remount when note changes */}
-      <BlockNoteEditor
+      <EditorErrorBoundary
         key={note.id}
-        initialContent={initialContent}
-        onSave={handleSave}
-        onChange={handleEditorChange}
-        isMobile={isMobile}
-        lastSaved={lastSaved}
-        lastSavedLabel={t("Notes.LastSaved")}
-      />
+        fallback={
+          <BlockNoteEditor
+            initialContent={undefined}
+            onSave={handleSave}
+            onChange={handleEditorChange}
+            isMobile={isMobile}
+            lastSaved={lastSaved}
+            lastSavedLabel={t("Notes.LastSaved")}
+          />
+        }
+      >
+        <BlockNoteEditor
+          initialContent={initialContent}
+          onSave={handleSave}
+          onChange={handleEditorChange}
+          isMobile={isMobile}
+          lastSaved={lastSaved}
+          lastSavedLabel={t("Notes.LastSaved")}
+        />
+      </EditorErrorBoundary>
     </Box>
   );
 };

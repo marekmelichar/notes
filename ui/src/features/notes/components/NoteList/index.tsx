@@ -34,7 +34,9 @@ import {
 import { selectAllTags } from '../../store/tagsSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
 import { selectNotesFilter } from '../../store/notesSlice';
-import type { NotesSortBy, NotesSortOrder } from '../../types';
+import type { NotesSortBy } from '../../types';
+
+const EMPTY_TAGS: never[] = [];
 import { NoteCard } from './NoteCard';
 import { NoteListItem } from './NoteListItem';
 import styles from './index.module.css';
@@ -63,9 +65,17 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
     dispatch(createNote({ folderId: filter.folderId }));
   };
 
-  const handleSelectNote = (noteId: string) => {
+  const handleSelectNote = React.useCallback((noteId: string) => {
     dispatch(setSelectedNote(noteId));
-  };
+  }, [dispatch]);
+
+  const tagsByNoteId = React.useMemo(() => {
+    const map = new Map<string, typeof allTags>();
+    for (const note of notes) {
+      map.set(note.id, allTags.filter(tag => note.tags.includes(tag.id)));
+    }
+    return map;
+  }, [notes, allTags]);
 
   const handleToggleViewMode = () => {
     dispatch(setViewMode(viewMode === 'grid' ? 'list' : 'grid'));
@@ -87,10 +97,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
       dispatch(setSortOrder('desc'));
     }
     handleSortClose();
-  };
-
-  const getTagsForNote = (tagIds: string[]) => {
-    return allTags.filter((tag) => tagIds.includes(tag.id));
   };
 
   const getSortLabel = () => {
@@ -245,17 +251,17 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
                 <NoteCard
                   key={note.id}
                   note={note}
-                  tags={getTagsForNote(note.tags)}
+                  tags={tagsByNoteId.get(note.id) || EMPTY_TAGS}
                   isSelected={note.id === selectedNoteId}
-                  onClick={() => handleSelectNote(note.id)}
+                  onSelect={handleSelectNote}
                 />
               ) : (
                 <NoteListItem
                   key={note.id}
                   note={note}
-                  tags={getTagsForNote(note.tags)}
+                  tags={tagsByNoteId.get(note.id) || EMPTY_TAGS}
                   isSelected={note.id === selectedNoteId}
-                  onClick={() => handleSelectNote(note.id)}
+                  onSelect={handleSelectNote}
                 />
               ),
             )}

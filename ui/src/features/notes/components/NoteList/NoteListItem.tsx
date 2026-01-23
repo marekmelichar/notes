@@ -24,7 +24,7 @@ interface NoteListItemProps {
   note: Note;
   tags: Tag[];
   isSelected: boolean;
-  onClick: () => void;
+  onSelect: (noteId: string) => void;
 }
 
 const stripHtmlTags = (html: string): string => {
@@ -45,7 +45,7 @@ const stripHtmlTags = (html: string): string => {
   }
 };
 
-export const NoteListItem = ({ note, tags, isSelected, onClick }: NoteListItemProps) => {
+export const NoteListItem = React.memo(({ note, tags, isSelected, onSelect }: NoteListItemProps) => {
   const { t } = useTranslation();
   const contentPreview = stripHtmlTags(note.content).slice(0, 80);
   const daysRemaining = note.isDeleted ? getDaysUntilPermanentDelete(note.deletedAt) : null;
@@ -53,7 +53,7 @@ export const NoteListItem = ({ note, tags, isSelected, onClick }: NoteListItemPr
   return (
     <Box
       className={`${styles.noteListItem} ${isSelected ? styles.noteListItemSelected : ''}`}
-      onClick={onClick}
+      onClick={() => onSelect(note.id)}
     >
       {note.isPinned && <PushPinIcon fontSize="small" color="primary" className={styles.pinnedIcon} />}
 
@@ -97,4 +97,6 @@ export const NoteListItem = ({ note, tags, isSelected, onClick }: NoteListItemPr
       </Box>
     </Box>
   );
-};
+});
+
+NoteListItem.displayName = 'NoteListItem';

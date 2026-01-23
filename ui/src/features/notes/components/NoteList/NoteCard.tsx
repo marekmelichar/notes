@@ -24,7 +24,7 @@ interface NoteCardProps {
   note: Note;
   tags: Tag[];
   isSelected: boolean;
-  onClick: () => void;
+  onSelect: (noteId: string) => void;
 }
 
 const stripHtmlTags = (html: string): string => {
@@ -45,7 +45,7 @@ const stripHtmlTags = (html: string): string => {
   }
 };
 
-export const NoteCard = ({ note, tags, isSelected, onClick }: NoteCardProps) => {
+export const NoteCard = React.memo(({ note, tags, isSelected, onSelect }: NoteCardProps) => {
   const { t } = useTranslation();
   const contentPreview = stripHtmlTags(note.content).slice(0, 150);
   const daysRemaining = note.isDeleted ? getDaysUntilPermanentDelete(note.deletedAt) : null;
@@ -55,7 +55,7 @@ export const NoteCard = ({ note, tags, isSelected, onClick }: NoteCardProps) => 
       className={`${styles.noteCard} ${isSelected ? styles.noteCardSelected : ''} ${
         note.isPinned ? styles.noteCardPinned : ''
       }`}
-      onClick={onClick}
+      onClick={() => onSelect(note.id)}
     >
       <Box className={styles.noteCardHeader}>
         <Typography className={styles.noteCardTitle}>
@@ -112,4 +112,6 @@ export const NoteCard = ({ note, tags, isSelected, onClick }: NoteCardProps) => 
       </Box>
     </Box>
   );
-};
+});
+
+NoteCard.displayName = 'NoteCard';

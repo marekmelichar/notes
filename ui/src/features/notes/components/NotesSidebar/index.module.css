@@ -53,6 +53,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: var(--mui-palette-background-default);
 }
 
 .sectionTitle {
@@ -349,11 +353,16 @@
   color: var(--mui-palette-text-disabled);
   padding: 0.125rem;
   border-radius: 0.25rem;
-  transition: color 0.2s, background-color 0.2s;
+  transition: color 0.2s, background-color 0.2s, opacity 0.2s;
   touch-action: none;
+  opacity: 0;
 }
 
 @media (hover: hover) {
+  .noteTreeItem:hover .dragHandle {
+    opacity: 1;
+  }
+
   .dragHandle:hover {
     color: var(--mui-palette-text-secondary);
     background-color: var(--mui-palette-action-hover);
@@ -480,6 +489,10 @@
   }
 
   .folderDragHandle {
+    opacity: 1;
+  }
+
+  .dragHandle {
     opacity: 1;
   }
 

@@ -44,5 +44,8 @@ docker-compose.override.yml
 *.userosscache
 *.sln.docstates
 
+# Import data
+scripts/import.sql
+
 # Claude Code
 .claude/
