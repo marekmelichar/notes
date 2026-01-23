@@ -107,7 +107,11 @@ const BlockNoteEditor = ({ initialContent, noteId, onChange, isMobile, lastSaved
         const response = await filesApi.upload(file, noteId);
         return response.url;
       } catch (err) {
-        enqueueSnackbar(t('Files.UploadError'), { variant: 'error' });
+        const detail = err instanceof Error ? err.message : '';
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        const serverMsg = (err as { response?: { data?: string } })?.response?.data;
+        const info = serverMsg || (status ? `HTTP ${status}` : detail);
+        enqueueSnackbar(`${t('Files.UploadError')}: ${info}`, { variant: 'error' });
         throw err;
       }
     },
