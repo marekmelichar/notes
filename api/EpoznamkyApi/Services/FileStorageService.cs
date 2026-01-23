@@ -13,6 +13,8 @@ public class FileStorageSettings
         "image/gif",
         "image/webp",
         "image/svg+xml",
+        "image/heic",
+        "image/heif",
         "application/pdf",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
