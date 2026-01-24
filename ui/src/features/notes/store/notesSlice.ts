@@ -304,8 +304,19 @@ export const selectFilteredNotes = createSelector(
       return true;
     });
 
-    // Sort
+    // Single sort with priority: pinned first → folder order → user sort
     filtered.sort((a, b) => {
+      // 1. Pinned notes always first
+      if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+
+      // 2. Within same folder, use manual order
+      if (a.folderId === b.folderId) {
+        const orderA = a.order ?? a.createdAt;
+        const orderB = b.order ?? b.createdAt;
+        if (orderA !== orderB) return orderA - orderB;
+      }
+
+      // 3. User-selected sort
       let comparison = 0;
       switch (sortBy) {
         case "title":
@@ -320,25 +331,6 @@ export const selectFilteredNotes = createSelector(
           break;
       }
       return sortOrder === "asc" ? comparison : -comparison;
-    });
-
-    // Sort by order within the same folder (for manual reordering)
-    // This is a secondary sort that preserves the order field when notes are in the same folder
-    filtered.sort((a, b) => {
-      // Only apply order sort when both notes are in the same folder
-      if (a.folderId === b.folderId) {
-        const orderA = a.order ?? a.createdAt;
-        const orderB = b.order ?? b.createdAt;
-        return orderA - orderB;
-      }
-      return 0;
-    });
-
-    // Pinned notes first
-    filtered.sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      return 0;
     });
 
     return filtered;

@@ -97,6 +97,7 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
+  const isMobile = useAppSelector((state) => state.ui.isMobile);
   const isSelected = selectedNoteId === note.id;
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -122,15 +123,16 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
     if (!isSelected) return;
     // Small delay for DOM to update after instant folder expansion
     const timer = requestAnimationFrame(() => {
-      elementRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      elementRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
     });
     return () => cancelAnimationFrame(timer);
   }, [isSelected]);
 
+  const step = isMobile ? 10 : 30;
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: level > 0 ? 30 + level * 30 : 12,
+    paddingLeft: level > 0 ? step + level * step : 12,
     opacity: isDragging ? 0.5 : 1,
     "--indent-level": level,
   } as React.CSSProperties;
@@ -177,6 +179,7 @@ const DroppableFolder = ({
 }: DroppableFolderProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
+  const isMobile = useAppSelector((state) => state.ui.isMobile);
   const expandedIds = useAppSelector(selectExpandedFolderIds);
   const childFolders = useAppSelector(selectChildFolders(folder.id));
   const notes = useAppSelector(selectAllNotes);
@@ -243,10 +246,11 @@ const DroppableFolder = ({
     setSortableRef(node);
   };
 
+  const step = isMobile ? 10 : 30;
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: level > 0 ? 30 + level * 30 : 12,
+    paddingLeft: level > 0 ? step + level * step : 12,
     "--indent-level": level,
   } as React.CSSProperties;
 
