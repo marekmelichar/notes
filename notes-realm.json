@@ -39,7 +39,7 @@
     {
       "clientId": "notes-frontend",
       "name": "Notes Frontend",
-      "description": "Nettio Notes React Frontend Application",
+      "description": "notes.nettio.eu React Frontend Application",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
