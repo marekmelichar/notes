@@ -1,8 +1,10 @@
+name: nettio
+
 services:
   # Nginx Reverse Proxy with SSL
   nginx:
     image: nginx:1.27-alpine
-    container_name: epoznamky-nginx
+    container_name: nettio-nginx
     ports:
       - "80:80"
       - "443:443"
@@ -10,16 +12,13 @@ services:
       - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./deploy/certbot/conf:/etc/letsencrypt:ro
       - ./deploy/certbot/www:/var/www/certbot:ro
-    depends_on:
-      - frontend
-      - api
-      - keycloak
+      - /home/deploy/nettio/landing:/var/www/nettio:ro
     restart: unless-stopped
 
   # Certbot for SSL certificates
   certbot:
     image: certbot/certbot
-    container_name: epoznamky-certbot
+    container_name: nettio-certbot
     volumes:
       - ./deploy/certbot/conf:/etc/letsencrypt
       - ./deploy/certbot/www:/var/www/certbot
@@ -29,7 +28,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16
-    container_name: epoznamky-db
+    container_name: nettio-notes-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
@@ -46,7 +45,7 @@ services:
   # Keycloak Authentication
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
-    container_name: epoznamky-keycloak
+    container_name: nettio-auth
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD required}
@@ -54,13 +53,13 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
-      KC_HOSTNAME: https://epoznamky.cz
-      KC_HOSTNAME_ADMIN: https://keycloak.epoznamky.cz
+      KC_HOSTNAME: https://notes.nettio.eu
+      KC_HOSTNAME_ADMIN: https://auth.nettio.eu
       KC_PROXY_HEADERS: xforwarded
       KC_HTTP_ENABLED: "true"
     command: start --import-realm
     volumes:
-      - ./keycloak-realm.json:/opt/keycloak/data/import/epoznamky-realm.json:ro
+      - ./notes-realm.json:/opt/keycloak/data/import/notes-realm.json:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -69,10 +68,10 @@ services:
   # .NET API
   api:
     image: ghcr.io/${GITHUB_REPOSITORY:-local}/api:latest
-    container_name: epoznamky-api
+    container_name: nettio-notes-api
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=epoznamky;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
-      Keycloak__Authority: "http://keycloak:8080/realms/epoznamky"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=notes;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
+      Keycloak__Authority: "http://keycloak:8080/realms/notes"
       ASPNETCORE_ENVIRONMENT: Production
       FileStorage__UploadDirectory: "/app/uploads"
     volumes:
@@ -87,12 +86,12 @@ services:
   # Frontend
   frontend:
     image: ghcr.io/${GITHUB_REPOSITORY:-local}/frontend:latest
-    container_name: epoznamky-frontend
+    container_name: nettio-notes-frontend
     environment:
-      API_URL: "https://epoznamky.cz"
-      KEYCLOAK_URL: "https://epoznamky.cz"
-      KEYCLOAK_REALM: "epoznamky"
-      KEYCLOAK_CLIENT_ID: "epoznamky-frontend"
+      API_URL: "https://notes.nettio.eu"
+      KEYCLOAK_URL: "https://notes.nettio.eu"
+      KEYCLOAK_REALM: "notes"
+      KEYCLOAK_CLIENT_ID: "notes-frontend"
       MOCK_MODE: "false"
     depends_on:
       - api
