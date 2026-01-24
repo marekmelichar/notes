@@ -1,3 +1,3 @@
 -- Create databases for the application
-CREATE DATABASE epoznamky;
+CREATE DATABASE notes;
 CREATE DATABASE keycloak;
