@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed } from '@/store';
-import { loadNotes, selectSelectedNote } from '@/features/notes/store/notesSlice';
+import { loadNotes, selectSelectedNote, setSelectedNote } from '@/features/notes/store/notesSlice';
 import { loadFolders } from '@/features/notes/store/foldersSlice';
 import { loadTags } from '@/features/notes/store/tagsSlice';
 import { checkPendingChanges, setOnlineStatus } from '@/features/notes/store/syncSlice';
@@ -26,12 +27,36 @@ const MEDIUM_BREAKPOINT = 1024;
 
 const NotesPage = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { noteId: urlNoteId } = useParams<{ noteId: string }>();
   const isMobile = useAppSelector((state) => state.ui.isMobile);
   const mobileView = useAppSelector((state) => state.ui.mobileView);
   const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
   const noteListCollapsed = useAppSelector((state) => state.ui.noteListCollapsed);
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const selectedNote = useAppSelector(selectSelectedNote);
+
+  // Sync URL → Redux: set selected note from URL on mount
+  const urlSyncRef = useRef(false);
+  useEffect(() => {
+    if (urlNoteId && urlNoteId !== selectedNoteId) {
+      urlSyncRef.current = true;
+      dispatch(setSelectedNote(urlNoteId));
+    }
+  }, [urlNoteId, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync Redux → URL: update URL when selected note changes
+  useEffect(() => {
+    if (urlSyncRef.current) {
+      urlSyncRef.current = false;
+      return;
+    }
+    if (selectedNoteId && selectedNoteId !== urlNoteId) {
+      navigate(`/notes/${selectedNoteId}`, { replace: true });
+    } else if (!selectedNoteId && urlNoteId) {
+      navigate('/', { replace: true });
+    }
+  }, [selectedNoteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resize state
   const [sidebarWidth, setSidebarWidth] = useState(() => {

@@ -68,6 +68,7 @@ const router = createBrowserRouter([
         element: <MainLayout />,
         children: [
           { index: true, element: <NotesPage /> },
+          { path: 'notes/:noteId', element: <NotesPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },
