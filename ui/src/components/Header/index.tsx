@@ -19,6 +19,7 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { useTranslation } from 'react-i18next';
 import { ROUTE_HOME } from '@/config';
 import { LanguageSwitch } from '../LanguageSwitch';
+import { SearchInput } from '../SearchInput';
 import { useColorMode } from '@/theme/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { logout } from '@/store/authSlice';
@@ -63,6 +64,8 @@ export const Header = () => {
           epoznamky
         </Typography>
       </Link>
+
+      <SearchInput />
 
       <Stack direction={'row'} gap={1} alignItems="center">
         <LanguageSwitch />
