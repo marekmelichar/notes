@@ -32,11 +32,21 @@ public class DataService(AppDbContext db)
 
     public async Task<List<Note>> SearchNotesAsync(string userId, string query)
     {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return [];
+        }
+
+        // Build prefix search query: "dai" -> "dai:*", "hello world" -> "hello:* & world:*"
+        var terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var prefixQuery = string.Join(" & ", terms.Select(t => t.Replace("'", "''") + ":*"));
+
+        // Use PostgreSQL full-text search with prefix matching
         var notes = await db.Notes
             .Where(n => (n.UserId == userId || db.NoteShares.Any(s => s.NoteId == n.Id && s.SharedWithUserId == userId)) &&
                        !n.IsDeleted &&
-                       (EF.Functions.ILike(n.Title, $"%{query}%") ||
-                        EF.Functions.ILike(n.Content, $"%{query}%")))
+                       n.SearchVector!.Matches(EF.Functions.ToTsQuery("simple", prefixQuery)))
+            .OrderByDescending(n => n.SearchVector!.Rank(EF.Functions.ToTsQuery("simple", prefixQuery)))
             .ToListAsync();
 
         await PopulateNoteRelationsAsync(notes);

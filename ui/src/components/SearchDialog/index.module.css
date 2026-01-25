@@ -1,0 +1,124 @@
+.dialogPaper {
+  position: fixed;
+  top: 15%;
+  margin: 0;
+  border-radius: 0.75rem;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.searchHeader {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--mui-palette-divider);
+}
+
+.searchIcon {
+  color: var(--mui-palette-text-secondary);
+  margin-right: 0.75rem;
+  font-size: 1.5rem;
+}
+
+.searchInput {
+  flex: 1;
+  font-size: 1.125rem;
+}
+
+.searchInput input::placeholder {
+  color: var(--mui-palette-text-secondary);
+  opacity: 1;
+}
+
+.spinner {
+  margin-left: 0.75rem;
+  color: var(--mui-palette-text-secondary);
+}
+
+.resultsContainer {
+  max-height: calc(70vh - 8rem);
+  overflow-y: auto;
+}
+
+.emptyState {
+  padding: 2rem;
+  text-align: center;
+}
+
+.resultItem {
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid var(--mui-palette-divider);
+}
+
+.resultItem:last-child {
+  border-bottom: none;
+}
+
+.resultItem:hover,
+.resultItem.selected {
+  background-color: var(--mui-palette-action-hover);
+}
+
+.resultTitle {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resultSnippet {
+  color: var(--mui-palette-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 0.25rem;
+}
+
+.folderBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--mui-palette-text-secondary);
+  margin-top: 0.25rem;
+}
+
+.folderIcon {
+  font-size: 0.875rem;
+}
+
+.footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--mui-palette-divider);
+  background-color: var(--mui-palette-background-default);
+}
+
+.shortcutKey {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  background-color: var(--mui-palette-action-hover);
+  border-radius: 0.25rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  margin: 0 0.25rem;
+}
+
+@media (max-width: 48rem) {
+  .dialogPaper {
+    top: 5%;
+    margin: 0 1rem;
+    width: calc(100% - 2rem);
+    max-width: calc(100% - 2rem);
+    max-height: 90%;
+  }
+
+  .resultsContainer {
+    max-height: calc(90vh - 10rem);
+  }
+}

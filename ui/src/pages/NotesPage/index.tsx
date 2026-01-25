@@ -11,7 +11,7 @@ import { NoteList } from '@/features/notes/components/NoteList';
 import { NoteEditor } from '@/features/notes/components/NoteEditor';
 import styles from './index.module.css';
 
-const DEFAULT_TITLE = 'epoznamky - Note Taking App';
+const DEFAULT_TITLE = 'notes';
 
 const SIDEBAR_MIN_WIDTH = 180;
 const SIDEBAR_MAX_WIDTH = 800;
@@ -114,7 +114,7 @@ const NotesPage = () => {
   // Update page title based on selected note
   useEffect(() => {
     if (selectedNote?.title) {
-      document.title = `${selectedNote.title} - epoznamky`;
+      document.title = `${selectedNote.title} - notes`;
     } else {
       document.title = DEFAULT_TITLE;
     }

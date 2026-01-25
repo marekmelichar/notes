@@ -17,10 +17,13 @@
 
 .logoLink {
   text-decoration: none;
+  display: flex;
+  align-items: center;
 }
 
-.logoTitle {
-  font-weight: 700;
+.logoIcon {
+  height: 2rem;
+  width: auto;
 }
 
 .logo {

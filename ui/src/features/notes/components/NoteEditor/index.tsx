@@ -14,12 +14,14 @@ import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
+import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useColorMode } from '@/theme/ThemeProvider';
 import {
   updateNote,
   deleteNote,
   selectSelectedNote,
+  selectNotesLoading,
 } from '../../store/notesSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
 import { TagPicker } from '../TagPicker';
@@ -184,6 +186,8 @@ export const NoteEditor = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const note = useAppSelector(selectSelectedNote);
+  const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
+  const isLoading = useAppSelector(selectNotesLoading);
   const folders = useAppSelector(selectAllFolders);
   const isMobile = useMediaQuery('(max-width: 48rem)');
   const [title, setTitle] = useState(note?.title || '');
@@ -191,6 +195,7 @@ export const NoteEditor = () => {
   const [folderMenuAnchor, setFolderMenuAnchor] = useState<null | HTMLElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showMobileTags, setShowMobileTags] = useState(false);
 
   // Track the last saved values
   const lastSavedContentRef = useRef<string>(note?.content || '');
@@ -307,6 +312,18 @@ export const NoteEditor = () => {
 
   const currentFolder = folders.find(f => f.id === note?.folderId);
 
+  // Show loading spinner when a note is selected but not yet loaded
+  if (selectedNoteId && !note && isLoading) {
+    return (
+      <Box className={styles.emptyState}>
+        <CircularProgress size={40} />
+        <Typography variant="body2" sx={{ mt: 2 }}>
+          {t("Common.Loading")}
+        </Typography>
+      </Box>
+    );
+  }
+
   if (!note) {
     return (
       <Box className={styles.emptyState}>
@@ -394,6 +411,17 @@ export const NoteEditor = () => {
               )}
             </IconButton>
           </Tooltip>
+          {isMobile && (
+            <Tooltip title={t("Tags.Tags")}>
+              <IconButton
+                size="small"
+                onClick={() => setShowMobileTags(!showMobileTags)}
+                color={showMobileTags || note.tags.length > 0 ? "primary" : "default"}
+              >
+                <LocalOfferOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title={t("Common.Delete")}>
             <IconButton size="small" onClick={handleDelete}>
               <DeleteOutlineIcon fontSize="small" />
@@ -401,8 +429,8 @@ export const NoteEditor = () => {
           </Tooltip>
         </Box>
 
-        {/* Row 3: Tags (mobile only - on desktop tags are in row 2) */}
-        {isMobile && (
+        {/* Row 3: Tags (mobile only - toggleable) */}
+        {isMobile && showMobileTags && (
           <Box className={styles.headerTags}>
             <TagPicker
               selectedTagIds={note.tags}

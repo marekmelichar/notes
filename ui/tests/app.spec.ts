@@ -17,9 +17,9 @@ test.describe('App Loading', () => {
     // Wait for header with correct test id
     await expect(page.getByTestId('header')).toBeVisible({ timeout: 15000 });
 
-    // Logo should display "epoznamky" - use the link test id to be specific
+    // Logo should be visible - use the link test id to be specific
     await expect(page.getByTestId('header-logo-link')).toBeVisible();
-    await expect(page.getByTestId('header-logo-link')).toContainText('epoznamky');
+    await expect(page.getByTestId('header-logo-link').locator('img')).toBeVisible();
   });
 
   test('should display the sidebar with folders', async ({ page }) => {

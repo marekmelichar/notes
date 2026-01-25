@@ -3,14 +3,17 @@
   align-items: center;
   background-color: var(--mui-palette-action-hover);
   border-radius: 0.5rem;
-  padding: 0.25rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   max-width: 20rem;
   width: 100%;
+  cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
-.searchContainer:focus-within {
+.searchContainer:hover,
+.searchContainer:focus {
   background-color: var(--mui-palette-action-selected);
+  outline: none;
 }
 
 .searchIcon {
@@ -19,27 +22,34 @@
   font-size: 1.25rem;
 }
 
-.input {
+.placeholder {
   flex: 1;
   font-size: 0.875rem;
-}
-
-.input input::placeholder {
-  color: var(--mui-palette-text-secondary);
-  opacity: 1;
-}
-
-.clearButton {
-  padding: 0.25rem;
   color: var(--mui-palette-text-secondary);
 }
 
-.clearButton:hover {
-  color: var(--mui-palette-text-primary);
+.shortcutHint {
+  display: flex;
+  align-items: center;
+  padding: 0.125rem 0.375rem;
+  background-color: var(--mui-palette-background-default);
+  border-radius: 0.25rem;
+  border: 1px solid var(--mui-palette-divider);
+}
+
+.shortcutText {
+  font-size: 0.75rem;
+  color: var(--mui-palette-text-secondary);
+  font-family: monospace;
 }
 
 @media (max-width: 48rem) {
   .searchContainer {
     max-width: 100%;
+    margin: 0 0.75rem;
+  }
+
+  .shortcutHint {
+    display: none;
   }
 }

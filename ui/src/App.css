@@ -19,7 +19,6 @@ a:visited,
 a:hover,
 a:active,
 a:focus {
-  all: unset; /* resets most styles */
   text-decoration: none;
   color: inherit;
   cursor: pointer;
