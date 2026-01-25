@@ -14,7 +14,7 @@ const MOCK_DELAY = 100;
 let mockNotes: Note[] = [
   {
     id: 'note-1',
-    title: 'Welcome to epoznamky',
+    title: 'Welcome to notes',
     content: JSON.stringify([
       {
         type: 'paragraph',

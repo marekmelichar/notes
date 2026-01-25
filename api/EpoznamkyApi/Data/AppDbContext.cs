@@ -27,6 +27,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasIndex(e => e.DeletedAt);
             entity.HasIndex(e => new { e.UserId, e.IsDeleted });
 
+            // Full-text search vector - stored generated column managed by PostgreSQL
+            entity.Property(e => e.SearchVector)
+                .HasColumnType("tsvector")
+                .HasComputedColumnSql(
+                    @"setweight(to_tsvector('simple', coalesce(""Title"", '')), 'A') || setweight(to_tsvector('simple', coalesce(""Content"", '')), 'B')",
+                    stored: true);
+
+            entity.HasIndex(e => e.SearchVector)
+                .HasMethod("GIN");
+
             entity.HasOne<Folder>()
                 .WithMany()
                 .HasForeignKey(e => e.FolderId)

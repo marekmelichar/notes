@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -19,6 +19,8 @@ import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { useTranslation } from 'react-i18next';
 import { ROUTE_HOME } from '@/config';
 import { LanguageSwitch } from '../LanguageSwitch';
+import { SearchInput } from '../SearchInput';
+import { SearchDialog } from '../SearchDialog';
 import { useColorMode } from '@/theme/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { logout } from '@/store/authSlice';
@@ -32,7 +34,28 @@ export const Header = () => {
   const user = useAppSelector((state) => state.auth.user);
   const { version } = useAppVersion();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const open = Boolean(anchorEl);
+
+  // Keyboard shortcut: Cmd/Ctrl+K to open search
+  const handleOpenSearch = useCallback(() => {
+    setIsSearchOpen(true);
+  }, []);
+
+  const handleCloseSearch = useCallback(() => {
+    setIsSearchOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        handleOpenSearch();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleOpenSearch]);
 
   const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -59,10 +82,11 @@ export const Header = () => {
   return (
     <Box data-testid="header" className={styles.header}>
       <Link to={ROUTE_HOME} data-testid="header-logo-link" className={styles.logoLink}>
-        <Typography variant="h6" component="span" className={styles.logoTitle}>
-          epoznamky
-        </Typography>
+        <img src="/favicon.svg" alt="notes" className={styles.logoIcon} />
       </Link>
+
+      <SearchInput onClick={handleOpenSearch} />
+      <SearchDialog open={isSearchOpen} onClose={handleCloseSearch} />
 
       <Stack direction={'row'} gap={1} alignItems="center">
         <LanguageSwitch />
