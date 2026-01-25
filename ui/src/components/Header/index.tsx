@@ -25,6 +25,7 @@ import { useColorMode } from '@/theme/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { logout } from '@/store/authSlice';
 import { useAppVersion } from '@/hooks';
+import { Logo } from '../Logo';
 
 export const Header = () => {
   const { t } = useTranslation();
@@ -82,7 +83,7 @@ export const Header = () => {
   return (
     <Box data-testid="header" className={styles.header}>
       <Link to={ROUTE_HOME} data-testid="header-logo-link" className={styles.logoLink}>
-        <img src="/favicon.svg" alt="notes" className={styles.logoIcon} />
+        <Logo className={styles.logoIcon} />
       </Link>
 
       <SearchInput onClick={handleOpenSearch} />
