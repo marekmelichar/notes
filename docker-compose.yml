@@ -46,7 +46,7 @@ services:
       dockerfile: Dockerfile
     container_name: epoznamky-api
     environment:
-      ConnectionStrings__DefaultConnection: "Host=postgres;Database=epoznamky;Username=postgres;Password=postgres"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=notes;Username=postgres;Password=postgres"
       Keycloak__Authority: "http://keycloak:8080/realms/epoznamky"
       ASPNETCORE_ENVIRONMENT: Development
       Logging__LogLevel__Microsoft.AspNetCore.Authentication: Debug
