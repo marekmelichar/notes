@@ -1,6 +1,6 @@
-# epoznamky.cz - Frontend
+# notes.nettio.eu - Frontend
 
-React frontend for epoznamky.cz - a note-taking application with rich text editing, folder organization, and tag management.
+React frontend for notes.nettio.eu - a note-taking application with rich text editing, folder organization, and tag management.
 
 ## Table of Contents
 

@@ -1,4 +1,4 @@
-# CLAUDE.md - AI Assistant Guide for epoznamky.cz
+# CLAUDE.md - AI Assistant Guide for notes.nettio.eu
 
 ## Project Overview
 
@@ -78,7 +78,7 @@ Follow `ui/docs/styling-guide.md` for all CSS/styling work:
 ## Project Structure
 
 ```
-epoznamky.cz/
+notes.nettio.eu/
 ├── ui/                      # React frontend
 │   ├── docs/                # Frontend documentation
 │   │   ├── styling-guide.md # CSS/styling conventions
@@ -153,9 +153,9 @@ The `mobileView` state is managed in Redux (`uiSlice`). When debugging navigatio
 
 | Service | Local Dev | Docker | Production |
 |---------|-----------|--------|------------|
-| Frontend | http://localhost:5173 | http://localhost:3000 | https://epoznamky.cz |
-| API | http://localhost:5001 | http://localhost:5001 | https://epoznamky.cz/api |
-| Keycloak | http://localhost:8080 | http://localhost:8080 | https://epoznamky.cz/auth |
+| Frontend | http://localhost:5173 | http://localhost:3000 | https://notes.nettio.eu |
+| API | http://localhost:5001 | http://localhost:5001 | https://notes.nettio.eu/api |
+| Keycloak | http://localhost:8080 | http://localhost:8080 | https://notes.nettio.eu/auth |
 
 ## Data Model
 

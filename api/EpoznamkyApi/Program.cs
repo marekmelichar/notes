@@ -27,7 +27,7 @@ builder.Services.Configure<FileStorageSettings>(
 builder.Services.AddScoped<FileStorageService>();
 
 // Configure JWT Authentication with Keycloak
-var keycloakAuthority = builder.Configuration["Keycloak:Authority"] ?? "http://localhost:8080/realms/epoznamky";
+var keycloakAuthority = builder.Configuration["Keycloak:Authority"] ?? "http://localhost:8080/realms/notes";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -59,7 +59,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://localhost:3000",
                 "http://localhost:5173",
-                "https://epoznamky.cz"
+                "https://notes.nettio.eu"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()

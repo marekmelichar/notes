@@ -1,11 +1,11 @@
-# epoznamky.cz
+# notes.nettio.eu
 
 A note-taking application with React frontend, .NET API, PostgreSQL database, and Keycloak authentication.
 
 ## Project Structure
 
 ```
-epoznamky.cz/
+notes.nettio.eu/
 ├── api/                    # .NET 10 API
 │   └── EpoznamkyApi/
 ├── ui/                     # React/Vite/MUI frontend
@@ -16,7 +16,8 @@ epoznamky.cz/
 ├── docker-compose.yml      # Local development
 ├── docker-compose.prod.yml # Production deployment
 ├── init-db.sql             # Database initialization
-└── keycloak-realm.json     # Keycloak realm configuration
+├── notes-dev-realm.json   # Keycloak dev realm configuration
+└── notes-prod-realm.json  # Keycloak prod realm configuration
 ```
 
 ## Local Development

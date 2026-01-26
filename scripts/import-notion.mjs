@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Import Notion export into epoznamky.cz PostgreSQL database.
+ * Import Notion export into notes.nettio.eu PostgreSQL database.
  *
  * Usage:
  *   node scripts/import-notion.mjs <export-folder> <user-id> [output-file]
@@ -14,7 +14,7 @@
  *   node scripts/import-notion.mjs ~/Downloads/Export-xxx "user-uuid" import.sql
  *
  * Then run on production:
- *   docker exec -i epoznamky-db psql -U postgres epoznamky < import.sql
+ *   docker exec -i notes-db psql -U postgres notes < import.sql
  */
 
 import fs from "fs";
@@ -591,7 +591,7 @@ console.log(`Found ${folders.length} folders and ${notes.length} notes`);
 
 // --- Generate SQL ---
 const timestamp = nowMs();
-let sql = `-- epoznamky.cz import from Notion export
+let sql = `-- notes.nettio.eu import from Notion export
 -- Generated: ${new Date().toISOString()}
 -- User ID: ${USER_ID}
 -- Folders: ${folders.length}
@@ -645,5 +645,5 @@ fs.writeFileSync(OUTPUT_FILE, sql, "utf-8");
 console.log(`SQL written to: ${OUTPUT_FILE}`);
 console.log(`\nTo import on production:`);
 console.log(
-  `  docker exec -i epoznamky-db psql -U postgres epoznamky < ${OUTPUT_FILE}`
+  `  docker exec -i notes-db psql -U postgres notes < ${OUTPUT_FILE}`
 );

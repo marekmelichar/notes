@@ -4,7 +4,7 @@ import { getApiBaseUrl } from '@/config';
 import { enqueueSnackbar, closeSnackbar } from 'notistack';
 import i18n from '@/i18n';
 import { Button } from '@mui/material';
-import { logout } from '@/store/authSlice';
+import { logout, setAccessStatus } from '@/store/authSlice';
 import { store } from '@/store';
 import { keycloak } from '@/features/auth/utils/keycloak';
 
@@ -94,7 +94,14 @@ const showSessionExpiredMessage = () => {
 
 // Response interceptor for authentication errors with silent token refresh
 apiManager.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Mark access as authorized on successful response
+    const currentStatus = store.getState().auth.accessStatus;
+    if (currentStatus === 'unknown') {
+      store.dispatch(setAccessStatus('authorized'));
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
@@ -127,9 +134,11 @@ apiManager.interceptors.response.use(
       try {
         // Attempt to refresh the token using Keycloak
         // minValidity of -1 forces a refresh regardless of current token validity
+        console.debug('Attempting silent token refresh after 401');
         const refreshed = await keycloak.updateToken(-1);
 
         if (refreshed && keycloak.token) {
+          console.debug('Token refresh successful, retrying request');
           // Update stored token
           setAuthToken(keycloak.token);
 
@@ -142,12 +151,14 @@ apiManager.interceptors.response.use(
         } else {
           // Token refresh returned false (token still valid but 401 occurred)
           // This shouldn't happen, but handle it gracefully
+          console.warn('Token refresh returned false despite 401 - session may be invalid');
           processQueue(error, null);
           showSessionExpiredMessage();
           return await Promise.reject(error);
         }
       } catch (refreshError) {
         // Token refresh failed - user needs to re-authenticate
+        console.error('Token refresh failed:', refreshError);
         processQueue(refreshError, null);
         showSessionExpiredMessage();
         return await Promise.reject(refreshError);
@@ -156,9 +167,10 @@ apiManager.interceptors.response.use(
       }
     }
 
-    // Handle 403 Forbidden - no refresh attempt, user lacks permissions
+    // Handle 403 Forbidden - user authenticated but lacks permissions
     if (statusCode === 403) {
-      showSessionExpiredMessage();
+      store.dispatch(setAccessStatus('unauthorized'));
+      // Don't show session expired - ProtectedRoute will redirect to NoAccess page
     }
 
     return Promise.reject(error);

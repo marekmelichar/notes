@@ -1,8 +1,8 @@
 # Feature Testing Checklist
 
-This document provides a comprehensive checklist for testing all features of epoznamky.cz.
+This document provides a comprehensive checklist for testing all features of notes.nettio.eu.
 
-**Test Environment:** https://epoznamky.cz
+**Test Environment:** https://notes.nettio.eu
 
 ## 1. Authentication
 

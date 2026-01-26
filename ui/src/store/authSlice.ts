@@ -1,6 +1,8 @@
-import { initKeycloak, keycloak } from '@/features/auth/utils/keycloak';
+import { initKeycloak, keycloak, cleanupKeycloak } from '@/features/auth/utils/keycloak';
 import { setAuthToken } from '@/lib';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+
+export type AccessStatus = 'unknown' | 'authorized' | 'unauthorized';
 
 interface IAuthState {
   isAuthenticated: boolean;
@@ -16,6 +18,7 @@ interface IAuthState {
     realmRoles?: string[];
   } | null;
   error: string | null;
+  accessStatus: AccessStatus;
 }
 
 const initialState: IAuthState = {
@@ -24,6 +27,7 @@ const initialState: IAuthState = {
   token: undefined,
   user: null,
   error: null,
+  accessStatus: 'unknown',
 };
 
 // Mock user for development mode
@@ -80,6 +84,8 @@ export const login = createAsyncThunk('auth/login', async () => {
 
 // Async thunk for logout
 export const logout = createAsyncThunk('auth/logout', async () => {
+  // Clean up token refresh interval before logout
+  cleanupKeycloak();
   keycloak.logout({
     redirectUri: window.location.origin,
   });
@@ -88,7 +94,11 @@ export const logout = createAsyncThunk('auth/logout', async () => {
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
-  reducers: {},
+  reducers: {
+    setAccessStatus: (state, action: { payload: AccessStatus }) => {
+      state.accessStatus = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       // Initialize auth
@@ -120,7 +130,10 @@ export const authSlice = createSlice({
         state.token = undefined;
         state.user = null;
         state.isLoading = false;
+        state.accessStatus = 'unknown';
         setAuthToken('');
       });
   },
 });
+
+export const { setAccessStatus } = authSlice.actions;

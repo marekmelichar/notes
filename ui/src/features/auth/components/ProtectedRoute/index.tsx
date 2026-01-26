@@ -1,11 +1,12 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAppSelector } from '@/store';
 import { Box, CircularProgress } from '@mui/material';
+import { ROUTE_NO_ACCESS } from '@/config';
 import styles from './index.module.css';
 
 export const ProtectedRoute = () => {
-  const { isLoading } = useAppSelector((state) => state.auth);
+  const { isLoading, accessStatus } = useAppSelector((state) => state.auth);
 
   if (isLoading) {
     return (
@@ -13,6 +14,11 @@ export const ProtectedRoute = () => {
         <CircularProgress />
       </Box>
     );
+  }
+
+  // Redirect to no-access page if user lacks permission (403)
+  if (accessStatus === 'unauthorized') {
+    return <Navigate to={`/${ROUTE_NO_ACCESS}`} replace />;
   }
 
   // If not authenticated, keycloak.login() will be called from initKeycloak

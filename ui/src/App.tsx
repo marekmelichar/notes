@@ -5,7 +5,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { closeSnackbar, MaterialDesignContent, SnackbarProvider } from 'notistack';
 import { ErrorBoundary, LoadingFallback, NotificationListener } from './components';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
-import { ROUTE_HOME, SNACKBARS_AUTOHIDE_DURATION } from './config';
+import { ROUTE_HOME, ROUTE_NO_ACCESS, SNACKBARS_AUTOHIDE_DURATION } from './config';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import 'dayjs/locale/cs';
 import './App.css';
@@ -24,6 +24,7 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const NotesPage = lazy(() => import('./pages/NotesPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const NoAccessPage = lazy(() => import('./pages/NoAccessPage'));
 
 const StyledSnackbar = styled(MaterialDesignContent)(() => ({
   '&.notistack-MuiContent': {
@@ -73,6 +74,10 @@ const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    path: ROUTE_NO_ACCESS,
+    element: <NoAccessPage />,
   },
   {
     path: '*',

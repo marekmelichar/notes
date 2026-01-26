@@ -1,5 +1,5 @@
 {
-  "name": "epoznamky-ui",
+  "name": "notes-ui",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -40,6 +40,8 @@
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@hookform/resolvers": "^5.2.2",
+    "@mantine/core": "^8.3.13",
+    "@mantine/hooks": "^8.3.13",
     "@mui/icons-material": "^6.5.0",
     "@mui/material": "^6.1.6",
     "@mui/system": "^5.14.1",

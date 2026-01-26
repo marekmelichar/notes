@@ -62,7 +62,6 @@ export const createNote = createAsyncThunk(
       };
       // Use the server-generated ID
       const id = await notesApi.create(noteData);
-      dispatch(showSuccess("Note created"));
       return { ...noteData, id } as Note;
     } catch (error) {
       dispatch(showError("Failed to create note"));

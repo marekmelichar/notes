@@ -59,7 +59,7 @@ services:
       KC_HTTP_ENABLED: "true"
     command: start --import-realm
     volumes:
-      - ./notes-realm.json:/opt/keycloak/data/import/notes-realm.json:ro
+      - ./notes-prod-realm.json:/opt/keycloak/data/import/notes-realm.json:ro
     depends_on:
       postgres:
         condition: service_healthy

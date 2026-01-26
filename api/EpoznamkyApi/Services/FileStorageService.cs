@@ -19,7 +19,9 @@ public class FileStorageSettings
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-        "application/zip"
+        "application/zip",
+        "text/markdown",
+        "text/x-markdown"
     ];
 }
 

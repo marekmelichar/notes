@@ -2,7 +2,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16
-    container_name: epoznamky-db
+    container_name: notes-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -20,7 +20,7 @@ services:
   # Keycloak Authentication
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
-    container_name: epoznamky-keycloak
+    container_name: notes-keycloak
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
@@ -32,7 +32,7 @@ services:
       KC_HOSTNAME_ADMIN_URL: "http://host.docker.internal:8080"
     command: start-dev --import-realm
     volumes:
-      - ./keycloak-realm.json:/opt/keycloak/data/import/epoznamky-realm.json:ro
+      - ./notes-dev-realm.json:/opt/keycloak/data/import/notes-realm.json:ro
     ports:
       - "8080:8080"
     depends_on:
@@ -44,10 +44,10 @@ services:
     build:
       context: ./api/EpoznamkyApi
       dockerfile: Dockerfile
-    container_name: epoznamky-api
+    container_name: notes-api
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=notes;Username=postgres;Password=postgres"
-      Keycloak__Authority: "http://keycloak:8080/realms/epoznamky"
+      Keycloak__Authority: "http://keycloak:8080/realms/notes"
       ASPNETCORE_ENVIRONMENT: Development
       Logging__LogLevel__Microsoft.AspNetCore.Authentication: Debug
       FileStorage__UploadDirectory: "/app/uploads"
@@ -66,12 +66,12 @@ services:
     build:
       context: ./ui
       dockerfile: Dockerfile
-    container_name: epoznamky-frontend
+    container_name: notes-frontend
     environment:
       API_URL: "http://localhost:5001"
       KEYCLOAK_URL: "http://localhost:8080"
-      KEYCLOAK_REALM: "epoznamky"
-      KEYCLOAK_CLIENT_ID: "epoznamky-frontend"
+      KEYCLOAK_REALM: "notes"
+      KEYCLOAK_CLIENT_ID: "notes-frontend"
       MOCK_MODE: "false"
     ports:
       - "3000:80"

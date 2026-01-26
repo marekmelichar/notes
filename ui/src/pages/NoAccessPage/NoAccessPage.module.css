@@ -1,0 +1,34 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+  background-color: var(--mui-palette-background-default);
+}
+
+.content {
+  text-align: center;
+  max-width: 25rem;
+}
+
+.title {
+  margin-bottom: 1rem;
+  color: var(--mui-palette-text-primary);
+}
+
+.message {
+  margin-bottom: 1.5rem;
+  color: var(--mui-palette-text-secondary);
+}
+
+.userInfo {
+  margin-bottom: 1.5rem;
+  color: var(--mui-palette-text-disabled);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
