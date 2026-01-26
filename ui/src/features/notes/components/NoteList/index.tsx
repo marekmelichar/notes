@@ -10,7 +10,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { Virtuoso } from 'react-virtuoso';
+import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import AddIcon from '@mui/icons-material/Add';
 import SortIcon from '@mui/icons-material/Sort';
 import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
@@ -55,6 +55,21 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   const isMobile = useAppSelector((state) => state.ui.isMobile);
 
   const [sortAnchorEl, setSortAnchorEl] = React.useState<null | HTMLElement>(null);
+  const virtuosoRef = React.useRef<VirtuosoHandle>(null);
+
+  // Scroll to selected note when selection changes
+  React.useEffect(() => {
+    if (selectedNoteId && virtuosoRef.current) {
+      const index = notes.findIndex((note) => note.id === selectedNoteId);
+      if (index !== -1) {
+        virtuosoRef.current.scrollToIndex({
+          index,
+          align: 'center',
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [selectedNoteId, notes]);
 
   const handleCreateNote = () => {
     dispatch(createNote({ folderId: filter.folderId }));
@@ -219,6 +234,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
           </Box>
         ) : (
           <Virtuoso
+            ref={virtuosoRef}
             data={notes}
             itemContent={(_index: number, note: Note) => (
               <NoteListItem

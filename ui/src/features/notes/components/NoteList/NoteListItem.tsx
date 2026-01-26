@@ -47,19 +47,11 @@ const stripHtmlTags = (html: string): string => {
 
 export const NoteListItem = React.memo(({ note, tags, isSelected, onSelect }: NoteListItemProps) => {
   const { t } = useTranslation();
-  const ref = React.useRef<HTMLDivElement>(null);
   const contentPreview = stripHtmlTags(note.content).slice(0, 80);
   const daysRemaining = note.isDeleted ? getDaysUntilPermanentDelete(note.deletedAt) : null;
 
-  React.useEffect(() => {
-    if (isSelected && ref.current) {
-      ref.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
-  }, [isSelected]);
-
   return (
     <Box
-      ref={ref}
       className={`${styles.noteListItem} ${isSelected ? styles.noteListItemSelected : ''}`}
       onClick={() => onSelect(note.id)}
     >
