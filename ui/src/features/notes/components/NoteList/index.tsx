@@ -10,10 +10,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { Virtuoso, VirtuosoGrid } from 'react-virtuoso';
+import { Virtuoso } from 'react-virtuoso';
 import AddIcon from '@mui/icons-material/Add';
-import ViewModuleIcon from '@mui/icons-material/ViewModule';
-import ViewListIcon from '@mui/icons-material/ViewList';
 import SortIcon from '@mui/icons-material/Sort';
 import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -22,12 +20,10 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import { useAppDispatch, useAppSelector, toggleNoteListCollapsed } from '@/store';
 import {
   selectFilteredNotes,
-  selectNotesViewMode,
   selectNotesSortBy,
   selectNotesSortOrder,
   selectNotesLoading,
   setSelectedNote,
-  setViewMode,
   setSortBy,
   setSortOrder,
   createNote,
@@ -38,19 +34,8 @@ import { selectNotesFilter } from '../../store/notesSlice';
 import type { NotesSortBy, Note } from '../../types';
 
 const EMPTY_TAGS: never[] = [];
-import { NoteCard } from './NoteCard';
 import { NoteListItem } from './NoteListItem';
 import styles from './index.module.css';
-
-// Grid components for VirtuosoGrid
-const GridList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  (props, ref) => <div ref={ref} {...props} className={styles.gridView} />,
-);
-GridList.displayName = 'GridList';
-
-const GridItem: React.FC<React.HTMLAttributes<HTMLDivElement>> = (props) => (
-  <div {...props} className={styles.gridItem} />
-);
 
 interface NoteListProps {
   collapsed?: boolean;
@@ -62,7 +47,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   const notes = useAppSelector(selectFilteredNotes);
   const allTags = useAppSelector(selectAllTags);
   const allFolders = useAppSelector(selectAllFolders);
-  const viewMode = useAppSelector(selectNotesViewMode);
   const sortBy = useAppSelector(selectNotesSortBy);
   const sortOrder = useAppSelector(selectNotesSortOrder);
   const filter = useAppSelector(selectNotesFilter);
@@ -88,10 +72,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
     return map;
   }, [notes, allTags]);
 
-  const handleToggleViewMode = () => {
-    dispatch(setViewMode(viewMode === 'grid' ? 'list' : 'grid'));
-  };
-
   const handleSortClick = (event: React.MouseEvent<HTMLElement>) => {
     setSortAnchorEl(event.currentTarget);
   };
@@ -108,15 +88,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
       dispatch(setSortOrder('desc'));
     }
     handleSortClose();
-  };
-
-  const getSortLabel = () => {
-    const labels: Record<NotesSortBy, string> = {
-      updatedAt: t("Sort.Modified"),
-      createdAt: t("Sort.Created"),
-      title: t("Sort.Title"),
-    };
-    return `${labels[sortBy]} ${sortOrder === 'asc' ? '↑' : '↓'}`;
   };
 
   const getTitle = () => {
@@ -213,15 +184,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
               {t("Sort.Title")} {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
             </MenuItem>
           </Menu>
-          <Tooltip title={viewMode === 'grid' ? t("View.ListView") : t("View.GridView")}>
-            <IconButton size="small" onClick={handleToggleViewMode}>
-              {viewMode === 'grid' ? (
-                <ViewListIcon fontSize="small" />
-              ) : (
-                <ViewModuleIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
           {!isMobile && (
             <Tooltip title={t("Common.CollapseNoteList")}>
               <IconButton size="small" onClick={handleToggleCollapse}>
@@ -255,24 +217,10 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
               {t("Notes.CreateNote")}
             </Button>
           </Box>
-        ) : viewMode === 'grid' ? (
-          <VirtuosoGrid
-            data={notes}
-            components={{ List: GridList, Item: GridItem }}
-            itemContent={(index: number, note: Note) => (
-              <NoteCard
-                note={note}
-                tags={tagsByNoteId.get(note.id) || EMPTY_TAGS}
-                isSelected={note.id === selectedNoteId}
-                onSelect={handleSelectNote}
-              />
-            )}
-          />
         ) : (
           <Virtuoso
             data={notes}
-            className={styles.listView}
-            itemContent={(index: number, note: Note) => (
+            itemContent={(_index: number, note: Note) => (
               <NoteListItem
                 note={note}
                 tags={tagsByNoteId.get(note.id) || EMPTY_TAGS}
