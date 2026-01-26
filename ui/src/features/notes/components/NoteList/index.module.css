@@ -59,20 +59,26 @@
 
 .listContainer {
   flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .gridView {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15.625rem, 1fr));
   gap: 1rem;
+  padding: 1rem;
+}
+
+.gridItem {
+  display: flex;
 }
 
 .listView {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  padding: 1rem;
 }
 
 .loadingState {
@@ -234,7 +240,11 @@
     padding: 0.75rem;
   }
 
-  .listContainer {
+  .gridView {
+    padding: 0.75rem;
+  }
+
+  .listView {
     padding: 0.75rem;
   }
 

@@ -10,6 +10,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { Virtuoso, VirtuosoGrid } from 'react-virtuoso';
 import AddIcon from '@mui/icons-material/Add';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
@@ -34,12 +35,22 @@ import {
 import { selectAllTags } from '../../store/tagsSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
 import { selectNotesFilter } from '../../store/notesSlice';
-import type { NotesSortBy } from '../../types';
+import type { NotesSortBy, Note } from '../../types';
 
 const EMPTY_TAGS: never[] = [];
 import { NoteCard } from './NoteCard';
 import { NoteListItem } from './NoteListItem';
 import styles from './index.module.css';
+
+// Grid components for VirtuosoGrid
+const GridList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  (props, ref) => <div ref={ref} {...props} className={styles.gridView} />,
+);
+GridList.displayName = 'GridList';
+
+const GridItem: React.FC<React.HTMLAttributes<HTMLDivElement>> = (props) => (
+  <div {...props} className={styles.gridItem} />
+);
 
 interface NoteListProps {
   collapsed?: boolean;
@@ -244,28 +255,32 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
               {t("Notes.CreateNote")}
             </Button>
           </Box>
-        ) : (
-          <Box className={viewMode === 'grid' ? styles.gridView : styles.listView}>
-            {notes.map((note) =>
-              viewMode === 'grid' ? (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  tags={tagsByNoteId.get(note.id) || EMPTY_TAGS}
-                  isSelected={note.id === selectedNoteId}
-                  onSelect={handleSelectNote}
-                />
-              ) : (
-                <NoteListItem
-                  key={note.id}
-                  note={note}
-                  tags={tagsByNoteId.get(note.id) || EMPTY_TAGS}
-                  isSelected={note.id === selectedNoteId}
-                  onSelect={handleSelectNote}
-                />
-              ),
+        ) : viewMode === 'grid' ? (
+          <VirtuosoGrid
+            data={notes}
+            components={{ List: GridList, Item: GridItem }}
+            itemContent={(index: number, note: Note) => (
+              <NoteCard
+                note={note}
+                tags={tagsByNoteId.get(note.id) || EMPTY_TAGS}
+                isSelected={note.id === selectedNoteId}
+                onSelect={handleSelectNote}
+              />
             )}
-          </Box>
+          />
+        ) : (
+          <Virtuoso
+            data={notes}
+            className={styles.listView}
+            itemContent={(index: number, note: Note) => (
+              <NoteListItem
+                note={note}
+                tags={tagsByNoteId.get(note.id) || EMPTY_TAGS}
+                isSelected={note.id === selectedNoteId}
+                onSelect={handleSelectNote}
+              />
+            )}
+          />
         )}
       </Box>
     </Box>
