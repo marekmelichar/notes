@@ -63,24 +63,6 @@
   min-height: 0;
 }
 
-.gridView {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15.625rem, 1fr));
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.gridItem {
-  display: flex;
-}
-
-.listView {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-}
-
 .loadingState {
   display: flex;
   flex-direction: column;
@@ -108,67 +90,6 @@
   opacity: 0.5;
 }
 
-.noteCard {
-  background-color: var(--mui-palette-background-paper);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  cursor: pointer;
-  border: 1px solid var(--mui-palette-divider);
-}
-
-.noteCardSelected {
-  border-color: var(--mui-palette-primary-main);
-  box-shadow: 0 0 0 2px var(--mui-palette-primary-light);
-}
-
-.noteCardPinned {
-  border-left: 3px solid var(--mui-palette-primary-main);
-}
-
-.noteCardHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.noteCardTitle {
-  font-weight: 600;
-  font-size: 1rem;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.noteCardContent {
-  font-size: 0.875rem;
-  color: var(--mui-palette-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  line-height: 1.5;
-  margin-bottom: 0.75rem;
-}
-
-.noteCardFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: var(--mui-palette-text-secondary);
-}
-
-.noteCardTags {
-  display: flex;
-  gap: 0.25rem;
-  flex-wrap: wrap;
-}
-
 .trashCountdown {
   display: flex;
   align-items: center;
@@ -179,11 +100,16 @@
   display: flex;
   align-items: center;
   padding: 0.75rem 1rem;
+  margin: 0 1rem 0.5rem;
   background-color: var(--mui-palette-background-paper);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: background-color 0.2s;
   border: 1px solid var(--mui-palette-divider);
+}
+
+.noteListItem:first-child {
+  margin-top: 1rem;
 }
 
 @media (hover: hover) {
@@ -240,30 +166,14 @@
     padding: 0.75rem;
   }
 
-  .gridView {
-    padding: 0.75rem;
-  }
-
-  .listView {
-    padding: 0.75rem;
-  }
-
-  .gridView {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
-  }
-
-  .noteCard {
-    padding: 0.75rem;
-  }
-
-  .noteCard:active {
-    background-color: var(--mui-palette-action-hover);
-  }
-
   .noteListItem {
     padding: 0.75rem;
+    margin: 0 0.75rem 0.5rem;
     min-height: 4rem;
+  }
+
+  .noteListItem:first-child {
+    margin-top: 0.75rem;
   }
 
   .noteListItem:active {
