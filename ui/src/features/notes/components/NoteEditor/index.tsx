@@ -411,7 +411,7 @@ export const NoteEditor = () => {
               )}
             </IconButton>
           </Tooltip>
-          {isMobile && (
+          {isMobile ? (
             <Tooltip title={t("Tags.Tags")}>
               <IconButton
                 size="small"
@@ -421,9 +421,15 @@ export const NoteEditor = () => {
                 <LocalOfferOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
+          ) : (
+            <TagPicker
+              selectedTagIds={note.tags}
+              onTagsChange={handleTagsChange}
+            />
           )}
+          <Box className={styles.actionSpacer} />
           <Tooltip title={t("Common.Delete")}>
-            <IconButton size="small" onClick={handleDelete}>
+            <IconButton size="small" onClick={handleDelete} color="error">
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -432,16 +438,6 @@ export const NoteEditor = () => {
         {/* Row 3: Tags (mobile only - toggleable) */}
         {isMobile && showMobileTags && (
           <Box className={styles.headerTags}>
-            <TagPicker
-              selectedTagIds={note.tags}
-              onTagsChange={handleTagsChange}
-            />
-          </Box>
-        )}
-
-        {/* Desktop: Tags inline with other actions */}
-        {!isMobile && (
-          <Box className={styles.headerActions}>
             <TagPicker
               selectedTagIds={note.tags}
               onTagsChange={handleTagsChange}

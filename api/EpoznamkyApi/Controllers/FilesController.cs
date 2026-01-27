@@ -43,7 +43,7 @@ public class FilesController(AppDbContext db, FileStorageService storageService)
         db.FileUploads.Add(fileUpload);
         await db.SaveChangesAsync();
 
-        var url = $"{Request.Scheme}://{Request.Host}/api/v1/files/{fileUpload.Id}";
+        var url = $"/api/v1/files/{fileUpload.Id}";
 
         return CreatedAtAction(nameof(GetFile), new { id = fileUpload.Id }, new FileUploadResponse
         {

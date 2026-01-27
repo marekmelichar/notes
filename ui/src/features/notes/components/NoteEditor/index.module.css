@@ -37,6 +37,10 @@
   gap: 0.5rem;
 }
 
+.actionSpacer {
+  flex: 1;
+}
+
 .editorContent {
   flex: 1;
   overflow-y: auto;
