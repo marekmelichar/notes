@@ -64,7 +64,9 @@
     "DaysRemaining": "{{days}} dní",
     "DeletedToday": "Smazáno dnes",
     "WillBeDeleted": "Bude trvale smazáno po 30 dnech v koši",
-    "Recent": "Nedávné"
+    "Recent": "Nedávné",
+    "Restore": "Obnovit",
+    "NoteRestored": "Poznámka obnovena"
   },
   "Folders": {
     "Folders": "Složky",

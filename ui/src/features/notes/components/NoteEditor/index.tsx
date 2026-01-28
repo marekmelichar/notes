@@ -10,6 +10,7 @@ import '@blocknote/mantine/style.css';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import RestoreIcon from '@mui/icons-material/Restore';
 import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
@@ -20,6 +21,7 @@ import { useColorMode } from '@/theme/ThemeProvider';
 import {
   updateNote,
   deleteNote,
+  restoreNote,
   selectSelectedNote,
   selectNotesLoading,
 } from '../../store/notesSlice';
@@ -289,6 +291,13 @@ export const NoteEditor = () => {
     }
   }, [note, dispatch]);
 
+  const handleRestore = useCallback(async () => {
+    if (note) {
+      await dispatch(restoreNote(note.id));
+      enqueueSnackbar(t('Notes.NoteRestored'), { variant: 'success' });
+    }
+  }, [note, dispatch, t]);
+
   const handleFolderMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setFolderMenuAnchor(event.currentTarget);
   }, []);
@@ -428,11 +437,19 @@ export const NoteEditor = () => {
             />
           )}
           <Box className={styles.actionSpacer} />
-          <Tooltip title={t("Common.Delete")}>
-            <IconButton size="small" onClick={handleDelete} color="error">
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {note.isDeleted ? (
+            <Tooltip title={t("Notes.Restore")}>
+              <IconButton size="small" onClick={handleRestore} color="success">
+                <RestoreIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title={t("Common.Delete")}>
+              <IconButton size="small" onClick={handleDelete} color="error">
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
 
         {/* Row 3: Tags (mobile only - toggleable) */}
