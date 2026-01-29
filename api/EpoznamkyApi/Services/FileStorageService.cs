@@ -18,10 +18,12 @@ public class FileStorageSettings
         "application/pdf",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         "application/zip",
         "text/markdown",
-        "text/x-markdown"
+        "text/x-markdown",
+        "text/plain"
     ];
 }
 
