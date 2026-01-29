@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';
-import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed } from '@/store';
-import { loadNotes, selectSelectedNote, setSelectedNote } from '@/features/notes/store/notesSlice';
+import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed, openTab, selectActiveTabId } from '@/store';
+import { loadNotes } from '@/features/notes/store/notesSlice';
 import { loadFolders } from '@/features/notes/store/foldersSlice';
 import { loadTags } from '@/features/notes/store/tagsSlice';
 import { checkPendingChanges, setOnlineStatus } from '@/features/notes/store/syncSlice';
 import { NotesSidebar } from '@/features/notes/components/NotesSidebar';
 import { NoteList } from '@/features/notes/components/NoteList';
-import { NoteEditor } from '@/features/notes/components/NoteEditor';
+import { EditorPanel } from '@/features/notes/components/EditorPanel';
 import styles from './index.module.css';
 
 const DEFAULT_TITLE = 'notes';
@@ -34,30 +34,32 @@ const NotesPage = () => {
   const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
   const noteListCollapsed = useAppSelector((state) => state.ui.noteListCollapsed);
   const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
-  const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
-  const selectedNote = useAppSelector(selectSelectedNote);
+  const activeTabId = useAppSelector(selectActiveTabId);
+  const activeNote = useAppSelector((state) =>
+    activeTabId ? state.notes.notes.find((n) => n.id === activeTabId) ?? null : null
+  );
 
-  // Sync URL → Redux: set selected note from URL on mount
+  // Sync URL → Redux: open tab from URL on mount
   const urlSyncRef = useRef(false);
   useEffect(() => {
-    if (urlNoteId && urlNoteId !== selectedNoteId) {
+    if (urlNoteId && urlNoteId !== activeTabId) {
       urlSyncRef.current = true;
-      dispatch(setSelectedNote(urlNoteId));
+      dispatch(openTab(urlNoteId));
     }
   }, [urlNoteId, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync Redux → URL: update URL when selected note changes
+  // Sync Redux → URL: update URL when active tab changes
   useEffect(() => {
     if (urlSyncRef.current) {
       urlSyncRef.current = false;
       return;
     }
-    if (selectedNoteId && selectedNoteId !== urlNoteId) {
-      navigate(`/notes/${selectedNoteId}`, { replace: true });
-    } else if (!selectedNoteId && urlNoteId) {
+    if (activeTabId && activeTabId !== urlNoteId) {
+      navigate(`/notes/${activeTabId}`, { replace: true });
+    } else if (!activeTabId && urlNoteId) {
       navigate('/', { replace: true });
     }
-  }, [selectedNoteId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTabId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resize state
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -112,10 +114,10 @@ const NotesPage = () => {
     };
   }, [dispatch]);
 
-  // Update page title based on selected note
+  // Update page title based on active tab's note
   useEffect(() => {
-    if (selectedNote?.title) {
-      document.title = `${selectedNote.title} - notes`;
+    if (activeNote?.title) {
+      document.title = `${activeNote.title} - notes`;
     } else {
       document.title = DEFAULT_TITLE;
     }
@@ -123,19 +125,19 @@ const NotesPage = () => {
     return () => {
       document.title = DEFAULT_TITLE;
     };
-  }, [selectedNote?.title]);
+  }, [activeNote?.title]);
 
-  // Track previous selected note to detect new selections
-  const prevSelectedNoteId = useRef<string | null>(null);
+  // Track previous active tab to detect new selections
+  const prevActiveTabId = useRef<string | null>(null);
 
-  // Switch to editor view only when a NEW note is selected on mobile
+  // Switch to editor view only when a NEW tab is activated on mobile
   useEffect(() => {
-    const isNewSelection = selectedNoteId && selectedNoteId !== prevSelectedNoteId.current;
+    const isNewSelection = activeTabId && activeTabId !== prevActiveTabId.current;
     if (isMobile && isNewSelection && mobileView === 'list') {
       dispatch(setMobileView('editor'));
     }
-    prevSelectedNoteId.current = selectedNoteId;
-  }, [dispatch, isMobile, selectedNoteId, mobileView]);
+    prevActiveTabId.current = activeTabId;
+  }, [dispatch, isMobile, activeTabId, mobileView]);
 
   // Resize handlers
   const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {
@@ -230,7 +232,7 @@ const NotesPage = () => {
         />
       )}
       <Box className={`${styles.editor} ${getPanelClass('editor')}`}>
-        <NoteEditor />
+        <EditorPanel />
       </Box>
     </Box>
   );

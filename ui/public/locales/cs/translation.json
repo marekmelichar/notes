@@ -69,7 +69,9 @@
     "Restore": "Obnovit",
     "NoteRestored": "Poznámka obnovena",
     "SaveError": "Nepodařilo se uložit poznámku",
-    "AutoSaveIn": "Automatické uložení za"
+    "AutoSaveIn": "Automatické uložení za",
+    "Words": "slov",
+    "Characters": "znaků"
   },
   "Folders": {
     "Folders": "Složky",
@@ -126,6 +128,11 @@
     "ResetToDefault": "Výchozí",
     "Layout": "Rozvržení",
     "ShowNoteList": "Zobrazit seznam poznámek"
+  },
+  "Tabs": {
+    "CloseTab": "Zavřít záložku",
+    "CloseOtherTabs": "Zavřít ostatní záložky",
+    "CloseAllTabs": "Zavřít všechny záložky"
   },
   "Files": {
     "OfflineError": "Nelze nahrát soubory bez připojení",

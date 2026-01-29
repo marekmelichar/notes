@@ -4,6 +4,7 @@ import {
   Box,
   Stack,
   IconButton,
+  Button,
   Menu,
   MenuItem,
   Avatar,
@@ -102,9 +103,9 @@ export const Header = () => {
       <SearchDialog open={isSearchOpen} onClose={handleCloseSearch} />
 
       <Stack direction={'row'} gap={1} alignItems="center">
-        <IconButton onClick={handleCreateNote} aria-label={t('Notes.NewNote')} className={styles.createNoteButton}>
-          <AddIcon />
-        </IconButton>
+        <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={handleCreateNote} className={styles.newNoteButton}>
+          {t('Notes.NewNote')}
+        </Button>
         <LanguageSwitch />
         <IconButton
           onClick={handleAvatarClick}

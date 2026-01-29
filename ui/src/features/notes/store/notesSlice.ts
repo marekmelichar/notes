@@ -25,7 +25,6 @@ const initialFilter: NotesFilter = {
 
 const initialState: NotesState = {
   notes: [],
-  selectedNoteId: null,
   filter: initialFilter,
   sortBy: "updatedAt",
   sortOrder: "desc",
@@ -147,9 +146,6 @@ export const notesSlice = createSlice({
   name: "notes",
   initialState,
   reducers: {
-    setSelectedNote: (state, action: PayloadAction<string | null>) => {
-      state.selectedNoteId = action.payload;
-    },
     setFilter: (state, action: PayloadAction<Partial<NotesFilter>>) => {
       state.filter = { ...state.filter, ...action.payload };
     },
@@ -187,7 +183,6 @@ export const notesSlice = createSlice({
       // Create note
       .addCase(createNote.fulfilled, (state, action) => {
         state.notes.push(action.payload);
-        state.selectedNoteId = action.payload.id;
       })
       // Update note
       .addCase(updateNote.fulfilled, (state, action) => {
@@ -206,9 +201,6 @@ export const notesSlice = createSlice({
         if (note) {
           note.isDeleted = true;
         }
-        if (state.selectedNoteId === action.payload) {
-          state.selectedNoteId = null;
-        }
       })
       // Restore note
       .addCase(restoreNote.fulfilled, (state, action) => {
@@ -224,9 +216,6 @@ export const notesSlice = createSlice({
       // Permanent delete
       .addCase(permanentDeleteNote.fulfilled, (state, action) => {
         state.notes = state.notes.filter((n) => n.id !== action.payload);
-        if (state.selectedNoteId === action.payload) {
-          state.selectedNoteId = null;
-        }
       })
       // Search notes
       .addCase(searchNotes.fulfilled, (state, action) => {
@@ -251,7 +240,6 @@ export const notesSlice = createSlice({
 });
 
 export const {
-  setSelectedNote,
   setFilter,
   resetFilter,
   setSortBy,
@@ -335,11 +323,6 @@ export const selectFilteredNotes = createSelector(
     return filtered;
   }
 );
-
-export const selectSelectedNote = (state: { notes: NotesState }) => {
-  const { notes, selectedNoteId } = state.notes;
-  return notes.find((n) => n.id === selectedNoteId) || null;
-};
 
 export const selectNotesLoading = (state: { notes: NotesState }) =>
   state.notes.isLoading;

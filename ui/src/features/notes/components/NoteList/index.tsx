@@ -17,13 +17,12 @@ import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-import { useAppDispatch, useAppSelector, toggleNoteListCollapsed } from '@/store';
+import { useAppDispatch, useAppSelector, toggleNoteListCollapsed, openTab, selectActiveTabId } from '@/store';
 import {
   selectFilteredNotes,
   selectNotesSortBy,
   selectNotesSortOrder,
   selectNotesLoading,
-  setSelectedNote,
   setSortBy,
   setSortOrder,
   createNote,
@@ -50,7 +49,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   const sortBy = useAppSelector(selectNotesSortBy);
   const sortOrder = useAppSelector(selectNotesSortOrder);
   const filter = useAppSelector(selectNotesFilter);
-  const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
+  const selectedNoteId = useAppSelector(selectActiveTabId);
   const isLoading = useAppSelector(selectNotesLoading);
   const isMobile = useAppSelector((state) => state.ui.isMobile);
 
@@ -76,7 +75,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   };
 
   const handleSelectNote = React.useCallback((noteId: string) => {
-    dispatch(setSelectedNote(noteId));
+    dispatch(openTab(noteId));
   }, [dispatch]);
 
   const tagsByNoteId = React.useMemo(() => {
@@ -162,14 +161,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
           {getTitle()} ({notes.length})
         </Typography>
         <Box className={styles.headerActions}>
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddIcon />}
-            onClick={handleCreateNote}
-          >
-            {t("Notes.NewNote")}
-          </Button>
           <Tooltip title={t("Sort.Sort")}>
             <IconButton size="small" onClick={handleSortClick}>
               <SortIcon fontSize="small" />

@@ -7,6 +7,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { authSlice } from './authSlice';
 import { uiSlice } from './uiSlice';
 import { notificationsSlice } from './notificationsSlice';
+import { tabsSlice } from './tabsSlice';
 import { notesSlice } from '@/features/notes/store/notesSlice';
 import { foldersSlice } from '@/features/notes/store/foldersSlice';
 import { tagsSlice } from '@/features/notes/store/tagsSlice';
@@ -16,6 +17,7 @@ import { syncSlice } from '@/features/notes/store/syncSlice';
 export * from './authSlice';
 export * from './uiSlice';
 export * from './notificationsSlice';
+export * from './tabsSlice';
 
 /**
  * Application wide data storage
@@ -25,6 +27,7 @@ export const store = configureStore({
     auth: authSlice.reducer,
     ui: uiSlice.reducer,
     notifications: notificationsSlice.reducer,
+    tabs: tabsSlice.reducer,
     notes: notesSlice.reducer,
     folders: foldersSlice.reducer,
     tags: tagsSlice.reducer,

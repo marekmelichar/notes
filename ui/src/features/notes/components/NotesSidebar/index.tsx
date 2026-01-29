@@ -53,14 +53,13 @@ import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { useAppDispatch, useAppSelector, toggleSidebarCollapsed } from "@/store";
+import { useAppDispatch, useAppSelector, toggleSidebarCollapsed, openTab, selectActiveTabId } from "@/store";
 import { setNoteListHidden } from "@/store/uiSlice";
 import {
   setFilter,
   resetFilter,
   selectNotesFilter,
   selectAllNotes,
-  setSelectedNote,
   updateNote,
   reorderNotes,
 } from "../../store/notesSlice";
@@ -97,7 +96,7 @@ interface SortableNoteProps {
 const SortableNote = ({ note, level }: SortableNoteProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
+  const selectedNoteId = useAppSelector(selectActiveTabId);
   const isMobile = useAppSelector((state) => state.ui.isMobile);
   const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
   const isSelected = selectedNoteId === note.id;
@@ -142,7 +141,7 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
   const handleClick = () => {
     // Only select the note - don't change the filter
     // The tree view already shows folder context visually
-    dispatch(setSelectedNote(note.id));
+    dispatch(openTab(note.id));
   };
 
   return (
@@ -361,7 +360,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const rootFolders = useAppSelector(selectRootFolders);
   const expandedIds = useAppSelector(selectExpandedFolderIds);
   const tags = useAppSelector(selectAllTags);
-  const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
+  const selectedNoteId = useAppSelector(selectActiveTabId);
   const isFoldersLoading = useAppSelector(selectFoldersLoading);
   const isTagsLoading = useAppSelector(selectTagsLoading);
   const isMobile = useAppSelector((state) => state.ui.isMobile);
@@ -913,7 +912,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
                 <Box
                   key={note.id}
                   className={`${styles.navItem} ${selectedNoteId === note.id ? styles.navItemActive : ""}`}
-                  onClick={() => dispatch(setSelectedNote(note.id))}
+                  onClick={() => dispatch(openTab(note.id))}
                 >
                   <AccessTimeIcon fontSize="small" className={styles.navItemIcon} />
                   <Typography className={styles.navItemLabel} noWrap>

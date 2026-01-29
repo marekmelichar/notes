@@ -60,7 +60,6 @@ export interface NotesFilter {
 
 export interface NotesState {
   notes: Note[];
-  selectedNoteId: string | null;
   filter: NotesFilter;
   sortBy: NotesSortBy;
   sortOrder: NotesSortOrder;

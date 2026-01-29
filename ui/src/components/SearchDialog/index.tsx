@@ -3,8 +3,7 @@ import { Dialog, Box, InputBase, Typography, CircularProgress } from '@mui/mater
 import SearchIcon from '@mui/icons-material/Search';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { setSelectedNote } from '@/features/notes/store/notesSlice';
+import { useAppDispatch, useAppSelector, openTab } from '@/store';
 import { selectAllFolders } from '@/features/notes/store/foldersSlice';
 import { setMobileView } from '@/store/uiSlice';
 import { notesApi } from '@/features/notes/services/notesApi';
@@ -114,7 +113,7 @@ export const SearchDialog = ({ open, onClose }: SearchDialogProps) => {
   // Handle note selection
   const handleSelect = useCallback(
     (note: Note) => {
-      dispatch(setSelectedNote(note.id));
+      dispatch(openTab(note.id));
       if (isMobile) {
         dispatch(setMobileView('editor'));
       }

@@ -69,7 +69,9 @@
     "Restore": "Restore",
     "NoteRestored": "Note restored",
     "SaveError": "Failed to save note",
-    "AutoSaveIn": "Auto-save in"
+    "AutoSaveIn": "Auto-save in",
+    "Words": "words",
+    "Characters": "characters"
   },
   "Folders": {
     "Folders": "Folders",
@@ -126,6 +128,11 @@
     "ResetToDefault": "Reset to Default",
     "Layout": "Layout",
     "ShowNoteList": "Show note list"
+  },
+  "Tabs": {
+    "CloseTab": "Close tab",
+    "CloseOtherTabs": "Close other tabs",
+    "CloseAllTabs": "Close all tabs"
   },
   "Files": {
     "OfflineError": "Cannot upload files while offline",

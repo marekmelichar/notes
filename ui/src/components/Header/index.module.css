@@ -40,6 +40,10 @@
   color: var(--mui-palette-text-secondary);
 }
 
+.newNoteButton {
+  margin-right: 1rem;
+}
+
 .avatarButton {
   margin-left: 0.5rem;
 }

@@ -2,6 +2,7 @@
 export { NoteEditor } from './components/NoteEditor';
 export { NoteList } from './components/NoteList';
 export { NotesSidebar } from './components/NotesSidebar';
+export { EditorPanel } from './components/EditorPanel';
 
 // Notes Store
 export {
@@ -13,7 +14,6 @@ export {
   restoreNote,
   permanentDeleteNote,
   searchNotes,
-  setSelectedNote,
   setFilter,
   resetFilter,
   setSortBy,
@@ -22,7 +22,6 @@ export {
   clearError as clearNotesError,
   selectAllNotes,
   selectFilteredNotes,
-  selectSelectedNote,
   selectNotesLoading,
   selectNotesError,
   selectNotesFilter,
