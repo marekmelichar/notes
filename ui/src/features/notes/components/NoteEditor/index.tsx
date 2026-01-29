@@ -1,5 +1,17 @@
-import React, { useCallback, useState, useRef, useMemo } from 'react';
-import { Box, IconButton, Typography, Tooltip, Menu, MenuItem, ListItemIcon, ListItemText, Button, CircularProgress, useMediaQuery } from '@mui/material';
+import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
+import {
+  Box,
+  IconButton,
+  Typography,
+  Tooltip,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Button,
+  CircularProgress,
+  useMediaQuery,
+} from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { enqueueSnackbar } from 'notistack';
 import { useCreateBlockNote } from '@blocknote/react';
@@ -65,7 +77,10 @@ interface EditorErrorBoundaryState {
   hasError: boolean;
 }
 
-class EditorErrorBoundary extends React.Component<EditorErrorBoundaryProps, EditorErrorBoundaryState> {
+class EditorErrorBoundary extends React.Component<
+  EditorErrorBoundaryProps,
+  EditorErrorBoundaryState
+> {
   state: EditorErrorBoundaryState = { hasError: false };
 
   static getDerivedStateFromError(): EditorErrorBoundaryState {
@@ -93,7 +108,14 @@ interface BlockNoteEditorProps {
   lastSavedLabel: string;
 }
 
-const BlockNoteEditor = ({ initialContent, noteId, onChange, isMobile, lastSaved, lastSavedLabel }: BlockNoteEditorProps) => {
+const BlockNoteEditor = ({
+  initialContent,
+  noteId,
+  onChange,
+  isMobile,
+  lastSaved,
+  lastSavedLabel,
+}: BlockNoteEditorProps) => {
   const { t } = useTranslation();
   const { mode } = useColorMode();
   const editor = useCreateBlockNote({
@@ -163,12 +185,7 @@ const BlockNoteEditor = ({ initialContent, noteId, onChange, isMobile, lastSaved
   return (
     <>
       <Box className={`${styles.editorContent} ${isMobile ? styles.editorContentMobile : ''}`}>
-        <BlockNoteView
-          editor={editor}
-          theme={mode}
-          onChange={handleChange}
-          sideMenu={false}
-        />
+        <BlockNoteView editor={editor} theme={mode} onChange={handleChange} sideMenu={false} />
       </Box>
       <Box className={styles.footer}>
         <Typography variant="caption">
@@ -223,14 +240,11 @@ export const NoteEditor = () => {
   }, []);
 
   // Handle title changes
-  const handleTitleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newTitle = e.target.value;
-      setTitle(newTitle);
-      setHasUnsavedChanges(true);
-    },
-    [],
-  );
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+    setHasUnsavedChanges(true);
+  }, []);
 
   // Manual save handler
   const handleSave = useCallback(async () => {
@@ -263,6 +277,21 @@ export const NoteEditor = () => {
       }
     }
   }, [note, title, dispatch, isSaving]);
+
+  // Keep a ref to the latest handleSave to avoid stale closures in the timer
+  const handleSaveRef = useRef(handleSave);
+  handleSaveRef.current = handleSave;
+
+  // Auto-save 10 seconds after unsaved changes appear
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const timer = setTimeout(() => {
+      handleSaveRef.current();
+    }, 10_000);
+
+    return () => clearTimeout(timer);
+  }, [hasUnsavedChanges]);
 
   // Keyboard shortcut for save (Ctrl/Cmd + S)
   React.useEffect(() => {
@@ -306,20 +335,26 @@ export const NoteEditor = () => {
     setFolderMenuAnchor(null);
   }, []);
 
-  const handleFolderChange = useCallback((folderId: string | null) => {
-    if (note) {
-      dispatch(updateNote({ id: note.id, updates: { folderId: folderId ?? '' } }));
-    }
-    setFolderMenuAnchor(null);
-  }, [note, dispatch]);
+  const handleFolderChange = useCallback(
+    (folderId: string | null) => {
+      if (note) {
+        dispatch(updateNote({ id: note.id, updates: { folderId: folderId ?? '' } }));
+      }
+      setFolderMenuAnchor(null);
+    },
+    [note, dispatch],
+  );
 
-  const handleTagsChange = useCallback((tagIds: string[]) => {
-    if (note) {
-      dispatch(updateNote({ id: note.id, updates: { tags: tagIds } }));
-    }
-  }, [note, dispatch]);
+  const handleTagsChange = useCallback(
+    (tagIds: string[]) => {
+      if (note) {
+        dispatch(updateNote({ id: note.id, updates: { tags: tagIds } }));
+      }
+    },
+    [note, dispatch],
+  );
 
-  const currentFolder = folders.find(f => f.id === note?.folderId);
+  const currentFolder = folders.find((f) => f.id === note?.folderId);
 
   // Show loading spinner when a note is selected but not yet loaded
   if (selectedNoteId && !note && isLoading) {
@@ -327,7 +362,7 @@ export const NoteEditor = () => {
       <Box className={styles.emptyState}>
         <CircularProgress size={40} />
         <Typography variant="body2" sx={{ mt: 2 }}>
-          {t("Common.Loading")}
+          {t('Common.Loading')}
         </Typography>
       </Box>
     );
@@ -337,10 +372,8 @@ export const NoteEditor = () => {
     return (
       <Box className={styles.emptyState}>
         <NoteOutlinedIcon className={styles.emptyStateIcon} />
-        <Typography variant="h6">{t("Notes.SelectNote")}</Typography>
-        <Typography variant="body2">
-          {t("Notes.SelectNoteHint")}
-        </Typography>
+        <Typography variant="h6">{t('Notes.SelectNote')}</Typography>
+        <Typography variant="body2">{t('Notes.SelectNoteHint')}</Typography>
       </Box>
     );
   }
@@ -354,12 +387,12 @@ export const NoteEditor = () => {
           className={styles.titleInput}
           value={title}
           onChange={handleTitleChange}
-          placeholder={t("Common.Untitled")}
+          placeholder={t('Common.Untitled')}
         />
 
         {/* Row 2: Actions */}
         <Box className={styles.headerActions}>
-          <Tooltip title={t("Notes.MoveToFolder")}>
+          <Tooltip title={t('Notes.MoveToFolder')}>
             <Button
               size="small"
               variant="outlined"
@@ -368,7 +401,7 @@ export const NoteEditor = () => {
               startIcon={<FolderIcon fontSize="small" />}
               className={styles.folderButton}
             >
-              {currentFolder?.name || t("Notes.NoFolder")}
+              {currentFolder?.name || t('Notes.NoFolder')}
             </Button>
           </Tooltip>
           <Menu
@@ -376,14 +409,11 @@ export const NoteEditor = () => {
             open={Boolean(folderMenuAnchor)}
             onClose={handleFolderMenuClose}
           >
-            <MenuItem
-              onClick={() => handleFolderChange(null)}
-              selected={!note.folderId}
-            >
+            <MenuItem onClick={() => handleFolderChange(null)} selected={!note.folderId}>
               <ListItemIcon>
                 <FolderOpenIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText>{t("Notes.NoFolder")}</ListItemText>
+              <ListItemText>{t('Notes.NoFolder')}</ListItemText>
             </MenuItem>
             {folders.map((folder) => (
               <MenuItem
@@ -398,20 +428,30 @@ export const NoteEditor = () => {
               </MenuItem>
             ))}
           </Menu>
-          <Tooltip title={t("Notes.SaveShortcut")}>
+          <Tooltip title={t('Notes.SaveShortcut')}>
             <Button
               size="small"
               variant={hasUnsavedChanges ? 'contained' : 'outlined'}
               color={hasUnsavedChanges ? 'primary' : 'inherit'}
               onClick={handleSave}
               disabled={isSaving}
-              startIcon={isSaving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon fontSize="small" />}
+              startIcon={
+                isSaving ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : (
+                  <SaveIcon fontSize="small" />
+                )
+              }
               className={styles.saveButton}
             >
-              {isSaving ? t("Common.Saving") : hasUnsavedChanges ? t("Common.Save") : t("Common.Saved")}
+              {isSaving
+                ? t('Common.Saving')
+                : hasUnsavedChanges
+                  ? t('Common.Save')
+                  : t('Common.Saved')}
             </Button>
           </Tooltip>
-          <Tooltip title={note.isPinned ? t("Notes.Unpin") : t("Notes.Pin")}>
+          <Tooltip title={note.isPinned ? t('Notes.Unpin') : t('Notes.Pin')}>
             <IconButton size="small" onClick={handleTogglePin}>
               {note.isPinned ? (
                 <PushPinIcon fontSize="small" color="primary" />
@@ -421,30 +461,27 @@ export const NoteEditor = () => {
             </IconButton>
           </Tooltip>
           {isMobile ? (
-            <Tooltip title={t("Tags.Tags")}>
+            <Tooltip title={t('Tags.Tags')}>
               <IconButton
                 size="small"
                 onClick={() => setShowMobileTags(!showMobileTags)}
-                color={showMobileTags || note.tags.length > 0 ? "primary" : "default"}
+                color={showMobileTags || note.tags.length > 0 ? 'primary' : 'default'}
               >
                 <LocalOfferOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           ) : (
-            <TagPicker
-              selectedTagIds={note.tags}
-              onTagsChange={handleTagsChange}
-            />
+            <TagPicker selectedTagIds={note.tags} onTagsChange={handleTagsChange} />
           )}
           <Box className={styles.actionSpacer} />
           {note.isDeleted ? (
-            <Tooltip title={t("Notes.Restore")}>
+            <Tooltip title={t('Notes.Restore')}>
               <IconButton size="small" onClick={handleRestore} color="success">
                 <RestoreIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           ) : (
-            <Tooltip title={t("Common.Delete")}>
+            <Tooltip title={t('Common.Delete')}>
               <IconButton size="small" onClick={handleDelete} color="error">
                 <DeleteOutlineIcon fontSize="small" />
               </IconButton>
@@ -455,10 +492,7 @@ export const NoteEditor = () => {
         {/* Row 3: Tags (mobile only - toggleable) */}
         {isMobile && showMobileTags && (
           <Box className={styles.headerTags}>
-            <TagPicker
-              selectedTagIds={note.tags}
-              onTagsChange={handleTagsChange}
-            />
+            <TagPicker selectedTagIds={note.tags} onTagsChange={handleTagsChange} />
           </Box>
         )}
       </Box>
@@ -474,7 +508,7 @@ export const NoteEditor = () => {
             onChange={handleEditorChange}
             isMobile={isMobile}
             lastSaved={lastSaved}
-            lastSavedLabel={t("Notes.LastSaved")}
+            lastSavedLabel={t('Notes.LastSaved')}
           />
         }
       >
@@ -485,7 +519,7 @@ export const NoteEditor = () => {
           onChange={handleEditorChange}
           isMobile={isMobile}
           lastSaved={lastSaved}
-          lastSavedLabel={t("Notes.LastSaved")}
+          lastSavedLabel={t('Notes.LastSaved')}
         />
       </EditorErrorBoundary>
     </Box>
