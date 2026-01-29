@@ -66,7 +66,9 @@
     "WillBeDeleted": "Will be permanently deleted after 30 days in trash",
     "Recent": "Recent",
     "Restore": "Restore",
-    "NoteRestored": "Note restored"
+    "NoteRestored": "Note restored",
+    "SaveError": "Failed to save note",
+    "AutoSaveIn": "Auto-save in"
   },
   "Folders": {
     "Folders": "Folders",

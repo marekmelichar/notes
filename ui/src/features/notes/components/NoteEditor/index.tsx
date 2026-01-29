@@ -106,6 +106,8 @@ interface BlockNoteEditorProps {
   isMobile: boolean;
   lastSaved: Date | null;
   lastSavedLabel: string;
+  autoSaveCountdown: number | null;
+  autoSaveLabel: string;
 }
 
 const BlockNoteEditor = ({
@@ -115,6 +117,8 @@ const BlockNoteEditor = ({
   isMobile,
   lastSaved,
   lastSavedLabel,
+  autoSaveCountdown,
+  autoSaveLabel,
 }: BlockNoteEditorProps) => {
   const { t } = useTranslation();
   const { mode } = useColorMode();
@@ -191,11 +195,18 @@ const BlockNoteEditor = ({
         <Typography variant="caption">
           {wordCount} words | {charCount} characters
         </Typography>
-        {lastSaved && (
-          <Typography variant="caption">
-            {lastSavedLabel} {lastSaved.toLocaleTimeString()}
-          </Typography>
-        )}
+        <Box sx={{ display: 'flex', gap: '0.75rem' }}>
+          {autoSaveCountdown !== null && (
+            <Typography variant="caption">
+              {autoSaveLabel} {autoSaveCountdown}s
+            </Typography>
+          )}
+          {lastSaved && (
+            <Typography variant="caption">
+              {lastSavedLabel} {lastSaved.toLocaleTimeString()}
+            </Typography>
+          )}
+        </Box>
       </Box>
     </>
   );
@@ -215,6 +226,8 @@ export const NoteEditor = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showMobileTags, setShowMobileTags] = useState(false);
+  const [autoSaveCountdown, setAutoSaveCountdown] = useState<number | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   // Track the last saved values
   const lastSavedContentRef = useRef<string>(note?.content || '');
@@ -235,16 +248,45 @@ export const NoteEditor = () => {
     return parseContent(note?.content);
   }, [note?.id]);
 
+  // Keep a ref to the latest handleSave to avoid stale closures in the timer
+  const handleSaveRef = useRef<() => void>(() => {});
+
+  // Auto-save timer ref (debounce: resets on every edit, fires 10s after the last one)
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const clearCountdown = useCallback(() => {
+    clearInterval(countdownIntervalRef.current);
+    setAutoSaveCountdown(null);
+  }, []);
+
+  const scheduleAutoSave = useCallback(() => {
+    clearTimeout(autoSaveTimerRef.current);
+    clearInterval(countdownIntervalRef.current);
+
+    setAutoSaveCountdown(10);
+    countdownIntervalRef.current = setInterval(() => {
+      setAutoSaveCountdown((prev) => (prev !== null && prev > 1 ? prev - 1 : null));
+    }, 1_000);
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      clearInterval(countdownIntervalRef.current);
+      setAutoSaveCountdown(null);
+      handleSaveRef.current();
+    }, 10_000);
+  }, []);
+
   const handleEditorChange = useCallback(() => {
     setHasUnsavedChanges(true);
-  }, []);
+    scheduleAutoSave();
+  }, [scheduleAutoSave]);
 
   // Handle title changes
   const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value;
     setTitle(newTitle);
     setHasUnsavedChanges(true);
-  }, []);
+    scheduleAutoSave();
+  }, [scheduleAutoSave]);
 
   // Manual save handler
   const handleSave = useCallback(async () => {
@@ -256,6 +298,10 @@ export const NoteEditor = () => {
 
     const hasContentChanged = content !== lastSavedContentRef.current;
     const hasTitleChanged = title !== lastSavedTitleRef.current;
+
+    // Remember previous values for rollback on failure
+    const previousContent = lastSavedContentRef.current;
+    const previousTitle = lastSavedTitleRef.current;
 
     if (hasContentChanged) {
       updates.content = content;
@@ -272,33 +318,39 @@ export const NoteEditor = () => {
         await dispatch(updateNote({ id: note.id, updates })).unwrap();
         setLastSaved(new Date());
         setHasUnsavedChanges(false);
+      } catch {
+        // Revert refs so the next save attempt re-sends the changes
+        lastSavedContentRef.current = previousContent;
+        lastSavedTitleRef.current = previousTitle;
+        enqueueSnackbar(t('Notes.SaveError'), { variant: 'error' });
       } finally {
         setIsSaving(false);
       }
     }
-  }, [note, title, dispatch, isSaving]);
-
-  // Keep a ref to the latest handleSave to avoid stale closures in the timer
-  const handleSaveRef = useRef(handleSave);
+  }, [note, title, dispatch, isSaving, t]);
   handleSaveRef.current = handleSave;
 
-  // Auto-save 10 seconds after unsaved changes appear
+  // Clear auto-save timer on manual save
+  const handleManualSave = useCallback(() => {
+    clearTimeout(autoSaveTimerRef.current);
+    clearCountdown();
+    handleSaveRef.current();
+  }, [clearCountdown]);
+
+  // Clear auto-save timer when switching notes
   useEffect(() => {
-    if (!hasUnsavedChanges) return;
-
-    const timer = setTimeout(() => {
-      handleSaveRef.current();
-    }, 10_000);
-
-    return () => clearTimeout(timer);
-  }, [hasUnsavedChanges]);
+    return () => {
+      clearTimeout(autoSaveTimerRef.current);
+      clearInterval(countdownIntervalRef.current);
+    };
+  }, [note?.id]);
 
   // Keyboard shortcut for save (Ctrl/Cmd + S)
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        handleSave();
+        handleManualSave();
       }
     };
 
@@ -306,7 +358,7 @@ export const NoteEditor = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleSave]);
+  }, [handleManualSave]);
 
   const handleTogglePin = useCallback(() => {
     if (note) {
@@ -433,7 +485,7 @@ export const NoteEditor = () => {
               size="small"
               variant={hasUnsavedChanges ? 'contained' : 'outlined'}
               color={hasUnsavedChanges ? 'primary' : 'inherit'}
-              onClick={handleSave}
+              onClick={handleManualSave}
               disabled={isSaving}
               startIcon={
                 isSaving ? (
@@ -509,6 +561,8 @@ export const NoteEditor = () => {
             isMobile={isMobile}
             lastSaved={lastSaved}
             lastSavedLabel={t('Notes.LastSaved')}
+            autoSaveCountdown={autoSaveCountdown}
+            autoSaveLabel={t('Notes.AutoSaveIn')}
           />
         }
       >
@@ -520,6 +574,8 @@ export const NoteEditor = () => {
           isMobile={isMobile}
           lastSaved={lastSaved}
           lastSavedLabel={t('Notes.LastSaved')}
+          autoSaveCountdown={autoSaveCountdown}
+          autoSaveLabel={t('Notes.AutoSaveIn')}
         />
       </EditorErrorBoundary>
     </Box>

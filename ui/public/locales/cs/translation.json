@@ -66,7 +66,9 @@
     "WillBeDeleted": "Bude trvale smazáno po 30 dnech v koši",
     "Recent": "Nedávné",
     "Restore": "Obnovit",
-    "NoteRestored": "Poznámka obnovena"
+    "NoteRestored": "Poznámka obnovena",
+    "SaveError": "Nepodařilo se uložit poznámku",
+    "AutoSaveIn": "Automatické uložení za"
   },
   "Folders": {
     "Folders": "Složky",
