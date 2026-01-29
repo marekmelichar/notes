@@ -25,6 +25,11 @@ public class FileStorageSettings
         "text/x-markdown",
         "text/plain"
     ];
+
+    public string[] AllowedExtensions { get; set; } =
+    [
+        ".conf"
+    ];
 }
 
 public class FileStorageService(IOptions<FileStorageSettings> options)
@@ -56,6 +61,12 @@ public class FileStorageService(IOptions<FileStorageSettings> options)
     public bool IsAllowedContentType(string contentType)
     {
         return _settings.AllowedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public bool IsAllowedExtension(string fileName)
+    {
+        var extension = Path.GetExtension(fileName);
+        return _settings.AllowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase);
     }
 
     public bool IsWithinSizeLimit(long size)

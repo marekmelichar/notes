@@ -24,7 +24,7 @@ public class FilesController(AppDbContext db, FileStorageService storageService)
         if (!storageService.IsWithinSizeLimit(file.Length))
             return BadRequest("File exceeds maximum allowed size.");
 
-        if (!storageService.IsAllowedContentType(file.ContentType))
+        if (!storageService.IsAllowedContentType(file.ContentType) && !storageService.IsAllowedExtension(file.FileName))
             return BadRequest("File type not allowed.");
 
         var fileUpload = new FileUpload
