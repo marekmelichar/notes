@@ -1,6 +1,8 @@
 import React from 'react';
-import { Box, Typography, Paper, Switch, Button } from '@mui/material';
+import { Box, Typography, Paper, Switch, Button, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '@/theme/ThemeProvider';
 import { DEFAULT_PRIMARY_COLOR } from '@/theme/colorUtils';
 import styles from './index.module.css';
@@ -16,6 +18,9 @@ const COLOR_PRESETS = [
 
 const SettingsPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  const handleClose = () => navigate(-1);
 
   const getColorName = (key: string) => t(`Colors.${key}`);
   const { mode, toggleColorMode, primaryColor, setPrimaryColor, resetPrimaryColor } =
@@ -29,9 +34,12 @@ const SettingsPage = () => {
 
   return (
     <Box className={styles.container}>
-      <Typography variant="h4" gutterBottom>
-        {t('Common.Nav.Settings')}
-      </Typography>
+      <Box className={styles.header}>
+        <Typography variant="h4">{t('Common.Nav.Settings')}</Typography>
+        <IconButton onClick={handleClose} aria-label={t('Common.Close')}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
 
       <Paper className={styles.paper}>
         <Box className={styles.section}>
@@ -84,6 +92,10 @@ const SettingsPage = () => {
           </Box>
         </Box>
       </Paper>
+
+      <Button variant="contained" onClick={handleClose} className={styles.okButton}>
+        {t('Common.Ok')}
+      </Button>
     </Box>
   );
 };

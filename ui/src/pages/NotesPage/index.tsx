@@ -33,6 +33,7 @@ const NotesPage = () => {
   const mobileView = useAppSelector((state) => state.ui.mobileView);
   const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
   const noteListCollapsed = useAppSelector((state) => state.ui.noteListCollapsed);
+  const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const selectedNote = useAppSelector(selectSelectedNote);
 
@@ -200,7 +201,9 @@ const NotesPage = () => {
   const effectiveNoteListWidth = noteListCollapsed ? NOTELIST_COLLAPSED_WIDTH : noteListWidth;
   const gridStyle = isMobile
     ? undefined
-    : { gridTemplateColumns: `${effectiveSidebarWidth}px ${effectiveNoteListWidth}px 1fr` };
+    : noteListHidden
+      ? { gridTemplateColumns: `${effectiveSidebarWidth}px 1fr` }
+      : { gridTemplateColumns: `${effectiveSidebarWidth}px ${effectiveNoteListWidth}px 1fr` };
 
   return (
     <Box ref={containerRef} className={styles.container} style={gridStyle}>
@@ -214,10 +217,12 @@ const NotesPage = () => {
           onMouseDown={handleSidebarResizeStart}
         />
       )}
-      <Box className={`${styles.noteList} ${getPanelClass('list')} ${noteListCollapsed ? styles.noteListCollapsed : ''}`}>
-        <NoteList collapsed={noteListCollapsed} />
-      </Box>
-      {!isMobile && !noteListCollapsed && (
+      {!(noteListHidden && !isMobile) && (
+        <Box className={`${styles.noteList} ${getPanelClass('list')} ${noteListCollapsed ? styles.noteListCollapsed : ''}`}>
+          <NoteList collapsed={noteListCollapsed} />
+        </Box>
+      )}
+      {!isMobile && !noteListCollapsed && !noteListHidden && (
         <Box
           className={`${styles.resizeHandle} ${resizingPanel === 'notelist' ? styles.resizeHandleActive : ''}`}
           style={{ left: effectiveSidebarWidth + effectiveNoteListWidth - 2 }}

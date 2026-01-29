@@ -29,6 +29,7 @@
     "Navigate": "navigace",
     "Open": "otevřít",
     "Close": "zavřít",
+    "Ok": "OK",
     "SessionExpired": "Relace vypršela. Přihlaste se znovu.",
     "DarkMode": "Tmavý režim",
     "Logout": "Odhlásit",
@@ -122,7 +123,9 @@
     "Appearance": "Vzhled",
     "PrimaryColor": "Barva",
     "CustomColor": "Vlastní",
-    "ResetToDefault": "Výchozí"
+    "ResetToDefault": "Výchozí",
+    "Layout": "Rozvržení",
+    "ShowNoteList": "Zobrazit seznam poznámek"
   },
   "Files": {
     "OfflineError": "Nelze nahrát soubory bez připojení",

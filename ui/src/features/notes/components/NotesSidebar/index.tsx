@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Typography,
@@ -54,6 +54,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { useAppDispatch, useAppSelector, toggleSidebarCollapsed } from "@/store";
+import { setNoteListHidden } from "@/store/uiSlice";
 import {
   setFilter,
   resetFilter,
@@ -98,6 +99,7 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
   const dispatch = useAppDispatch();
   const selectedNoteId = useAppSelector((state) => state.notes.selectedNoteId);
   const isMobile = useAppSelector((state) => state.ui.isMobile);
+  const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
   const isSelected = selectedNoteId === note.id;
   const elementRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -118,15 +120,15 @@ const SortableNote = ({ note, level }: SortableNoteProps) => {
     elementRef.current = node;
   }, [setNodeRef]);
 
-  // Scroll into view when selected
+  // Scroll into view when selected (skip when note list is hidden)
   React.useEffect(() => {
-    if (!isSelected) return;
+    if (!isSelected || noteListHidden) return;
     // Small delay for DOM to update after instant folder expansion
     const timer = requestAnimationFrame(() => {
       elementRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
     });
     return () => cancelAnimationFrame(timer);
-  }, [isSelected]);
+  }, [isSelected, noteListHidden]);
 
   const step = isMobile ? 10 : 30;
   const style = {
@@ -363,6 +365,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const isFoldersLoading = useAppSelector(selectFoldersLoading);
   const isTagsLoading = useAppSelector(selectTagsLoading);
   const isMobile = useAppSelector((state) => state.ui.isMobile);
+  const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
@@ -375,6 +378,53 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const [editTagColor, setEditTagColor] = useState("#6366f1");
   const [showTreeView, setShowTreeView] = useState(true);
   const [recentExpanded, setRecentExpanded] = useState(true);
+  const RECENT_STORAGE_KEY = 'notes-recent-height';
+  const RECENT_MIN_HEIGHT = 60;
+  const RECENT_MAX_HEIGHT = 500;
+  const RECENT_DEFAULT_HEIGHT = 180;
+  const [recentHeight, setRecentHeight] = useState(() => {
+    const saved = localStorage.getItem(RECENT_STORAGE_KEY);
+    return saved ? parseInt(saved, 10) : RECENT_DEFAULT_HEIGHT;
+  });
+  const [resizingRecent, setResizingRecent] = useState(false);
+  const recentStartY = useRef(0);
+  const recentStartHeight = useRef(0);
+
+  const handleRecentResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setResizingRecent(true);
+    recentStartY.current = e.clientY;
+    recentStartHeight.current = recentHeight;
+  }, [recentHeight]);
+
+  const handleRecentResizeMove = useCallback((e: MouseEvent) => {
+    if (!resizingRecent) return;
+    const delta = e.clientY - recentStartY.current;
+    const newHeight = Math.min(Math.max(recentStartHeight.current + delta, RECENT_MIN_HEIGHT), RECENT_MAX_HEIGHT);
+    setRecentHeight(newHeight);
+  }, [resizingRecent]);
+
+  const handleRecentResizeEnd = useCallback(() => {
+    if (!resizingRecent) return;
+    localStorage.setItem(RECENT_STORAGE_KEY, recentHeight.toString());
+    setResizingRecent(false);
+  }, [resizingRecent, recentHeight]);
+
+  useEffect(() => {
+    if (resizingRecent) {
+      document.addEventListener('mousemove', handleRecentResizeMove);
+      document.addEventListener('mouseup', handleRecentResizeEnd);
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+    }
+    return () => {
+      document.removeEventListener('mousemove', handleRecentResizeMove);
+      document.removeEventListener('mouseup', handleRecentResizeEnd);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [resizingRecent, handleRecentResizeMove, handleRecentResizeEnd]);
+
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [activeFolder, setActiveFolder] = useState<Folder | null>(null);
   const [parentFolderIdForCreate, setParentFolderIdForCreate] = useState<
@@ -588,8 +638,13 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const favoritesCount = notes.filter((n) => n.isPinned && !n.isDeleted).length;
   const trashCount = notes.filter((n) => n.isDeleted).length;
 
+  const showNoteListIfHidden = () => {
+    if (noteListHidden) dispatch(setNoteListHidden(false));
+  };
+
   const handleAllNotes = () => {
     dispatch(resetFilter());
+    showNoteListIfHidden();
   };
 
   const handleFavorites = () => {
@@ -602,6 +657,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
         searchQuery: "",
       })
     );
+    showNoteListIfHidden();
   };
 
   const handleTrash = () => {
@@ -614,6 +670,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
         searchQuery: "",
       })
     );
+    showNoteListIfHidden();
   };
 
   const handleTagClick = (tagId: string) => {
@@ -805,7 +862,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
         {/* Quick Filters */}
         <Box className={styles.section}>
           <Box
-            className={`${styles.navItem} ${isAllNotesActive ? styles.navItemActive : ""}`}
+            className={styles.navItem}
             onClick={handleAllNotes}
           >
             <NoteOutlinedIcon fontSize="small" className={styles.navItemIcon} />
@@ -814,7 +871,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
           </Box>
 
           <Box
-            className={`${styles.navItem} ${isFavoritesActive ? styles.navItemActive : ""}`}
+            className={styles.navItem}
             onClick={handleFavorites}
           >
             <StarOutlineIcon fontSize="small" className={styles.navItemIcon} />
@@ -823,7 +880,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
           </Box>
 
           <Box
-            className={`${styles.navItem} ${isTrashActive ? styles.navItemActive : ""}`}
+            className={styles.navItem}
             onClick={handleTrash}
           >
             <DeleteOutlineIcon
@@ -851,7 +908,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
             </IconButton>
           </Box>
           <Collapse in={recentExpanded}>
-            <Box className={styles.recentList}>
+            <Box className={styles.recentList} style={{ maxHeight: recentHeight }}>
               {recentNotes.map((note) => (
                 <Box
                   key={note.id}
@@ -865,6 +922,10 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
                 </Box>
               ))}
             </Box>
+            <Box
+              className={`${styles.verticalResizeHandle} ${resizingRecent ? styles.verticalResizeHandleActive : ''}`}
+              onMouseDown={handleRecentResizeStart}
+            />
           </Collapse>
         </Box>
 

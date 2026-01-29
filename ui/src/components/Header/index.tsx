@@ -16,6 +16,8 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import ViewListOutlinedIcon from '@mui/icons-material/ViewListOutlined';
+import AddIcon from '@mui/icons-material/Add';
 import { useTranslation } from 'react-i18next';
 import { ROUTE_HOME } from '@/config';
 import { LanguageSwitch } from '../LanguageSwitch';
@@ -24,6 +26,8 @@ import { SearchDialog } from '../SearchDialog';
 import { useColorMode } from '@/theme/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { logout } from '@/store/authSlice';
+import { toggleNoteListHidden } from '@/store/uiSlice';
+import { createNote, selectNotesFilter } from '@/features/notes/store/notesSlice';
 import { useAppVersion } from '@/hooks';
 import { Logo } from '../Logo';
 
@@ -33,6 +37,9 @@ export const Header = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
+  const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
+  const isMobile = useAppSelector((state) => state.ui.isMobile);
+  const filter = useAppSelector(selectNotesFilter);
   const { version } = useAppVersion();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -75,6 +82,11 @@ export const Header = () => {
     toggleColorMode();
   };
 
+  const handleCreateNote = () => {
+    dispatch(createNote({ folderId: filter.folderId }));
+    navigate('/');
+  };
+
   const handleSettings = () => {
     handleMenuClose();
     navigate('/settings');
@@ -90,6 +102,9 @@ export const Header = () => {
       <SearchDialog open={isSearchOpen} onClose={handleCloseSearch} />
 
       <Stack direction={'row'} gap={1} alignItems="center">
+        <IconButton onClick={handleCreateNote} aria-label={t('Notes.NewNote')} className={styles.createNoteButton}>
+          <AddIcon />
+        </IconButton>
         <LanguageSwitch />
         <IconButton
           onClick={handleAvatarClick}
@@ -133,6 +148,23 @@ export const Header = () => {
                 />
               </Box>
             </Box>
+            {!isMobile && (
+              <Box className={styles.themeToggleRow}>
+                <Box className={styles.themeToggleLeft}>
+                  <Box className={styles.iconWrapper}>
+                    <ViewListOutlinedIcon className={styles.icon} />
+                  </Box>
+                  <Typography variant="body1">{t('SettingsPage.ShowNoteList')}</Typography>
+                </Box>
+                <Box>
+                  <Switch
+                    checked={!noteListHidden}
+                    onChange={() => dispatch(toggleNoteListHidden())}
+                    size="small"
+                  />
+                </Box>
+              </Box>
+            )}
           </Box>
           <Divider />
           <MenuItem onClick={handleSettings} className={styles.logoutMenuItem}>

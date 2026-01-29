@@ -29,6 +29,7 @@
     "Navigate": "navigate",
     "Open": "open",
     "Close": "close",
+    "Ok": "OK",
     "SessionExpired": "Your session expired. Please log in again.",
     "DarkMode": "Dark mode",
     "Logout": "Logout",
@@ -122,7 +123,9 @@
     "Appearance": "Appearance",
     "PrimaryColor": "Primary Color",
     "CustomColor": "Custom Color",
-    "ResetToDefault": "Reset to Default"
+    "ResetToDefault": "Reset to Default",
+    "Layout": "Layout",
+    "ShowNoteList": "Show note list"
   },
   "Files": {
     "OfflineError": "Cannot upload files while offline",

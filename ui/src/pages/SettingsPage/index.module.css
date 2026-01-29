@@ -1,6 +1,14 @@
 .container {
   padding: 1.5rem;
   max-width: 40rem;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
 }
 
 .paper {
@@ -82,4 +90,9 @@
 
 .resetButton {
   margin-top: 1rem;
+}
+
+.okButton {
+  margin-top: 1.5rem;
+  float: right;
 }

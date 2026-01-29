@@ -36,6 +36,10 @@
   }
 }
 
+.createNoteButton {
+  color: var(--mui-palette-text-secondary);
+}
+
 .avatarButton {
   margin-left: 0.5rem;
 }

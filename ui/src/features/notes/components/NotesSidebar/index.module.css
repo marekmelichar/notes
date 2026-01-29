@@ -68,13 +68,29 @@
 }
 
 .recentList {
-  max-height: 11.25rem;
   overflow-y: auto;
   scrollbar-width: none;
 }
 
 .recentList::-webkit-scrollbar {
   display: none;
+}
+
+.verticalResizeHandle {
+  height: 4px;
+  cursor: row-resize;
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+
+.verticalResizeHandleActive {
+  background-color: var(--mui-palette-primary-main);
+}
+
+@media (hover: hover) {
+  .verticalResizeHandle:hover {
+    background-color: var(--mui-palette-primary-main);
+  }
 }
 
 .navItem {
@@ -95,6 +111,7 @@
 
 .navItemActive {
   background-color: var(--mui-palette-action-selected);
+  border: 1px solid var(--mui-palette-primary-main);
 }
 
 .navItemIcon {
