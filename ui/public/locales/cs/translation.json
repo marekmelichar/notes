@@ -139,6 +139,15 @@
     "TooLarge": "Soubor je příliš velký (max 100 MB)",
     "UploadError": "Nahrání souboru se nezdařilo"
   },
+  "Export": {
+    "Export": "Exportovat",
+    "PDF": "PDF",
+    "DOCX": "Word (DOCX)",
+    "Markdown": "Markdown",
+    "HTML": "HTML",
+    "Success": "Poznámka úspěšně exportována",
+    "Error": "Export poznámky se nezdařil"
+  },
   "ErrorPage": {
     "Title": "Něco se pokazilo",
     "Message": "Došlo k chybě. Zkuste obnovit stránku.",

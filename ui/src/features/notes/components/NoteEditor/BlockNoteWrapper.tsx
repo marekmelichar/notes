@@ -13,6 +13,12 @@ import styles from './index.module.css';
 
 const MAX_FILE_SIZE = 104_857_600; // 100 MB
 
+export type ExportFormat = 'pdf' | 'docx' | 'markdown' | 'html';
+
+export interface NoteExportFunctions {
+  exportTo: (format: ExportFormat, title?: string) => Promise<Blob>;
+}
+
 interface BlockNoteWrapperProps {
   initialContent: PartialBlock[] | undefined;
   noteId?: string;
@@ -23,6 +29,7 @@ interface BlockNoteWrapperProps {
   autoSaveCountdown: number | null;
   autoSaveLabel: string;
   onContentGetterReady: (getter: (() => string) | null) => void;
+  onExportReady?: (exporter: NoteExportFunctions | null) => void;
 }
 
 export const BlockNoteWrapper = ({
@@ -35,6 +42,7 @@ export const BlockNoteWrapper = ({
   autoSaveCountdown,
   autoSaveLabel,
   onContentGetterReady,
+  onExportReady,
 }: BlockNoteWrapperProps) => {
   const { t } = useTranslation();
   const { mode } = useColorMode();
@@ -97,6 +105,71 @@ export const BlockNoteWrapper = ({
       onContentGetterReady(null);
     };
   }, [onContentGetterReady, getContent]);
+
+  // Expose export functions to parent via callback
+  const exportTo = useCallback(
+    async (format: ExportFormat, title?: string): Promise<Blob> => {
+      const blocks = editor.document;
+
+      // Build blocks with title for PDF/DOCX (need full Block objects)
+      const getBlocksWithTitle = () => {
+        if (!title) return blocks;
+        // Insert a temporary heading, snapshot the document, then undo
+        editor.insertBlocks(
+          [{ type: 'heading', props: { level: 1 }, content: title }],
+          blocks[0],
+          'before',
+        );
+        const snapshot = editor.document;
+        editor.undo();
+        return snapshot;
+      };
+
+      switch (format) {
+        case 'pdf': {
+          const blocksWithTitle = getBlocksWithTitle();
+          const [{ PDFExporter, pdfDefaultSchemaMappings }, { pdf }] = await Promise.all([
+            import('@blocknote/xl-pdf-exporter'),
+            import('@react-pdf/renderer'),
+          ]);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const exporter = new PDFExporter(editor.schema as any, pdfDefaultSchemaMappings as any);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const doc = await exporter.toReactPDFDocument(blocksWithTitle as any);
+          return pdf(doc).toBlob();
+        }
+        case 'docx': {
+          const blocksWithTitle = getBlocksWithTitle();
+          const { DOCXExporter, docxDefaultSchemaMappings } = await import(
+            '@blocknote/xl-docx-exporter'
+          );
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const exporter = new DOCXExporter(editor.schema as any, docxDefaultSchemaMappings as any);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return exporter.toBlob(blocksWithTitle as any);
+        }
+        case 'markdown': {
+          const md = await editor.blocksToMarkdownLossy(blocks);
+          const withTitle = title ? `# ${title}\n\n${md}` : md;
+          return new Blob([withTitle], { type: 'text/markdown;charset=utf-8' });
+        }
+        case 'html': {
+          const html = await editor.blocksToFullHTML(blocks);
+          const withTitle = title ? `<h1>${title}</h1>\n${html}` : html;
+          return new Blob([withTitle], { type: 'text/html;charset=utf-8' });
+        }
+      }
+    },
+    [editor],
+  );
+
+  useEffect(() => {
+    if (!onExportReady) return;
+    onExportReady({ exportTo });
+    return () => {
+      onExportReady(null);
+    };
+  }, [onExportReady, exportTo]);
 
   return (
     <>

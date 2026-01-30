@@ -21,6 +21,11 @@ import RestoreIcon from '@mui/icons-material/Restore';
 import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
+import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { setTabUnsaved } from '@/store/tabsSlice';
@@ -31,7 +36,7 @@ import {
 } from '../../store/notesSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
 import { TagPicker } from '../TagPicker';
-import { BlockNoteWrapper } from './BlockNoteWrapper';
+import { BlockNoteWrapper, type ExportFormat, type NoteExportFunctions } from './BlockNoteWrapper';
 import styles from './index.module.css';
 
 // Validate a block has minimum required structure for BlockNote
@@ -111,6 +116,14 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   const handleContentGetterReady = useCallback((getter: (() => string) | null) => {
     getContentRef.current = getter;
   }, []);
+
+  // Export functions
+  const exportRef = useRef<NoteExportFunctions | null>(null);
+  const handleExportReady = useCallback((exporter: NoteExportFunctions | null) => {
+    exportRef.current = exporter;
+  }, []);
+  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Track the last saved values
   const lastSavedContentRef = useRef<string>(note?.content || '');
@@ -290,6 +303,35 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
     [note, dispatch],
   );
 
+  const handleExport = useCallback(
+    async (format: ExportFormat) => {
+      setExportMenuAnchor(null);
+      if (!exportRef.current || !note) return;
+
+      setIsExporting(true);
+      try {
+        const blob = await exportRef.current.exportTo(format, note.title);
+        const ext = format === 'markdown' ? 'md' : format;
+        const filename = `${note.title || t('Common.Untitled')}.${ext}`;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        enqueueSnackbar(t('Export.Success'), { variant: 'success' });
+      } catch (err) {
+        console.error('Export failed:', err);
+        enqueueSnackbar(t('Export.Error'), { variant: 'error' });
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [note, t],
+  );
+
   const currentFolder = folders.find((f) => f.id === note?.folderId);
 
   if (!note) {
@@ -380,6 +422,49 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
               )}
             </IconButton>
           </Tooltip>
+          <Tooltip title={t('Export.Export')}>
+            <IconButton
+              size="small"
+              onClick={(e) => setExportMenuAnchor(e.currentTarget)}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <CircularProgress size={18} />
+              ) : (
+                <FileDownloadOutlinedIcon fontSize="small" />
+              )}
+            </IconButton>
+          </Tooltip>
+          <Menu
+            anchorEl={exportMenuAnchor}
+            open={Boolean(exportMenuAnchor)}
+            onClose={() => setExportMenuAnchor(null)}
+          >
+            <MenuItem onClick={() => handleExport('pdf')}>
+              <ListItemIcon>
+                <PictureAsPdfOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('Export.PDF')}</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => handleExport('docx')}>
+              <ListItemIcon>
+                <DescriptionOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('Export.DOCX')}</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => handleExport('markdown')}>
+              <ListItemIcon>
+                <CodeOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('Export.Markdown')}</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => handleExport('html')}>
+              <ListItemIcon>
+                <HtmlOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('Export.HTML')}</ListItemText>
+            </MenuItem>
+          </Menu>
           {isMobile ? (
             <Tooltip title={t('Tags.Tags')}>
               <IconButton
@@ -431,6 +516,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
             autoSaveCountdown={autoSaveCountdown}
             autoSaveLabel={t('Notes.AutoSaveIn')}
             onContentGetterReady={handleContentGetterReady}
+            onExportReady={handleExportReady}
           />
         }
       >
@@ -444,6 +530,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
           autoSaveCountdown={autoSaveCountdown}
           autoSaveLabel={t('Notes.AutoSaveIn')}
           onContentGetterReady={handleContentGetterReady}
+          onExportReady={handleExportReady}
         />
       </EditorErrorBoundary>
     </Box>

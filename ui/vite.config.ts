@@ -14,6 +14,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
+    dedupe: [
+      '@blocknote/core',
+      '@blocknote/react',
+      '@blocknote/mantine',
+      'prosemirror-state',
+      'prosemirror-model',
+      'prosemirror-view',
+    ],
   },
   define: {
     'import.meta.env.PACKAGE_VERSION': JSON.stringify(packageJson.version),

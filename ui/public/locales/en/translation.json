@@ -139,6 +139,15 @@
     "TooLarge": "File is too large (max 100 MB)",
     "UploadError": "Failed to upload file"
   },
+  "Export": {
+    "Export": "Export",
+    "PDF": "PDF",
+    "DOCX": "Word (DOCX)",
+    "Markdown": "Markdown",
+    "HTML": "HTML",
+    "Success": "Note exported successfully",
+    "Error": "Failed to export note"
+  },
   "ErrorPage": {
     "Title": "Something went wrong",
     "Message": "An unexpected error occurred. Please try reloading the page.",
