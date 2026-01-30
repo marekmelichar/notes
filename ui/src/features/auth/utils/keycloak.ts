@@ -7,7 +7,7 @@ const keycloak = new Keycloak({
 });
 
 // Store interval ID for cleanup
-let tokenRefreshInterval: number | null = null;
+let tokenRefreshInterval: ReturnType<typeof setInterval> | null = null;
 
 // Mock mode bypass - returns true immediately without Keycloak initialization
 const initKeycloakMock = (): Promise<boolean> => {
