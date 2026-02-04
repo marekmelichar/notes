@@ -10,6 +10,8 @@ import {
   Button,
   CircularProgress,
   useMediaQuery,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { enqueueSnackbar } from 'notistack';
@@ -27,6 +29,7 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
 import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { setTabUnsaved } from '@/store/tabsSlice';
 import {
@@ -44,7 +47,8 @@ function isValidBlock(block: unknown): boolean {
   if (!block || typeof block !== 'object') return false;
   const b = block as Record<string, unknown>;
   if (typeof b.type !== 'string') return false;
-  if (b.content !== undefined && !Array.isArray(b.content)) return false;
+  // Content can be an array (inline content) or an object (table content, etc.)
+  if (b.content !== undefined && typeof b.content !== 'object') return false;
   if (b.children !== undefined && !Array.isArray(b.children)) return false;
   return true;
 }
@@ -109,11 +113,12 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   const [isSaving, setIsSaving] = useState(false);
   const [showMobileTags, setShowMobileTags] = useState(false);
   const [autoSaveCountdown, setAutoSaveCountdown] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'editor' | 'markdown'>('editor');
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  // Content getter (replaces window global)
-  const getContentRef = useRef<(() => string) | null>(null);
-  const handleContentGetterReady = useCallback((getter: (() => string) | null) => {
+  // Content getter (replaces window global) - async to support markdown parsing
+  const getContentRef = useRef<(() => Promise<string>) | null>(null);
+  const handleContentGetterReady = useCallback((getter: (() => Promise<string>) | null) => {
     getContentRef.current = getter;
   }, []);
 
@@ -191,7 +196,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   const handleSave = useCallback(async () => {
     if (!note || isSaving) return;
 
-    const content = getContentRef.current ? getContentRef.current() : '[]';
+    const content = getContentRef.current ? await getContentRef.current() : '[]';
     const updates: { content?: string; title?: string } = {};
 
     const hasContentChanged = content !== lastSavedContentRef.current;
@@ -354,6 +359,24 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
 
         {/* Row 2: Actions */}
         <Box className={styles.headerActions}>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, newMode) => newMode && setViewMode(newMode)}
+            size="small"
+            className={styles.viewToggle}
+          >
+            <ToggleButton value="editor">
+              <Tooltip title={t('View.Editor')}>
+                <EditOutlinedIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="markdown">
+              <Tooltip title={t('View.Markdown')}>
+                <CodeOutlinedIcon fontSize="small" />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
           <Tooltip title={t('Notes.MoveToFolder')}>
             <Button
               size="small"
@@ -517,6 +540,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
             autoSaveLabel={t('Notes.AutoSaveIn')}
             onContentGetterReady={handleContentGetterReady}
             onExportReady={handleExportReady}
+            viewMode={viewMode}
           />
         }
       >
@@ -531,6 +555,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
           autoSaveLabel={t('Notes.AutoSaveIn')}
           onContentGetterReady={handleContentGetterReady}
           onExportReady={handleExportReady}
+          viewMode={viewMode}
         />
       </EditorErrorBoundary>
     </Box>

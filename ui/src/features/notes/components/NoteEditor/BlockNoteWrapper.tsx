@@ -1,5 +1,7 @@
-import { useCallback, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
+import { useCallback, useEffect, useState, useRef } from 'react';
+import { Box, Typography, Tooltip } from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { useTranslation } from 'react-i18next';
 import { enqueueSnackbar } from 'notistack';
 import { useCreateBlockNote } from '@blocknote/react';
@@ -19,6 +21,41 @@ export interface NoteExportFunctions {
   exportTo: (format: ExportFormat, title?: string) => Promise<Blob>;
 }
 
+type MarkdownValidation = {
+  isValid: boolean;
+  warning?: string;
+};
+
+// Detect if content looks like JSON (BlockNote format)
+function looksLikeJson(content: string): boolean {
+  const trimmed = content.trim();
+  if (!trimmed.startsWith('[') && !trimmed.startsWith('{')) return false;
+  try {
+    const parsed = JSON.parse(trimmed);
+    // Check if it looks like BlockNote blocks
+    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].type) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+// Detect if content looks like raw HTML (not markdown with HTML)
+function looksLikeHtml(content: string): boolean {
+  const trimmed = content.trim();
+  // Check if it starts with DOCTYPE or html tag
+  if (trimmed.toLowerCase().startsWith('<!doctype') || trimmed.toLowerCase().startsWith('<html')) {
+    return true;
+  }
+  // Check if it's predominantly HTML tags
+  const htmlTagCount = (trimmed.match(/<[a-z][^>]*>/gi) || []).length;
+  const lines = trimmed.split('\n').length;
+  // If more than 50% of lines have HTML tags, it's probably HTML
+  return htmlTagCount > lines * 0.5 && htmlTagCount > 5;
+}
+
 interface BlockNoteWrapperProps {
   initialContent: PartialBlock[] | undefined;
   noteId?: string;
@@ -28,8 +65,9 @@ interface BlockNoteWrapperProps {
   lastSavedLabel: string;
   autoSaveCountdown: number | null;
   autoSaveLabel: string;
-  onContentGetterReady: (getter: (() => string) | null) => void;
+  onContentGetterReady: (getter: (() => Promise<string>) | null) => void;
   onExportReady?: (exporter: NoteExportFunctions | null) => void;
+  viewMode: 'editor' | 'markdown';
 }
 
 export const BlockNoteWrapper = ({
@@ -43,9 +81,27 @@ export const BlockNoteWrapper = ({
   autoSaveLabel,
   onContentGetterReady,
   onExportReady,
+  viewMode,
 }: BlockNoteWrapperProps) => {
   const { t } = useTranslation();
   const { mode } = useColorMode();
+  const [markdownContent, setMarkdownContent] = useState('');
+  const [validation, setValidation] = useState<MarkdownValidation>({ isValid: true });
+  const [isEditorMounted, setIsEditorMounted] = useState(false);
+  const prevViewModeRef = useRef(viewMode);
+  const markdownRef = useRef(markdownContent);
+  const viewModeRef = useRef(viewMode);
+  const validationTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Keep refs in sync
+  useEffect(() => {
+    markdownRef.current = markdownContent;
+  }, [markdownContent]);
+
+  useEffect(() => {
+    viewModeRef.current = viewMode;
+  }, [viewMode]);
+
   const editor = useCreateBlockNote({
     initialContent,
     uploadFile: async (file: File) => {
@@ -71,6 +127,90 @@ export const BlockNoteWrapper = ({
     },
   });
 
+  // Mark editor as mounted after first render
+  useEffect(() => {
+    // Small delay to ensure BlockNote's internal view is ready
+    const timer = setTimeout(() => setIsEditorMounted(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Validate markdown content (debounced)
+  useEffect(() => {
+    if (!isEditorMounted) return;
+    if (viewMode !== 'markdown' || !markdownContent.trim()) {
+      setValidation({ isValid: true });
+      return;
+    }
+
+    clearTimeout(validationTimeoutRef.current);
+    validationTimeoutRef.current = setTimeout(async () => {
+      // Check for JSON (BlockNote format)
+      if (looksLikeJson(markdownContent)) {
+        setValidation({
+          isValid: false,
+          warning: t('Notes.MarkdownWarningJson'),
+        });
+        return;
+      }
+
+      // Check for raw HTML
+      if (looksLikeHtml(markdownContent)) {
+        setValidation({
+          isValid: false,
+          warning: t('Notes.MarkdownWarningHtml'),
+        });
+        return;
+      }
+
+      // Try to parse markdown
+      try {
+        const blocks = await editor.tryParseMarkdownToBlocks(markdownContent);
+        if (blocks.length === 0) {
+          setValidation({
+            isValid: false,
+            warning: t('Notes.MarkdownWarningEmpty'),
+          });
+        } else {
+          setValidation({ isValid: true });
+        }
+      } catch {
+        setValidation({
+          isValid: false,
+          warning: t('Notes.MarkdownParseError'),
+        });
+      }
+    }, 500);
+
+    return () => clearTimeout(validationTimeoutRef.current);
+  }, [markdownContent, viewMode, editor, t, isEditorMounted]);
+
+  // Handle view mode transitions
+  useEffect(() => {
+    if (!isEditorMounted) return;
+
+    const handleModeSwitch = async () => {
+      if (prevViewModeRef.current === viewMode) return;
+
+      if (viewMode === 'markdown') {
+        // Switching to markdown: convert blocks to markdown
+        const md = await editor.blocksToMarkdownLossy(editor.document);
+        setMarkdownContent(md);
+      } else if (prevViewModeRef.current === 'markdown') {
+        // Switching back to editor: parse markdown to blocks
+        try {
+          const blocks = await editor.tryParseMarkdownToBlocks(markdownContent);
+          editor.replaceBlocks(editor.document, blocks);
+        } catch {
+          enqueueSnackbar(t('Notes.MarkdownParseError'), { variant: 'error' });
+        }
+      }
+
+      prevViewModeRef.current = viewMode;
+    };
+
+    handleModeSwitch();
+  }, [viewMode, editor, markdownContent, t, isEditorMounted]);
+
   // Calculate word count from blocks
   const getTextFromBlocks = (blocks: Block[]): string => {
     let text = '';
@@ -89,7 +229,9 @@ export const BlockNoteWrapper = ({
     return text;
   };
 
-  const textContent = getTextFromBlocks(editor.document);
+  // Calculate stats based on current view mode
+  const textContent =
+    viewMode === 'markdown' ? markdownContent : getTextFromBlocks(editor.document);
   const charCount = textContent.replace(/\s/g, '').length;
   const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
 
@@ -97,8 +239,30 @@ export const BlockNoteWrapper = ({
     onChange();
   }, [onChange]);
 
-  // Expose content getter to parent via callback
-  const getContent = useCallback(() => JSON.stringify(editor.document), [editor]);
+  const handleMarkdownChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setMarkdownContent(e.target.value);
+      onChange();
+    },
+    [onChange],
+  );
+
+  // Async content getter that properly handles markdown mode
+  const getContent = useCallback(async (): Promise<string> => {
+    // Use refs to get current values (avoids stale closure issues)
+    if (viewModeRef.current === 'markdown') {
+      // In markdown mode: parse current markdown to blocks
+      try {
+        const blocks = await editor.tryParseMarkdownToBlocks(markdownRef.current);
+        return JSON.stringify(blocks);
+      } catch {
+        return '[]';
+      }
+    }
+    // In editor mode: return current editor document
+    return JSON.stringify(editor.document);
+  }, [editor]);
+
   useEffect(() => {
     onContentGetterReady(getContent);
     return () => {
@@ -109,7 +273,15 @@ export const BlockNoteWrapper = ({
   // Expose export functions to parent via callback
   const exportTo = useCallback(
     async (format: ExportFormat, title?: string): Promise<Blob> => {
-      const blocks = editor.document;
+      // If in markdown mode, parse markdown to get blocks
+      let blocks = editor.document;
+      if (viewModeRef.current === 'markdown') {
+        try {
+          blocks = await editor.tryParseMarkdownToBlocks(markdownRef.current);
+        } catch {
+          // Keep current editor document if parsing fails
+        }
+      }
 
       // Build blocks with title for PDF/DOCX (need full Block objects)
       const getBlocksWithTitle = () => {
@@ -174,12 +346,40 @@ export const BlockNoteWrapper = ({
   return (
     <>
       <Box className={`${styles.editorContent} ${isMobile ? styles.editorContentMobile : ''}`}>
-        <BlockNoteView editor={editor} theme={mode} onChange={handleChange} sideMenu={false} />
+        {viewMode === 'editor' ? (
+          <BlockNoteView editor={editor} theme={mode} onChange={handleChange} sideMenu={false} />
+        ) : (
+          <textarea
+            className={styles.markdownTextarea}
+            value={markdownContent}
+            onChange={handleMarkdownChange}
+            placeholder={t('Notes.MarkdownPlaceholder')}
+          />
+        )}
       </Box>
       <Box className={styles.footer}>
-        <Typography variant="caption">
-          {wordCount} {t('Notes.Words')} | {charCount} {t('Notes.Characters')}
-        </Typography>
+        <Box className={styles.footerLeft}>
+          <Typography variant="caption">
+            {wordCount} {t('Notes.Words')} | {charCount} {t('Notes.Characters')}
+          </Typography>
+          {viewMode === 'markdown' && markdownContent.trim() && (
+            <Tooltip title={validation.warning || t('Notes.MarkdownValid')}>
+              {validation.isValid ? (
+                <CheckCircleOutlineIcon
+                  fontSize="small"
+                  color="success"
+                  className={styles.validationIcon}
+                />
+              ) : (
+                <WarningAmberIcon
+                  fontSize="small"
+                  color="warning"
+                  className={styles.validationIcon}
+                />
+              )}
+            </Tooltip>
+          )}
+        </Box>
         <Box className={styles.footerRight}>
           {autoSaveCountdown !== null && (
             <Typography variant="caption">

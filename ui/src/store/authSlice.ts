@@ -1,4 +1,4 @@
-import { initKeycloak, keycloak, cleanupKeycloak } from '@/features/auth/utils/keycloak';
+import { initKeycloak, keycloak } from '@/features/auth/utils/keycloak';
 import { setAuthToken } from '@/lib';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
@@ -84,8 +84,6 @@ export const login = createAsyncThunk('auth/login', async () => {
 
 // Async thunk for logout
 export const logout = createAsyncThunk('auth/logout', async () => {
-  // Clean up token refresh interval before logout
-  cleanupKeycloak();
   keycloak.logout({
     redirectUri: window.location.origin,
   });

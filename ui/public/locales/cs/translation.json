@@ -71,7 +71,13 @@
     "SaveError": "Nepodařilo se uložit poznámku",
     "AutoSaveIn": "Automatické uložení za",
     "Words": "slov",
-    "Characters": "znaků"
+    "Characters": "znaků",
+    "MarkdownPlaceholder": "Pište poznámku v Markdown...",
+    "MarkdownParseError": "Nepodařilo se zpracovat markdown",
+    "MarkdownValid": "Platný markdown",
+    "MarkdownWarningJson": "Vypadá to jako JSON/BlockNote formát, ne markdown",
+    "MarkdownWarningHtml": "Vypadá to jako HTML, ne markdown",
+    "MarkdownWarningEmpty": "Z tohoto markdown nelze zpracovat žádný obsah"
   },
   "Folders": {
     "Folders": "Složky",
@@ -107,7 +113,9 @@
   },
   "View": {
     "ListView": "Seznam",
-    "GridView": "Mřížka"
+    "GridView": "Mřížka",
+    "Editor": "Editor",
+    "Markdown": "Markdown"
   },
   "Colors": {
     "Blue": "Modrá",

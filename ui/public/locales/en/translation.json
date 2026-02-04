@@ -71,7 +71,13 @@
     "SaveError": "Failed to save note",
     "AutoSaveIn": "Auto-save in",
     "Words": "words",
-    "Characters": "characters"
+    "Characters": "characters",
+    "MarkdownPlaceholder": "Write your note in Markdown...",
+    "MarkdownParseError": "Failed to parse markdown",
+    "MarkdownValid": "Valid markdown",
+    "MarkdownWarningJson": "This looks like JSON/BlockNote format, not markdown",
+    "MarkdownWarningHtml": "This looks like raw HTML, not markdown",
+    "MarkdownWarningEmpty": "No content could be parsed from this markdown"
   },
   "Folders": {
     "Folders": "Folders",
@@ -107,7 +113,9 @@
   },
   "View": {
     "ListView": "List view",
-    "GridView": "Grid view"
+    "GridView": "Grid view",
+    "Editor": "Editor",
+    "Markdown": "Markdown"
   },
   "Colors": {
     "Blue": "Blue",
