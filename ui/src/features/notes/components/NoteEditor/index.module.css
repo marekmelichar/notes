@@ -99,6 +99,7 @@
 
 .viewToggle {
   margin-right: 0.5rem;
+  flex-shrink: 0;
 }
 
 .viewToggle button {
@@ -191,29 +192,38 @@
   }
 
   .headerActions {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.375rem;
     justify-content: flex-start;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     transition:
-      max-height 0.3s ease,
+      max-height 0.2s ease,
       opacity 0.2s ease;
+  }
+
+  .headerActions::-webkit-scrollbar {
+    display: none;
   }
 
   .controlsCollapsed {
     max-height: 0;
     opacity: 0;
     pointer-events: none;
+    overflow: hidden;
   }
 
   .controlsOpen {
-    max-height: 12rem;
+    max-height: 5rem;
     opacity: 1;
   }
 
   .folderButton {
     padding: 0.375rem 0.625rem;
     font-size: 0.8125rem;
+    flex-shrink: 0;
   }
 
   .folderButton :global(.MuiButton-startIcon) {
@@ -223,10 +233,15 @@
   .saveButton {
     padding: 0.375rem 0.625rem;
     font-size: 0.8125rem;
+    flex-shrink: 0;
   }
 
   .saveButton :global(.MuiButton-startIcon) {
     margin-right: 0.25rem;
+  }
+
+  .actionSpacer {
+    display: none;
   }
 
   .footer {
