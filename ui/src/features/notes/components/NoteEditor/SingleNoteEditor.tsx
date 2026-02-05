@@ -30,6 +30,7 @@ import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
 import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { setTabUnsaved } from '@/store/tabsSlice';
 import {
@@ -112,6 +113,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showMobileTags, setShowMobileTags] = useState(false);
+  const [showMobileControls, setShowMobileControls] = useState(false);
   const [autoSaveCountdown, setAutoSaveCountdown] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'editor' | 'markdown'>('editor');
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
@@ -347,18 +349,35 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
     <Box
       className={`${styles.editorContainer} ${!isActive ? styles.editorHidden : ''}`}
     >
-      <Box className={`${styles.header} ${isMobile ? styles.headerMobile : ''}`}>
-        {/* Row 1: Title */}
-        <input
-          type="text"
-          className={styles.titleInput}
-          value={title}
-          onChange={handleTitleChange}
-          placeholder={t('Common.Untitled')}
-        />
+      <Box className={`${styles.header} ${isMobile ? `${styles.headerMobile} ${!showMobileControls ? styles.headerMobileCollapsed : ''}` : ''}`}>
+        {/* Row 1: Title + toggle on mobile */}
+        <Box className={styles.titleRow}>
+          <input
+            type="text"
+            className={styles.titleInput}
+            value={title}
+            onChange={handleTitleChange}
+            placeholder={t('Common.Untitled')}
+          />
+          {isMobile && (
+            <Tooltip title={t('Notes.Controls')}>
+              <IconButton
+                data-testid="editor-controls-toggle"
+                size="small"
+                onClick={() => setShowMobileControls(!showMobileControls)}
+                color={showMobileControls ? 'primary' : 'default'}
+                className={styles.controlsToggle}
+              >
+                <TuneOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
 
-        {/* Row 2: Actions */}
-        <Box className={styles.headerActions}>
+        {/* Row 2: Actions — always on desktop, collapsible on mobile */}
+        <Box
+          className={`${styles.headerActions} ${isMobile ? (showMobileControls ? styles.controlsOpen : styles.controlsCollapsed) : ''}`}
+        >
           <ToggleButtonGroup
             value={viewMode}
             exclusive
@@ -518,7 +537,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
         </Box>
 
         {/* Row 3: Tags (mobile only - toggleable) */}
-        {isMobile && showMobileTags && (
+        {isMobile && showMobileTags && showMobileControls && (
           <Box className={styles.headerTags}>
             <TagPicker selectedTagIds={note.tags} onTagsChange={handleTagsChange} />
           </Box>

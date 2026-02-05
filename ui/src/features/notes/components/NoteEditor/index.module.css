@@ -16,6 +16,10 @@
   border-bottom: 1px solid var(--mui-palette-divider);
 }
 
+.titleRow {
+  display: contents;
+}
+
 .titleInput {
   flex: 1;
   font-size: 1.5rem;
@@ -25,6 +29,10 @@
   background: transparent;
   color: var(--mui-palette-text-primary);
   padding: 0;
+}
+
+.controlsToggle {
+  flex-shrink: 0;
 }
 
 .titleInput::placeholder {
@@ -155,6 +163,10 @@
   padding: 0.75rem;
 }
 
+.headerMobileCollapsed {
+  gap: 0;
+}
+
 .headerTags {
   display: flex;
   align-items: center;
@@ -167,6 +179,12 @@
 
 /* Mobile responsive styles */
 @media (max-width: 48rem) {
+  .titleRow {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
   .titleInput {
     font-size: 1.25rem;
     min-width: 0;
@@ -176,6 +194,21 @@
     flex-wrap: nowrap;
     gap: 0.375rem;
     justify-content: flex-start;
+    overflow: hidden;
+    transition:
+      max-height 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  .controlsCollapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .controlsOpen {
+    max-height: 5rem;
+    opacity: 1;
   }
 
   .folderButton {

@@ -62,6 +62,7 @@
     "DropToRemoveFromFolder": "Drop here to remove from folder",
     "LastSaved": "Last saved:",
     "SaveShortcut": "Save (Ctrl+S)",
+    "Controls": "Toggle controls",
     "DaysRemaining": "{{days}} days left",
     "DeletedToday": "Deleted today",
     "WillBeDeleted": "Will be permanently deleted after 30 days in trash",
