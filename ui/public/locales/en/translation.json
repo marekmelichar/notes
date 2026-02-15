@@ -73,12 +73,7 @@
     "AutoSaveIn": "Auto-save in",
     "Words": "words",
     "Characters": "characters",
-    "MarkdownPlaceholder": "Write your note in Markdown...",
-    "MarkdownParseError": "Failed to parse markdown",
-    "MarkdownValid": "Valid markdown",
-    "MarkdownWarningJson": "This looks like JSON/BlockNote format, not markdown",
-    "MarkdownWarningHtml": "This looks like raw HTML, not markdown",
-    "MarkdownWarningEmpty": "No content could be parsed from this markdown"
+    "MarkdownPlaceholder": "Write your note in Markdown..."
   },
   "Folders": {
     "Folders": "Folders",
@@ -116,7 +111,8 @@
     "ListView": "List view",
     "GridView": "Grid view",
     "Editor": "Editor",
-    "Markdown": "Markdown"
+    "Markdown": "Markdown",
+    "Preview": "Markdown preview (read-only)"
   },
   "Colors": {
     "Blue": "Blue",
@@ -155,6 +151,7 @@
     "Markdown": "Markdown",
     "HTML": "HTML",
     "Success": "Note exported successfully",
+    "SuccessWithWarning": "Note exported with {{count}} missing image(s)",
     "Error": "Failed to export note"
   },
   "ErrorPage": {
