@@ -73,12 +73,7 @@
     "AutoSaveIn": "Automatické uložení za",
     "Words": "slov",
     "Characters": "znaků",
-    "MarkdownPlaceholder": "Pište poznámku v Markdown...",
-    "MarkdownParseError": "Nepodařilo se zpracovat markdown",
-    "MarkdownValid": "Platný markdown",
-    "MarkdownWarningJson": "Vypadá to jako JSON/BlockNote formát, ne markdown",
-    "MarkdownWarningHtml": "Vypadá to jako HTML, ne markdown",
-    "MarkdownWarningEmpty": "Z tohoto markdown nelze zpracovat žádný obsah"
+    "MarkdownPlaceholder": "Pište poznámku v Markdown..."
   },
   "Folders": {
     "Folders": "Složky",
@@ -116,7 +111,8 @@
     "ListView": "Seznam",
     "GridView": "Mřížka",
     "Editor": "Editor",
-    "Markdown": "Markdown"
+    "Markdown": "Markdown",
+    "Preview": "Markdown náhled (pouze ke čtení)"
   },
   "Colors": {
     "Blue": "Modrá",
@@ -155,6 +151,7 @@
     "Markdown": "Markdown",
     "HTML": "HTML",
     "Success": "Poznámka úspěšně exportována",
+    "SuccessWithWarning": "Poznámka exportována s {{count}} chybějícím obrázkem/y",
     "Error": "Export poznámky se nezdařil"
   },
   "ErrorPage": {

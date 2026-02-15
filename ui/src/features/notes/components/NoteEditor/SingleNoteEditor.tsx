@@ -40,7 +40,11 @@ import {
 } from '../../store/notesSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
 import { TagPicker } from '../TagPicker';
-import { BlockNoteWrapper, type ExportFormat, type NoteExportFunctions } from './BlockNoteWrapper';
+import {
+  BlockNoteWrapper,
+  type ExportFormat,
+  type NoteExportFunctions,
+} from './BlockNoteWrapper';
 import styles from './index.module.css';
 
 // Validate a block has minimum required structure for BlockNote
@@ -317,9 +321,10 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
 
       setIsExporting(true);
       try {
-        const blob = await exportRef.current.exportTo(format, note.title);
+        const { blob, failedImages } = await exportRef.current.exportTo(format, note.title);
         const ext = format === 'markdown' ? 'md' : format;
-        const filename = `${note.title || t('Common.Untitled')}.${ext}`;
+        const safeTitle = (note.title || t('Common.Untitled')).replace(/[/\\:*?"<>|]/g, '-');
+        const filename = `${safeTitle}.${ext}`;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -328,7 +333,13 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        enqueueSnackbar(t('Export.Success'), { variant: 'success' });
+        if (failedImages > 0) {
+          enqueueSnackbar(t('Export.SuccessWithWarning', { count: failedImages }), {
+            variant: 'warning',
+          });
+        } else {
+          enqueueSnackbar(t('Export.Success'), { variant: 'success' });
+        }
       } catch (err) {
         console.error('Export failed:', err);
         enqueueSnackbar(t('Export.Error'), { variant: 'error' });
@@ -391,7 +402,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
               </Tooltip>
             </ToggleButton>
             <ToggleButton value="markdown">
-              <Tooltip title={t('View.Markdown')}>
+              <Tooltip title={t('View.Preview')}>
                 <CodeOutlinedIcon fontSize="small" />
               </Tooltip>
             </ToggleButton>
@@ -552,7 +563,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
             initialContent={undefined}
             noteId={note.id}
             onChange={handleEditorChange}
-            isMobile={isMobile}
+
             lastSaved={lastSaved}
             lastSavedLabel={t('Notes.LastSaved')}
             autoSaveCountdown={autoSaveCountdown}
@@ -567,7 +578,6 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
           initialContent={initialContent}
           noteId={note.id}
           onChange={handleEditorChange}
-          isMobile={isMobile}
           lastSaved={lastSaved}
           lastSavedLabel={t('Notes.LastSaved')}
           autoSaveCountdown={autoSaveCountdown}

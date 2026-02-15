@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState, useRef } from 'react';
-import { Box, Typography, Tooltip } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { useCallback, useEffect, useState, useRef, type ComponentProps } from 'react';
+import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { enqueueSnackbar } from 'notistack';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { Block, PartialBlock } from '@blocknote/core';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import { useColorMode } from '@/theme/ThemeProvider';
@@ -15,52 +15,32 @@ import styles from './index.module.css';
 
 const MAX_FILE_SIZE = 104_857_600; // 100 MB
 
+// 1x1 transparent PNG as bytes
+const PLACEHOLDER_PNG_B64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+function createPlaceholderBlob(): Blob {
+  const bin = atob(PLACEHOLDER_PNG_B64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: 'image/png' });
+}
+
 export type ExportFormat = 'pdf' | 'docx' | 'markdown' | 'html';
 
+export interface ExportResult {
+  blob: Blob;
+  failedImages: number;
+}
+
 export interface NoteExportFunctions {
-  exportTo: (format: ExportFormat, title?: string) => Promise<Blob>;
-}
-
-type MarkdownValidation = {
-  isValid: boolean;
-  warning?: string;
-};
-
-// Detect if content looks like JSON (BlockNote format)
-function looksLikeJson(content: string): boolean {
-  const trimmed = content.trim();
-  if (!trimmed.startsWith('[') && !trimmed.startsWith('{')) return false;
-  try {
-    const parsed = JSON.parse(trimmed);
-    // Check if it looks like BlockNote blocks
-    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].type) {
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-// Detect if content looks like raw HTML (not markdown with HTML)
-function looksLikeHtml(content: string): boolean {
-  const trimmed = content.trim();
-  // Check if it starts with DOCTYPE or html tag
-  if (trimmed.toLowerCase().startsWith('<!doctype') || trimmed.toLowerCase().startsWith('<html')) {
-    return true;
-  }
-  // Check if it's predominantly HTML tags
-  const htmlTagCount = (trimmed.match(/<[a-z][^>]*>/gi) || []).length;
-  const lines = trimmed.split('\n').length;
-  // If more than 50% of lines have HTML tags, it's probably HTML
-  return htmlTagCount > lines * 0.5 && htmlTagCount > 5;
+  exportTo: (format: ExportFormat, title?: string) => Promise<ExportResult>;
 }
 
 interface BlockNoteWrapperProps {
   initialContent: PartialBlock[] | undefined;
   noteId?: string;
   onChange: () => void;
-  isMobile: boolean;
   lastSaved: Date | null;
   lastSavedLabel: string;
   autoSaveCountdown: number | null;
@@ -70,11 +50,19 @@ interface BlockNoteWrapperProps {
   viewMode: 'editor' | 'markdown';
 }
 
+// Open all links in new tab
+const markdownComponents: ComponentProps<typeof Markdown>['components'] = {
+  a: ({ children, href, ...props }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+      {children}
+    </a>
+  ),
+};
+
 export const BlockNoteWrapper = ({
   initialContent,
   noteId,
   onChange,
-  isMobile,
   lastSaved,
   lastSavedLabel,
   autoSaveCountdown,
@@ -86,21 +74,8 @@ export const BlockNoteWrapper = ({
   const { t } = useTranslation();
   const { mode } = useColorMode();
   const [markdownContent, setMarkdownContent] = useState('');
-  const [validation, setValidation] = useState<MarkdownValidation>({ isValid: true });
   const [isEditorMounted, setIsEditorMounted] = useState(false);
   const prevViewModeRef = useRef(viewMode);
-  const markdownRef = useRef(markdownContent);
-  const viewModeRef = useRef(viewMode);
-  const validationTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  // Keep refs in sync
-  useEffect(() => {
-    markdownRef.current = markdownContent;
-  }, [markdownContent]);
-
-  useEffect(() => {
-    viewModeRef.current = viewMode;
-  }, [viewMode]);
 
   const editor = useCreateBlockNote({
     initialContent,
@@ -134,56 +109,6 @@ export const BlockNoteWrapper = ({
     return () => clearTimeout(timer);
   }, []);
 
-  // Validate markdown content (debounced)
-  useEffect(() => {
-    if (!isEditorMounted) return;
-    if (viewMode !== 'markdown' || !markdownContent.trim()) {
-      setValidation({ isValid: true });
-      return;
-    }
-
-    clearTimeout(validationTimeoutRef.current);
-    validationTimeoutRef.current = setTimeout(async () => {
-      // Check for JSON (BlockNote format)
-      if (looksLikeJson(markdownContent)) {
-        setValidation({
-          isValid: false,
-          warning: t('Notes.MarkdownWarningJson'),
-        });
-        return;
-      }
-
-      // Check for raw HTML
-      if (looksLikeHtml(markdownContent)) {
-        setValidation({
-          isValid: false,
-          warning: t('Notes.MarkdownWarningHtml'),
-        });
-        return;
-      }
-
-      // Try to parse markdown
-      try {
-        const blocks = await editor.tryParseMarkdownToBlocks(markdownContent);
-        if (blocks.length === 0) {
-          setValidation({
-            isValid: false,
-            warning: t('Notes.MarkdownWarningEmpty'),
-          });
-        } else {
-          setValidation({ isValid: true });
-        }
-      } catch {
-        setValidation({
-          isValid: false,
-          warning: t('Notes.MarkdownParseError'),
-        });
-      }
-    }, 500);
-
-    return () => clearTimeout(validationTimeoutRef.current);
-  }, [markdownContent, viewMode, editor, t, isEditorMounted]);
-
   // Handle view mode transitions
   useEffect(() => {
     if (!isEditorMounted) return;
@@ -192,26 +117,19 @@ export const BlockNoteWrapper = ({
       if (prevViewModeRef.current === viewMode) return;
 
       if (viewMode === 'markdown') {
-        // Switching to markdown: convert blocks to markdown
+        // Switching to markdown preview: convert blocks to markdown (read-only)
         const md = await editor.blocksToMarkdownLossy(editor.document);
         setMarkdownContent(md);
-      } else if (prevViewModeRef.current === 'markdown') {
-        // Switching back to editor: parse markdown to blocks
-        try {
-          const blocks = await editor.tryParseMarkdownToBlocks(markdownContent);
-          editor.replaceBlocks(editor.document, blocks);
-        } catch {
-          enqueueSnackbar(t('Notes.MarkdownParseError'), { variant: 'error' });
-        }
       }
+      // Switching back to editor: nothing to do — editor state is untouched
 
       prevViewModeRef.current = viewMode;
     };
 
     handleModeSwitch();
-  }, [viewMode, editor, markdownContent, t, isEditorMounted]);
+  }, [viewMode, editor, isEditorMounted]);
 
-  // Calculate word count from blocks
+  // Extract visible text from blocks (for consistent word/char count)
   const getTextFromBlocks = (blocks: Block[]): string => {
     let text = '';
     for (const block of blocks) {
@@ -229,9 +147,8 @@ export const BlockNoteWrapper = ({
     return text;
   };
 
-  // Calculate stats based on current view mode
-  const textContent =
-    viewMode === 'markdown' ? markdownContent : getTextFromBlocks(editor.document);
+  // Always count from editor blocks for consistency across view modes
+  const textContent = getTextFromBlocks(editor.document);
   const charCount = textContent.replace(/\s/g, '').length;
   const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
 
@@ -239,27 +156,8 @@ export const BlockNoteWrapper = ({
     onChange();
   }, [onChange]);
 
-  const handleMarkdownChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setMarkdownContent(e.target.value);
-      onChange();
-    },
-    [onChange],
-  );
-
-  // Async content getter that properly handles markdown mode
+  // Content getter always returns editor document (markdown is read-only preview)
   const getContent = useCallback(async (): Promise<string> => {
-    // Use refs to get current values (avoids stale closure issues)
-    if (viewModeRef.current === 'markdown') {
-      // In markdown mode: parse current markdown to blocks
-      try {
-        const blocks = await editor.tryParseMarkdownToBlocks(markdownRef.current);
-        return JSON.stringify(blocks);
-      } catch {
-        return '[]';
-      }
-    }
-    // In editor mode: return current editor document
     return JSON.stringify(editor.document);
   }, [editor]);
 
@@ -272,30 +170,36 @@ export const BlockNoteWrapper = ({
 
   // Expose export functions to parent via callback
   const exportTo = useCallback(
-    async (format: ExportFormat, title?: string): Promise<Blob> => {
-      // If in markdown mode, parse markdown to get blocks
-      let blocks = editor.document;
-      if (viewModeRef.current === 'markdown') {
-        try {
-          blocks = await editor.tryParseMarkdownToBlocks(markdownRef.current);
-        } catch {
-          // Keep current editor document if parsing fails
-        }
-      }
+    async (format: ExportFormat, title?: string): Promise<ExportResult> => {
+      const blocks = editor.document;
 
-      // Build blocks with title for PDF/DOCX (need full Block objects)
-      const getBlocksWithTitle = () => {
+      // Build blocks with title by cloning (avoids mutating the live editor)
+      const getBlocksWithTitle = (): typeof blocks => {
         if (!title) return blocks;
-        // Insert a temporary heading, snapshot the document, then undo
-        editor.insertBlocks(
-          [{ type: 'heading', props: { level: 1 }, content: title }],
-          blocks[0],
-          'before',
-        );
-        const snapshot = editor.document;
-        editor.undo();
-        return snapshot;
+        const titleBlock = {
+          type: 'heading' as const,
+          props: { level: 1 as const },
+          content: [{ type: 'text' as const, text: title, styles: {} }],
+          children: [],
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return [titleBlock as any, ...blocks];
       };
+
+      // Fetch file directly, return placeholder on failure and track failures
+      let failedImages = 0;
+      const resolveFileUrl = async (url: string): Promise<Blob> => {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.blob();
+        } catch {
+          failedImages++;
+          return createPlaceholderBlob();
+        }
+      };
+
+      let blob: Blob;
 
       switch (format) {
         case 'pdf': {
@@ -304,33 +208,45 @@ export const BlockNoteWrapper = ({
             import('@blocknote/xl-pdf-exporter'),
             import('@react-pdf/renderer'),
           ]);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const exporter = new PDFExporter(editor.schema as any, pdfDefaultSchemaMappings as any);
+          const exporter = new PDFExporter(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            editor.schema as any, pdfDefaultSchemaMappings as any,
+            { resolveFileUrl },
+          );
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const doc = await exporter.toReactPDFDocument(blocksWithTitle as any);
-          return pdf(doc).toBlob();
+          blob = await pdf(doc).toBlob();
+          break;
         }
         case 'docx': {
           const blocksWithTitle = getBlocksWithTitle();
           const { DOCXExporter, docxDefaultSchemaMappings } = await import(
             '@blocknote/xl-docx-exporter'
           );
+          const exporter = new DOCXExporter(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            editor.schema as any, docxDefaultSchemaMappings as any,
+            { resolveFileUrl },
+          );
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const exporter = new DOCXExporter(editor.schema as any, docxDefaultSchemaMappings as any);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return exporter.toBlob(blocksWithTitle as any);
+          blob = await exporter.toBlob(blocksWithTitle as any);
+          break;
         }
         case 'markdown': {
           const md = await editor.blocksToMarkdownLossy(blocks);
           const withTitle = title ? `# ${title}\n\n${md}` : md;
-          return new Blob([withTitle], { type: 'text/markdown;charset=utf-8' });
+          blob = new Blob([withTitle], { type: 'text/markdown;charset=utf-8' });
+          break;
         }
         case 'html': {
           const html = await editor.blocksToFullHTML(blocks);
           const withTitle = title ? `<h1>${title}</h1>\n${html}` : html;
-          return new Blob([withTitle], { type: 'text/html;charset=utf-8' });
+          blob = new Blob([withTitle], { type: 'text/html;charset=utf-8' });
+          break;
         }
       }
+
+      return { blob, failedImages };
     },
     [editor],
   );
@@ -345,16 +261,18 @@ export const BlockNoteWrapper = ({
 
   return (
     <>
-      <Box className={`${styles.editorContent} ${isMobile ? styles.editorContentMobile : ''}`}>
+      <Box className={styles.editorContent}>
         {viewMode === 'editor' ? (
           <BlockNoteView editor={editor} theme={mode} onChange={handleChange} sideMenu={false} />
         ) : (
-          <textarea
-            className={styles.markdownTextarea}
-            value={markdownContent}
-            onChange={handleMarkdownChange}
-            placeholder={t('Notes.MarkdownPlaceholder')}
-          />
+          <div className={styles.markdownPreview}>
+            <Markdown
+              remarkPlugins={[remarkGfm]}
+              components={markdownComponents}
+            >
+              {markdownContent}
+            </Markdown>
+          </div>
         )}
       </Box>
       <Box className={styles.footer}>
@@ -362,23 +280,6 @@ export const BlockNoteWrapper = ({
           <Typography variant="caption">
             {wordCount} {t('Notes.Words')} | {charCount} {t('Notes.Characters')}
           </Typography>
-          {viewMode === 'markdown' && markdownContent.trim() && (
-            <Tooltip title={validation.warning || t('Notes.MarkdownValid')}>
-              {validation.isValid ? (
-                <CheckCircleOutlineIcon
-                  fontSize="small"
-                  color="success"
-                  className={styles.validationIcon}
-                />
-              ) : (
-                <WarningAmberIcon
-                  fontSize="small"
-                  color="warning"
-                  className={styles.validationIcon}
-                />
-              )}
-            </Tooltip>
-          )}
         </Box>
         <Box className={styles.footerRight}>
           {autoSaveCountdown !== null && (
