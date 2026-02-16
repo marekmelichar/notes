@@ -17,10 +17,13 @@ public abstract class BaseController : ControllerBase
             if (!string.IsNullOrEmpty(sub))
                 return sub;
 
-            // Fallback to header for development/testing
-            var headerUserId = Request.Headers["X-User-Id"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(headerUserId))
-                return headerUserId;
+            // Fallback to header for development/testing ONLY
+            if (HttpContext.RequestServices.GetService<IWebHostEnvironment>()?.IsDevelopment() == true)
+            {
+                var headerUserId = Request.Headers["X-User-Id"].FirstOrDefault();
+                if (!string.IsNullOrEmpty(headerUserId))
+                    return headerUserId;
+            }
 
             return "anonymous";
         }
