@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using EpoznamkyApi.Data;
 using EpoznamkyApi.Models;
 using Microsoft.EntityFrameworkCore;
@@ -37,8 +39,12 @@ public class DataService(AppDbContext db)
             return [];
         }
 
+        // Strip diacritics so "Krsiak" matches "Kršiak" and vice versa
+        // (SearchVector is also unaccented via unaccent_immutable in the generated column)
+        var normalized = RemoveDiacritics(query);
+
         // Build prefix search query: "dai" -> "dai:*", "hello world" -> "hello:* & world:*"
-        var terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var terms = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var prefixQuery = string.Join(" & ", terms.Select(t => t.Replace("'", "''") + ":*"));
 
         // Use PostgreSQL full-text search with prefix matching
@@ -51,6 +57,18 @@ public class DataService(AppDbContext db)
 
         await PopulateNoteRelationsAsync(notes);
         return notes;
+    }
+
+    private static string RemoveDiacritics(string text)
+    {
+        var normalized = text.Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder(normalized.Length);
+        foreach (var c in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                sb.Append(c);
+        }
+        return sb.ToString().Normalize(NormalizationForm.FormC);
     }
 
     public async Task<Note> CreateNoteAsync(Note note, List<string> tagIds)
