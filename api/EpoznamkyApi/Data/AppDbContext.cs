@@ -31,7 +31,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.SearchVector)
                 .HasColumnType("tsvector")
                 .HasComputedColumnSql(
-                    @"setweight(to_tsvector('simple', coalesce(""Title"", '')), 'A') || setweight(to_tsvector('simple', coalesce(""Content"", '')), 'B')",
+                    @"setweight(to_tsvector('simple', unaccent_immutable(coalesce(""Title"", ''))), 'A') || setweight(to_tsvector('simple', unaccent_immutable(coalesce(""Content"", ''))), 'B')",
                     stored: true);
 
             entity.HasIndex(e => e.SearchVector)
