@@ -72,6 +72,7 @@ services:
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=notes;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
       Keycloak__Authority: "http://keycloak:8080/realms/notes"
+      Keycloak__Issuer: "https://notes.nettio.eu/realms/notes"
       ASPNETCORE_ENVIRONMENT: Production
       FileStorage__UploadDirectory: "/app/uploads"
     volumes:

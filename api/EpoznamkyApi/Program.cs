@@ -93,19 +93,25 @@ builder.Services.AddRateLimiter(options =>
 // Configure JWT Authentication with Keycloak
 var keycloakAuthority = builder.Configuration["Keycloak:Authority"] ?? "http://localhost:8080/realms/notes";
 
+// In production, tokens are issued with the external URL (e.g. https://notes.nettio.eu/realms/notes)
+// which differs from the internal authority (http://keycloak:8080/realms/notes).
+// Keycloak:Issuer overrides the expected issuer for token validation.
+var keycloakIssuer = builder.Configuration["Keycloak:Issuer"] ?? keycloakAuthority;
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = keycloakAuthority;
         options.Audience = "account";
-        options.RequireHttpsMetadata = !isDevelopment;
+        // Container-to-container communication uses HTTP — HTTPS is enforced at the Nginx edge
+        options.RequireHttpsMetadata = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = !isDevelopment,
             ValidateAudience = !isDevelopment,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = keycloakAuthority,
+            ValidIssuer = keycloakIssuer,
             ValidAudience = "account",
             NameClaimType = "preferred_username",
             RoleClaimType = "realm_access"
