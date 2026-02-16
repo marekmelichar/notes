@@ -1,8 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Threading.RateLimiting;
 using EpoznamkyApi.Data;
 using EpoznamkyApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -43,6 +46,49 @@ builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection")!,
         name: "postgresql",
         tags: ["ready"]);
+
+// Rate limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Global policy: 100 requests/min per authenticated user (or IP for anonymous)
+    options.AddPolicy("global", context =>
+    {
+        var userId = context.User?.FindFirst("sub")?.Value;
+        var key = userId ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 100,
+            Window = TimeSpan.FromMinutes(1)
+        });
+    });
+
+    // Stricter policy for file uploads: 10/min
+    options.AddPolicy("file-upload", context =>
+    {
+        var userId = context.User?.FindFirst("sub")?.Value ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter($"upload:{userId}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1)
+        });
+    });
+
+    // Stricter policy for user search: 30/min
+    options.AddPolicy("user-search", context =>
+    {
+        var userId = context.User?.FindFirst("sub")?.Value ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter($"search:{userId}", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 30,
+            Window = TimeSpan.FromMinutes(1)
+        });
+    });
+});
 
 // Configure JWT Authentication with Keycloak
 var keycloakAuthority = builder.Configuration["Keycloak:Authority"] ?? "http://localhost:8080/realms/notes";
@@ -89,6 +135,12 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Structured JSON logging for production
+if (!isDevelopment)
+{
+    builder.Logging.AddJsonConsole();
+}
+
 var app = builder.Build();
 
 // Apply pending migrations on startup (for development/Docker)
@@ -98,9 +150,24 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
+// Forward headers from reverse proxy (Nginx) so rate limiting sees real client IP
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 // Global error handling
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+
+// Security headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    await next();
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -115,6 +182,8 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseRateLimiter();
+
 // Health check endpoints (unauthenticated for Docker/k8s probes)
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
@@ -126,6 +195,6 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     Predicate = check => check.Tags.Contains("ready")
 });
 
-app.MapControllers();
+app.MapControllers().RequireRateLimiting("global");
 
 app.Run();

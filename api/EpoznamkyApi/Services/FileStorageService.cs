@@ -32,30 +32,64 @@ public class FileStorageSettings
     ];
 }
 
-public class FileStorageService(IOptions<FileStorageSettings> options)
+public class FileStorageService(IOptions<FileStorageSettings> options, ILogger<FileStorageService> logger)
 {
     private readonly FileStorageSettings _settings = options.Value;
 
     public async Task<string> SaveFileAsync(Stream fileStream, string storedFilename)
     {
         Directory.CreateDirectory(_settings.UploadDirectory);
-        var filePath = Path.Combine(_settings.UploadDirectory, storedFilename);
-        await using var output = File.Create(filePath);
-        await fileStream.CopyToAsync(output);
-        return filePath;
+
+        var filePath = GetSafePath(storedFilename);
+
+        try
+        {
+            await using var output = File.Create(filePath);
+            await fileStream.CopyToAsync(output);
+            logger.LogInformation("File saved: {StoredFilename}", storedFilename);
+            return filePath;
+        }
+        catch (IOException ex)
+        {
+            logger.LogError(ex, "Failed to save file: {StoredFilename}", storedFilename);
+            throw;
+        }
     }
 
     public FileStream? GetFileStream(string storedFilename)
     {
-        var filePath = Path.Combine(_settings.UploadDirectory, storedFilename);
-        if (!File.Exists(filePath)) return null;
-        return new FileStream(filePath, FileMode.Open, FileAccess.Read);
+        var filePath = GetSafePath(storedFilename);
+
+        try
+        {
+            if (!File.Exists(filePath)) return null;
+            return new FileStream(filePath, FileMode.Open, FileAccess.Read);
+        }
+        catch (IOException ex)
+        {
+            logger.LogError(ex, "Failed to read file: {StoredFilename}", storedFilename);
+            return null;
+        }
     }
 
-    public void DeleteFile(string storedFilename)
+    public bool DeleteFile(string storedFilename)
     {
-        var filePath = Path.Combine(_settings.UploadDirectory, storedFilename);
-        if (File.Exists(filePath)) File.Delete(filePath);
+        var filePath = GetSafePath(storedFilename);
+
+        try
+        {
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                logger.LogInformation("File deleted: {StoredFilename}", storedFilename);
+            }
+            return true;
+        }
+        catch (IOException ex)
+        {
+            logger.LogError(ex, "Failed to delete file: {StoredFilename}", storedFilename);
+            return false;
+        }
     }
 
     public bool IsAllowedContentType(string contentType)
@@ -72,5 +106,22 @@ public class FileStorageService(IOptions<FileStorageSettings> options)
     public bool IsWithinSizeLimit(long size)
     {
         return size <= _settings.MaxFileSizeBytes;
+    }
+
+    /// <summary>
+    /// Resolve the file path and verify it stays within the upload directory (prevents path traversal).
+    /// </summary>
+    private string GetSafePath(string storedFilename)
+    {
+        var fullPath = Path.GetFullPath(Path.Combine(_settings.UploadDirectory, storedFilename));
+        var uploadDir = Path.GetFullPath(_settings.UploadDirectory);
+
+        if (!fullPath.StartsWith(uploadDir + Path.DirectorySeparatorChar) && fullPath != uploadDir)
+        {
+            logger.LogWarning("Path traversal attempt blocked: {Filename}", storedFilename);
+            throw new InvalidOperationException("Invalid file path.");
+        }
+
+        return fullPath;
     }
 }

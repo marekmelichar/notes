@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace EpoznamkyApi.Models;
 
 public class Tag
@@ -12,12 +14,20 @@ public class Tag
 
 public class CreateTagRequest
 {
+    [Required]
+    [StringLength(50, MinimumLength = 1)]
     public string Name { get; set; } = string.Empty;
+
+    [Required]
+    [RegularExpression(@"^#[0-9a-fA-F]{6}$")]
     public string Color { get; set; } = "#6366f1";
 }
 
 public class UpdateTagRequest
 {
+    [StringLength(50, MinimumLength = 1)]
     public string? Name { get; set; }
+
+    [RegularExpression(@"^#[0-9a-fA-F]{6}$")]
     public string? Color { get; set; }
 }

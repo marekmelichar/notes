@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using NpgsqlTypes;
 
@@ -55,36 +56,67 @@ public class SharedUser
 // Request DTOs
 public class CreateNoteRequest
 {
+    [Required]
+    [StringLength(500, MinimumLength = 1)]
     public string Title { get; set; } = string.Empty;
+
+    [StringLength(5_000_000)]
     public string Content { get; set; } = string.Empty;
+
+    [StringLength(36)]
     public string? FolderId { get; set; }
+
+    [MaxLength(50)]
     public List<string> Tags { get; set; } = [];
+
     public bool IsPinned { get; set; }
 }
 
 public class UpdateNoteRequest
 {
+    [StringLength(500, MinimumLength = 1)]
     public string? Title { get; set; }
+
+    [StringLength(5_000_000)]
     public string? Content { get; set; }
+
     public string? FolderId { get; set; }
+
+    [MaxLength(50)]
     public List<string>? Tags { get; set; }
+
     public bool? IsPinned { get; set; }
+
+    [Range(0, int.MaxValue)]
     public int? Order { get; set; }
 }
 
 public class ShareNoteRequest
 {
+    [Required]
+    [EmailAddress]
+    [StringLength(320)]
     public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [RegularExpression("^(view|edit)$")]
     public string Permission { get; set; } = "view";
 }
 
 public class ReorderNotesRequest
 {
+    [Required]
+    [MinLength(1)]
+    [MaxLength(1000)]
     public List<NoteOrderItem> Items { get; set; } = [];
 }
 
 public class NoteOrderItem
 {
+    [Required]
+    [StringLength(36, MinimumLength = 1)]
     public string Id { get; set; } = string.Empty;
+
+    [Range(0, int.MaxValue)]
     public int Order { get; set; }
 }

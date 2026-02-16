@@ -42,10 +42,31 @@ public class FoldersController(DataService dataService) : BaseController
     [HttpPut("{id}")]
     public async Task<ActionResult<Folder>> Update(string id, [FromBody] UpdateFolderRequest request)
     {
+        // Prevent circular references
+        if (request.ParentId == id)
+            return BadRequest("A folder cannot be its own parent.");
+
+        if (request.ParentId != null)
+        {
+            var visited = new HashSet<string> { id };
+            var currentParentId = request.ParentId;
+
+            while (!string.IsNullOrEmpty(currentParentId))
+            {
+                if (!visited.Add(currentParentId))
+                    return BadRequest("Circular reference detected.");
+
+                var parent = await dataService.GetFolderAsync(currentParentId, UserId);
+                if (parent == null) break;
+                currentParentId = parent.ParentId;
+            }
+        }
+
         var folder = await dataService.UpdateFolderAsync(id, UserId, f =>
         {
             if (request.Name != null) f.Name = request.Name;
-            if (request.ParentId != null) f.ParentId = request.ParentId;
+            // ParentId: null means "don't change", empty string means "move to root"
+            if (request.ParentId != null) f.ParentId = request.ParentId == "" ? null : request.ParentId;
             if (request.Color != null) f.Color = request.Color;
             if (request.Order.HasValue) f.Order = request.Order.Value;
         });

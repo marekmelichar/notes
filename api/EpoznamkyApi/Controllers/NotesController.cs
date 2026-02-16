@@ -14,21 +14,24 @@ public class NotesController(DataService dataService) : BaseController
     [HttpGet]
     public async Task<ActionResult<List<Note>>> GetAll()
     {
-        return await dataService.GetNotesAsync(UserId);
+        return await dataService.GetNotesAsync(UserId, UserEmail);
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<Note>> Get(string id)
     {
-        var note = await dataService.GetNoteAsync(id, UserId);
+        var note = await dataService.GetNoteAsync(id, UserId, UserEmail);
         if (note == null) return NotFound();
         return note;
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<List<Note>>> Search([FromQuery] string q)
+    public async Task<ActionResult<List<Note>>> Search([FromQuery] string? q)
     {
-        return await dataService.SearchNotesAsync(UserId, q ?? "");
+        if (q?.Length > 200)
+            return BadRequest("Search query must not exceed 200 characters.");
+
+        return await dataService.SearchNotesAsync(UserId, UserEmail, q ?? "");
     }
 
     [HttpPost]

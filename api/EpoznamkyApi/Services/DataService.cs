@@ -1,18 +1,21 @@
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using EpoznamkyApi.Data;
 using EpoznamkyApi.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace EpoznamkyApi.Services;
 
-public class DataService(AppDbContext db)
+public partial class DataService(AppDbContext db, ILogger<DataService> logger)
 {
     // Notes
-    public async Task<List<Note>> GetNotesAsync(string userId)
+    public async Task<List<Note>> GetNotesAsync(string userId, string userEmail)
     {
         var notes = await db.Notes
-            .Where(n => n.UserId == userId || db.NoteShares.Any(s => s.NoteId == n.Id && s.SharedWithUserId == userId))
+            .Where(n => n.UserId == userId ||
+                        db.NoteShares.Any(s => s.NoteId == n.Id &&
+                            (s.SharedWithUserId == userId || s.SharedWithEmail == userEmail)))
             .OrderBy(n => n.Order)
             .ToListAsync();
 
@@ -20,11 +23,13 @@ public class DataService(AppDbContext db)
         return notes;
     }
 
-    public async Task<Note?> GetNoteAsync(string id, string userId)
+    public async Task<Note?> GetNoteAsync(string id, string userId, string userEmail)
     {
         var note = await db.Notes
             .FirstOrDefaultAsync(n => n.Id == id &&
-                (n.UserId == userId || db.NoteShares.Any(s => s.NoteId == n.Id && s.SharedWithUserId == userId)));
+                (n.UserId == userId ||
+                 db.NoteShares.Any(s => s.NoteId == n.Id &&
+                     (s.SharedWithUserId == userId || s.SharedWithEmail == userEmail))));
 
         if (note != null)
             await PopulateNoteRelationsAsync([note]);
@@ -32,7 +37,7 @@ public class DataService(AppDbContext db)
         return note;
     }
 
-    public async Task<List<Note>> SearchNotesAsync(string userId, string query)
+    public async Task<List<Note>> SearchNotesAsync(string userId, string userEmail, string query)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -43,13 +48,22 @@ public class DataService(AppDbContext db)
         // (SearchVector is also unaccented via unaccent_immutable in the generated column)
         var normalized = RemoveDiacritics(query);
 
+        // Sanitize: keep only alphanumeric characters and spaces
+        var sanitized = SearchSanitizeRegex().Replace(normalized, "");
+        if (string.IsNullOrWhiteSpace(sanitized))
+        {
+            return [];
+        }
+
         // Build prefix search query: "dai" -> "dai:*", "hello world" -> "hello:* & world:*"
-        var terms = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var prefixQuery = string.Join(" & ", terms.Select(t => t.Replace("'", "''") + ":*"));
+        var terms = sanitized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var prefixQuery = string.Join(" & ", terms.Select(t => t + ":*"));
 
         // Use PostgreSQL full-text search with prefix matching
         var notes = await db.Notes
-            .Where(n => (n.UserId == userId || db.NoteShares.Any(s => s.NoteId == n.Id && s.SharedWithUserId == userId)) &&
+            .Where(n => (n.UserId == userId ||
+                         db.NoteShares.Any(s => s.NoteId == n.Id &&
+                             (s.SharedWithUserId == userId || s.SharedWithEmail == userEmail))) &&
                        !n.IsDeleted &&
                        n.SearchVector!.Matches(EF.Functions.ToTsQuery("simple", prefixQuery)))
             .OrderByDescending(n => n.SearchVector!.Rank(EF.Functions.ToTsQuery("simple", prefixQuery)))
@@ -71,6 +85,9 @@ public class DataService(AppDbContext db)
         return sb.ToString().Normalize(NormalizationForm.FormC);
     }
 
+    [GeneratedRegex(@"[^\w\s]")]
+    private static partial Regex SearchSanitizeRegex();
+
     public async Task<Note> CreateNoteAsync(Note note, List<string> tagIds)
     {
         db.Notes.Add(note);
@@ -81,6 +98,7 @@ public class DataService(AppDbContext db)
         }
 
         await db.SaveChangesAsync();
+        logger.LogInformation("Note {NoteId} created for user {UserId}", note.Id, note.UserId);
         note.Tags = tagIds;
         return note;
     }
@@ -88,7 +106,11 @@ public class DataService(AppDbContext db)
     public async Task<Note?> UpdateNoteAsync(string id, string userId, Action<Note> update, List<string>? tagIds = null)
     {
         var note = await db.Notes.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
-        if (note == null) return null;
+        if (note == null)
+        {
+            logger.LogDebug("Note {NoteId} not found for user {UserId} during update", id, userId);
+            return null;
+        }
 
         update(note);
         note.UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -112,10 +134,15 @@ public class DataService(AppDbContext db)
     public async Task<bool> DeleteNoteAsync(string id, string userId)
     {
         var note = await db.Notes.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
-        if (note == null) return false;
+        if (note == null)
+        {
+            logger.LogDebug("Note {NoteId} not found for user {UserId} during delete", id, userId);
+            return false;
+        }
 
         db.Notes.Remove(note);
         await db.SaveChangesAsync();
+        logger.LogInformation("Note {NoteId} permanently deleted for user {UserId}", id, userId);
         return true;
     }
 
@@ -145,25 +172,35 @@ public class DataService(AppDbContext db)
     public async Task<Note?> ShareNoteAsync(string noteId, string userId, string email, string permission)
     {
         var note = await db.Notes.FirstOrDefaultAsync(n => n.Id == noteId && n.UserId == userId);
-        if (note == null) return null;
+        if (note == null)
+        {
+            logger.LogDebug("Note {NoteId} not found for user {UserId} during share", noteId, userId);
+            return null;
+        }
+
+        // Resolve email to actual user ID when possible
+        var targetUser = await db.Users.FirstOrDefaultAsync(u => EF.Functions.ILike(u.Email, email));
+        var sharedWithUserId = targetUser?.Id ?? email;
 
         var existingShare = await db.NoteShares.FirstOrDefaultAsync(s => s.NoteId == noteId && s.SharedWithEmail == email);
         if (existingShare != null)
         {
             existingShare.Permission = permission;
+            existingShare.SharedWithUserId = sharedWithUserId;
         }
         else
         {
             db.NoteShares.Add(new NoteShare
             {
                 NoteId = noteId,
-                SharedWithUserId = email,
+                SharedWithUserId = sharedWithUserId,
                 SharedWithEmail = email,
                 Permission = permission
             });
         }
 
         await db.SaveChangesAsync();
+        logger.LogInformation("Note {NoteId} shared (permission: {Permission}) by user {UserId}", noteId, permission, userId);
         await PopulateNoteRelationsAsync([note]);
         return note;
     }
@@ -171,13 +208,20 @@ public class DataService(AppDbContext db)
     public async Task<Note?> RemoveShareAsync(string noteId, string userId, string sharedUserId)
     {
         var note = await db.Notes.FirstOrDefaultAsync(n => n.Id == noteId && n.UserId == userId);
-        if (note == null) return null;
+        if (note == null)
+        {
+            logger.LogDebug("Note {NoteId} not found for user {UserId} during share removal", noteId, userId);
+            return null;
+        }
 
-        var share = await db.NoteShares.FirstOrDefaultAsync(s => s.NoteId == noteId && s.SharedWithUserId == sharedUserId);
+        // Match by ID or email (SharedWithUserId may contain either depending on data age)
+        var share = await db.NoteShares.FirstOrDefaultAsync(s =>
+            s.NoteId == noteId && (s.SharedWithUserId == sharedUserId || s.SharedWithEmail == sharedUserId));
         if (share != null)
         {
             db.NoteShares.Remove(share);
             await db.SaveChangesAsync();
+            logger.LogInformation("Share removed from note {NoteId} by user {UserId}", noteId, userId);
         }
 
         await PopulateNoteRelationsAsync([note]);
@@ -224,13 +268,18 @@ public class DataService(AppDbContext db)
     {
         db.Folders.Add(folder);
         await db.SaveChangesAsync();
+        logger.LogInformation("Folder {FolderId} created for user {UserId}", folder.Id, folder.UserId);
         return folder;
     }
 
     public async Task<Folder?> UpdateFolderAsync(string id, string userId, Action<Folder> update)
     {
         var folder = await db.Folders.FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
-        if (folder == null) return null;
+        if (folder == null)
+        {
+            logger.LogDebug("Folder {FolderId} not found for user {UserId} during update", id, userId);
+            return null;
+        }
 
         update(folder);
         folder.UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -241,7 +290,11 @@ public class DataService(AppDbContext db)
     public async Task<bool> DeleteFolderAsync(string id, string userId)
     {
         var folder = await db.Folders.FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
-        if (folder == null) return false;
+        if (folder == null)
+        {
+            logger.LogDebug("Folder {FolderId} not found for user {UserId} during delete", id, userId);
+            return false;
+        }
 
         // Clear folderId from notes in this folder
         var notesInFolder = await db.Notes.Where(n => n.FolderId == id).ToListAsync();
@@ -252,6 +305,7 @@ public class DataService(AppDbContext db)
 
         db.Folders.Remove(folder);
         await db.SaveChangesAsync();
+        logger.LogInformation("Folder {FolderId} deleted for user {UserId}", id, userId);
         return true;
     }
 
@@ -266,13 +320,18 @@ public class DataService(AppDbContext db)
     {
         db.Tags.Add(tag);
         await db.SaveChangesAsync();
+        logger.LogInformation("Tag {TagId} created for user {UserId}", tag.Id, tag.UserId);
         return tag;
     }
 
     public async Task<Tag?> UpdateTagAsync(string id, string userId, Action<Tag> update)
     {
         var tag = await db.Tags.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
-        if (tag == null) return null;
+        if (tag == null)
+        {
+            logger.LogDebug("Tag {TagId} not found for user {UserId} during update", id, userId);
+            return null;
+        }
 
         update(tag);
         tag.UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -283,19 +342,48 @@ public class DataService(AppDbContext db)
     public async Task<bool> DeleteTagAsync(string id, string userId)
     {
         var tag = await db.Tags.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
-        if (tag == null) return false;
+        if (tag == null)
+        {
+            logger.LogDebug("Tag {TagId} not found for user {UserId} during delete", id, userId);
+            return false;
+        }
 
         db.Tags.Remove(tag);
         await db.SaveChangesAsync();
+        logger.LogInformation("Tag {TagId} deleted for user {UserId}", id, userId);
         return true;
     }
 
     // Users
-    public async Task<User?> GetUserAsync(string id) =>
-        await db.Users.FirstOrDefaultAsync(u => u.Id == id);
 
-    public async Task<List<User>> SearchUsersAsync(string email) =>
-        await db.Users.Where(u => EF.Functions.ILike(u.Email, $"%{email}%")).ToListAsync();
+    /// <summary>
+    /// Get a user only if they share notes with the requesting user (prevents user enumeration).
+    /// </summary>
+    public async Task<User?> GetUserIfRelatedAsync(string id, string requestingUserId, string requestingUserEmail)
+    {
+        var targetUser = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (targetUser == null) return null;
+
+        var isRelated = await db.NoteShares
+            .AnyAsync(s =>
+                // Target user has a share on requester's notes
+                (db.Notes.Any(n => n.Id == s.NoteId && n.UserId == requestingUserId) &&
+                 (s.SharedWithUserId == id || s.SharedWithEmail == targetUser.Email)) ||
+                // Requester has a share on target user's notes
+                (db.Notes.Any(n => n.Id == s.NoteId && n.UserId == id) &&
+                 (s.SharedWithUserId == requestingUserId || s.SharedWithEmail == requestingUserEmail)));
+
+        if (!isRelated) return null;
+        return targetUser;
+    }
+
+    public async Task<List<User>> SearchUsersAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return [];
+
+        return await db.Users.Where(u => EF.Functions.ILike(u.Email, $"%{email}%")).ToListAsync();
+    }
 
     public async Task<User> CreateOrUpdateUserAsync(User user)
     {
