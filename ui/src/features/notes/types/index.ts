@@ -65,6 +65,7 @@ export interface NotesState {
   sortOrder: NotesSortOrder;
   viewMode: NotesViewMode;
   isLoading: boolean;
+  isCreating: boolean;
   error: string | null;
 }
 

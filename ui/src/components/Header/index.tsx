@@ -11,6 +11,7 @@ import {
   Typography,
   Divider,
   Switch,
+  CircularProgress,
 } from '@mui/material';
 import styles from './index.module.css';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -28,7 +29,7 @@ import { useColorMode } from '@/theme/ThemeProvider';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { logout } from '@/store/authSlice';
 import { toggleNoteListHidden } from '@/store/uiSlice';
-import { createNote, selectNotesFilter } from '@/features/notes/store/notesSlice';
+import { createNote, selectNotesFilter, selectNotesCreating } from '@/features/notes/store/notesSlice';
 import { useAppVersion } from '@/hooks';
 import { Logo } from '../Logo';
 
@@ -41,6 +42,7 @@ export const Header = () => {
   const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
   const isMobile = useAppSelector((state) => state.ui.isMobile);
   const filter = useAppSelector(selectNotesFilter);
+  const isCreating = useAppSelector(selectNotesCreating);
   const { version } = useAppVersion();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -84,6 +86,7 @@ export const Header = () => {
   };
 
   const handleCreateNote = () => {
+    if (isCreating) return;
     dispatch(createNote({ folderId: filter.folderId }));
     navigate('/');
   };
@@ -103,7 +106,7 @@ export const Header = () => {
       <SearchDialog open={isSearchOpen} onClose={handleCloseSearch} />
 
       <Stack direction={'row'} gap={1} alignItems="center">
-        <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={handleCreateNote} className={styles.newNoteButton}>
+        <Button variant="contained" size="small" startIcon={isCreating ? <CircularProgress size={16} color="inherit" /> : <AddIcon />} onClick={handleCreateNote} disabled={isCreating} data-testid="header-new-note-button" className={styles.newNoteButton}>
           {t('Notes.NewNote')}
         </Button>
         <LanguageSwitch />

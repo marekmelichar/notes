@@ -30,6 +30,7 @@ const initialState: NotesState = {
   sortOrder: "desc",
   viewMode: "grid",
   isLoading: false,
+  isCreating: false,
   error: null,
 };
 
@@ -181,8 +182,15 @@ export const notesSlice = createSlice({
         state.error = action.error.message || "Failed to load notes";
       })
       // Create note
+      .addCase(createNote.pending, (state) => {
+        state.isCreating = true;
+      })
       .addCase(createNote.fulfilled, (state, action) => {
+        state.isCreating = false;
         state.notes.push(action.payload);
+      })
+      .addCase(createNote.rejected, (state) => {
+        state.isCreating = false;
       })
       // Update note
       .addCase(updateNote.fulfilled, (state, action) => {
@@ -336,3 +344,5 @@ export const selectNotesSortOrder = (state: { notes: NotesState }) =>
   state.notes.sortOrder;
 export const selectNotesViewMode = (state: { notes: NotesState }) =>
   state.notes.viewMode;
+export const selectNotesCreating = (state: { notes: NotesState }) =>
+  state.notes.isCreating;

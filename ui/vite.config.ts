@@ -55,9 +55,6 @@ export default defineConfig({
           // State management
           redux: ['@reduxjs/toolkit', 'react-redux'],
 
-          // Data fetching
-          'react-query': ['@tanstack/react-query'],
-
           // Routing
           router: ['react-router-dom'],
 

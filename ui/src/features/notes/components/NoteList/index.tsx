@@ -23,6 +23,7 @@ import {
   selectNotesSortBy,
   selectNotesSortOrder,
   selectNotesLoading,
+  selectNotesCreating,
   setSortBy,
   setSortOrder,
   createNote,
@@ -51,6 +52,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   const filter = useAppSelector(selectNotesFilter);
   const selectedNoteId = useAppSelector(selectActiveTabId);
   const isLoading = useAppSelector(selectNotesLoading);
+  const isCreating = useAppSelector(selectNotesCreating);
   const isMobile = useAppSelector((state) => state.ui.isMobile);
 
   const [sortAnchorEl, setSortAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -71,6 +73,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   }, [selectedNoteId, notes]);
 
   const handleCreateNote = () => {
+    if (isCreating) return;
     dispatch(createNote({ folderId: filter.folderId }));
   };
 
@@ -132,7 +135,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
             </Tooltip>
           )}
           <Tooltip title={t("Notes.NewNote")} placement="right">
-            <IconButton size="small" onClick={handleCreateNote}>
+            <IconButton size="small" onClick={handleCreateNote} disabled={isCreating} data-testid="collapsed-new-note-button">
               <AddIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -217,8 +220,10 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
             </Typography>
             <Button
               variant="outlined"
-              startIcon={<AddIcon />}
+              startIcon={isCreating ? <CircularProgress size={16} /> : <AddIcon />}
               onClick={handleCreateNote}
+              disabled={isCreating}
+              data-testid="empty-state-create-note-button"
             >
               {t("Notes.CreateNote")}
             </Button>
