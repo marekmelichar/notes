@@ -6,6 +6,7 @@ import {
 } from "@reduxjs/toolkit";
 import { notesApi } from "../services/notesApi";
 import { showSuccess, showError } from "@/store/notificationsSlice";
+import { updateItemById, removeItemById } from "@/store/reducerUtils";
 import type {
   Note,
   NotesState,
@@ -194,14 +195,7 @@ export const notesSlice = createSlice({
       })
       // Update note
       .addCase(updateNote.fulfilled, (state, action) => {
-        if (action.payload) {
-          const index = state.notes.findIndex(
-            (n) => n.id === action.payload!.id
-          );
-          if (index !== -1) {
-            state.notes[index] = action.payload;
-          }
-        }
+        updateItemById(state.notes, action.payload);
       })
       // Delete note
       .addCase(deleteNote.fulfilled, (state, action) => {
@@ -212,18 +206,11 @@ export const notesSlice = createSlice({
       })
       // Restore note
       .addCase(restoreNote.fulfilled, (state, action) => {
-        if (action.payload) {
-          const index = state.notes.findIndex(
-            (n) => n.id === action.payload!.id
-          );
-          if (index !== -1) {
-            state.notes[index] = action.payload;
-          }
-        }
+        updateItemById(state.notes, action.payload);
       })
       // Permanent delete
       .addCase(permanentDeleteNote.fulfilled, (state, action) => {
-        state.notes = state.notes.filter((n) => n.id !== action.payload);
+        state.notes = removeItemById(state.notes, action.payload);
       })
       // Search notes
       .addCase(searchNotes.fulfilled, (state, action) => {

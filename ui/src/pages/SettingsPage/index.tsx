@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '@/theme/ThemeProvider';
 import { DEFAULT_PRIMARY_COLOR } from '@/theme/colorUtils';
+import { useAppDispatch, useAppSelector, selectNoteListHidden, selectIsMobile } from '@/store';
+import { toggleNoteListHidden } from '@/store/uiSlice';
 import styles from './index.module.css';
 
 const COLOR_PRESETS = [
@@ -19,6 +21,9 @@ const COLOR_PRESETS = [
 const SettingsPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const noteListHidden = useAppSelector(selectNoteListHidden);
+  const isMobile = useAppSelector(selectIsMobile);
 
   const handleClose = () => navigate(-1);
 
@@ -91,11 +96,24 @@ const SettingsPage = () => {
             )}
           </Box>
         </Box>
-      </Paper>
 
-      <Button variant="contained" onClick={handleClose} className={styles.okButton}>
-        {t('Common.Ok')}
-      </Button>
+        {!isMobile && (
+          <Box className={styles.section}>
+            <Typography variant="h6" className={styles.sectionTitle}>
+              {t('SettingsPage.Layout')}
+            </Typography>
+
+            <Box className={styles.settingRow}>
+              <Typography>{t('SettingsPage.ShowNoteList')}</Typography>
+              <Switch
+                checked={!noteListHidden}
+                onChange={() => dispatch(toggleNoteListHidden())}
+                data-testid="settings-show-note-list"
+              />
+            </Box>
+          </Box>
+        )}
+      </Paper>
     </Box>
   );
 };

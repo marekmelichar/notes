@@ -14,7 +14,7 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { enqueueSnackbar } from 'notistack';
+import { showError, showSuccess, showWarning } from '@/store/notificationsSlice';
 import { PartialBlock } from '@blocknote/core';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
@@ -30,10 +30,12 @@ import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
 import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import { useAppDispatch, useAppSelector } from '@/store';
+import { useAutoSave } from '@/hooks';
 import { setTabUnsaved } from '@/store/tabsSlice';
 import {
+  selectAllNotes,
   updateNote,
   deleteNote,
   restoreNote,
@@ -108,19 +110,17 @@ interface SingleNoteEditorProps {
 export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const note = useAppSelector((state) => state.notes.notes.find((n) => n.id === noteId) ?? null);
+  const notes = useAppSelector(selectAllNotes);
+  const note = useMemo(() => notes.find((n) => n.id === noteId) ?? null, [notes, noteId]);
   const folders = useAppSelector(selectAllFolders);
   const isMobile = useMediaQuery('(max-width: 48rem)');
   const [title, setTitle] = useState(note?.title || '');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [folderMenuAnchor, setFolderMenuAnchor] = useState<null | HTMLElement>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showMobileTags, setShowMobileTags] = useState(false);
   const [showMobileControls, setShowMobileControls] = useState(false);
-  const [autoSaveCountdown, setAutoSaveCountdown] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'editor' | 'markdown'>('editor');
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   // Content getter (replaces window global) - async to support markdown parsing
   const getContentRef = useRef<(() => Promise<string>) | null>(null);
@@ -139,6 +139,62 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   // Track the last saved values
   const lastSavedContentRef = useRef<string>(note?.content || '');
   const lastSavedTitleRef = useRef<string>(note?.title || '');
+  const titleRef = useRef(title);
+  titleRef.current = title;
+
+  // markClean ref to break circular dep: performSave needs markClean, useAutoSave needs performSave
+  const markCleanRef = useRef<() => void>(() => {});
+
+  // Perform the actual save operation
+  const performSave = useCallback(async () => {
+    if (!note || isSaving) return;
+
+    const content = getContentRef.current ? await getContentRef.current() : '[]';
+    const currentTitle = titleRef.current;
+    const updates: { content?: string; title?: string } = {};
+
+    const hasContentChanged = content !== lastSavedContentRef.current;
+    const hasTitleChanged = currentTitle !== lastSavedTitleRef.current;
+
+    const previousContent = lastSavedContentRef.current;
+    const previousTitle = lastSavedTitleRef.current;
+
+    if (hasContentChanged) {
+      updates.content = content;
+      lastSavedContentRef.current = content;
+    }
+    if (hasTitleChanged) {
+      updates.title = currentTitle;
+      lastSavedTitleRef.current = currentTitle;
+    }
+
+    if (hasContentChanged || hasTitleChanged) {
+      setIsSaving(true);
+      try {
+        await dispatch(updateNote({ id: note.id, updates })).unwrap();
+        setLastSaved(new Date());
+        markCleanRef.current();
+      } catch {
+        lastSavedContentRef.current = previousContent;
+        lastSavedTitleRef.current = previousTitle;
+        dispatch(showError(t('Notes.SaveError')));
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  }, [note, dispatch, isSaving, t]);
+
+  const {
+    hasUnsavedChanges,
+    autoSaveCountdown,
+    markDirty,
+    markClean,
+    saveNow,
+  } = useAutoSave({
+    delayMs: 10_000,
+    onSave: performSave,
+  });
+  markCleanRef.current = markClean;
 
   // Update title when note changes externally
   React.useEffect(() => {
@@ -146,7 +202,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
       setTitle(note.title || '');
       lastSavedContentRef.current = note.content || '';
       lastSavedTitleRef.current = note.title || '';
-      setHasUnsavedChanges(false);
+      markClean();
     }
   }, [note?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -160,96 +216,14 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
     dispatch(setTabUnsaved({ id: noteId, hasUnsavedChanges }));
   }, [dispatch, noteId, hasUnsavedChanges]);
 
-  // Keep a ref to the latest handleSave to avoid stale closures in the timer
-  const handleSaveRef = useRef<() => void>(() => {});
-
-  // Auto-save timer ref
-  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  const clearCountdown = useCallback(() => {
-    clearInterval(countdownIntervalRef.current);
-    setAutoSaveCountdown(null);
-  }, []);
-
-  const scheduleAutoSave = useCallback(() => {
-    clearTimeout(autoSaveTimerRef.current);
-    clearInterval(countdownIntervalRef.current);
-
-    setAutoSaveCountdown(10);
-    countdownIntervalRef.current = setInterval(() => {
-      setAutoSaveCountdown((prev) => (prev !== null && prev > 1 ? prev - 1 : null));
-    }, 1_000);
-
-    autoSaveTimerRef.current = setTimeout(() => {
-      clearInterval(countdownIntervalRef.current);
-      setAutoSaveCountdown(null);
-      handleSaveRef.current();
-    }, 10_000);
-  }, []);
-
   const handleEditorChange = useCallback(() => {
-    setHasUnsavedChanges(true);
-    scheduleAutoSave();
-  }, [scheduleAutoSave]);
+    markDirty();
+  }, [markDirty]);
 
   const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTitle = e.target.value;
-    setTitle(newTitle);
-    setHasUnsavedChanges(true);
-    scheduleAutoSave();
-  }, [scheduleAutoSave]);
-
-  const handleSave = useCallback(async () => {
-    if (!note || isSaving) return;
-
-    const content = getContentRef.current ? await getContentRef.current() : '[]';
-    const updates: { content?: string; title?: string } = {};
-
-    const hasContentChanged = content !== lastSavedContentRef.current;
-    const hasTitleChanged = title !== lastSavedTitleRef.current;
-
-    const previousContent = lastSavedContentRef.current;
-    const previousTitle = lastSavedTitleRef.current;
-
-    if (hasContentChanged) {
-      updates.content = content;
-      lastSavedContentRef.current = content;
-    }
-    if (hasTitleChanged) {
-      updates.title = title;
-      lastSavedTitleRef.current = title;
-    }
-
-    if (hasContentChanged || hasTitleChanged) {
-      setIsSaving(true);
-      try {
-        await dispatch(updateNote({ id: note.id, updates })).unwrap();
-        setLastSaved(new Date());
-        setHasUnsavedChanges(false);
-      } catch {
-        lastSavedContentRef.current = previousContent;
-        lastSavedTitleRef.current = previousTitle;
-        enqueueSnackbar(t('Notes.SaveError'), { variant: 'error' });
-      } finally {
-        setIsSaving(false);
-      }
-    }
-  }, [note, title, dispatch, isSaving, t]);
-  handleSaveRef.current = handleSave;
-
-  const handleManualSave = useCallback(() => {
-    clearTimeout(autoSaveTimerRef.current);
-    clearCountdown();
-    handleSaveRef.current();
-  }, [clearCountdown]);
-
-  // Clear auto-save timer on unmount
-  useEffect(() => {
-    return () => {
-      clearTimeout(autoSaveTimerRef.current);
-      clearInterval(countdownIntervalRef.current);
-    };
-  }, []);
+    setTitle(e.target.value);
+    markDirty();
+  }, [markDirty]);
 
   // Keyboard shortcut for save (Ctrl/Cmd + S) — only when active
   React.useEffect(() => {
@@ -258,7 +232,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
-        handleManualSave();
+        saveNow();
       }
     };
 
@@ -266,7 +240,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleManualSave, isActive]);
+  }, [saveNow, isActive]);
 
   const handleTogglePin = useCallback(() => {
     if (note) {
@@ -283,7 +257,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   const handleRestore = useCallback(async () => {
     if (note) {
       await dispatch(restoreNote(note.id));
-      enqueueSnackbar(t('Notes.NoteRestored'), { variant: 'success' });
+      dispatch(showSuccess(t('Notes.NoteRestored')));
     }
   }, [note, dispatch, t]);
 
@@ -334,20 +308,18 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         if (failedImages > 0) {
-          enqueueSnackbar(t('Export.SuccessWithWarning', { count: failedImages }), {
-            variant: 'warning',
-          });
+          dispatch(showWarning(t('Export.SuccessWithWarning', { count: failedImages })));
         } else {
-          enqueueSnackbar(t('Export.Success'), { variant: 'success' });
+          dispatch(showSuccess(t('Export.Success')));
         }
       } catch (err) {
         console.error('Export failed:', err);
-        enqueueSnackbar(t('Export.Error'), { variant: 'error' });
+        dispatch(showError(t('Export.Error')));
       } finally {
         setIsExporting(false);
       }
     },
-    [note, t],
+    [note, t, dispatch],
   );
 
   const currentFolder = folders.find((f) => f.id === note?.folderId);
@@ -379,7 +351,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
                 color={showMobileControls ? 'primary' : 'default'}
                 className={styles.controlsToggle}
               >
-                <TuneOutlinedIcon fontSize="small" />
+                <MoreHorizIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
@@ -444,27 +416,29 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
             ))}
           </Menu>
           <Tooltip title={t('Notes.SaveShortcut')}>
-            <Button
-              size="small"
-              variant={hasUnsavedChanges ? 'contained' : 'outlined'}
-              color={hasUnsavedChanges ? 'primary' : 'inherit'}
-              onClick={handleManualSave}
-              disabled={isSaving}
-              startIcon={
-                isSaving ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : (
-                  <SaveIcon fontSize="small" />
-                )
-              }
-              className={styles.saveButton}
-            >
-              {isSaving
-                ? t('Common.Saving')
-                : hasUnsavedChanges
-                  ? t('Common.Save')
-                  : t('Common.Saved')}
-            </Button>
+            <span>
+              <Button
+                size="small"
+                variant={hasUnsavedChanges ? 'contained' : 'outlined'}
+                color={hasUnsavedChanges ? 'primary' : 'inherit'}
+                onClick={saveNow}
+                disabled={isSaving}
+                startIcon={
+                  isSaving ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <SaveIcon fontSize="small" />
+                  )
+                }
+                className={styles.saveButton}
+              >
+                {isSaving
+                  ? t('Common.Saving')
+                  : hasUnsavedChanges
+                    ? t('Common.Save')
+                    : t('Common.Saved')}
+              </Button>
+            </span>
           </Tooltip>
           <Tooltip title={note.isPinned ? t('Notes.Unpin') : t('Notes.Pin')}>
             <IconButton size="small" onClick={handleTogglePin}>
@@ -476,17 +450,19 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
             </IconButton>
           </Tooltip>
           <Tooltip title={t('Export.Export')}>
-            <IconButton
-              size="small"
-              onClick={(e) => setExportMenuAnchor(e.currentTarget)}
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <CircularProgress size={18} />
-              ) : (
-                <FileDownloadOutlinedIcon fontSize="small" />
-              )}
-            </IconButton>
+            <span>
+              <IconButton
+                size="small"
+                onClick={(e) => setExportMenuAnchor(e.currentTarget)}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <CircularProgress size={18} />
+                ) : (
+                  <FileDownloadOutlinedIcon fontSize="small" />
+                )}
+              </IconButton>
+            </span>
           </Tooltip>
           <Menu
             anchorEl={exportMenuAnchor}

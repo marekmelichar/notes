@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';
-import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed, openTab, selectActiveTabId } from '@/store';
-import { loadNotes } from '@/features/notes/store/notesSlice';
+import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed, openTab, selectActiveTabId, selectIsMobile, selectMobileView, selectSidebarCollapsed, selectNoteListCollapsed, selectNoteListHidden } from '@/store';
+import { loadNotes, selectAllNotes } from '@/features/notes/store/notesSlice';
 import { loadFolders } from '@/features/notes/store/foldersSlice';
 import { loadTags } from '@/features/notes/store/tagsSlice';
 import { checkPendingChanges, setOnlineStatus } from '@/features/notes/store/syncSlice';
@@ -29,14 +29,16 @@ const NotesPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { noteId: urlNoteId } = useParams<{ noteId: string }>();
-  const isMobile = useAppSelector((state) => state.ui.isMobile);
-  const mobileView = useAppSelector((state) => state.ui.mobileView);
-  const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
-  const noteListCollapsed = useAppSelector((state) => state.ui.noteListCollapsed);
-  const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
+  const isMobile = useAppSelector(selectIsMobile);
+  const mobileView = useAppSelector(selectMobileView);
+  const sidebarCollapsed = useAppSelector(selectSidebarCollapsed);
+  const noteListCollapsed = useAppSelector(selectNoteListCollapsed);
+  const noteListHidden = useAppSelector(selectNoteListHidden);
   const activeTabId = useAppSelector(selectActiveTabId);
-  const activeNote = useAppSelector((state) =>
-    activeTabId ? state.notes.notes.find((n) => n.id === activeTabId) ?? null : null
+  const notes = useAppSelector(selectAllNotes);
+  const activeNote = useMemo(
+    () => (activeTabId ? notes.find((n) => n.id === activeTabId) ?? null : null),
+    [notes, activeTabId],
   );
 
   // Sync URL → Redux: open tab from URL on mount

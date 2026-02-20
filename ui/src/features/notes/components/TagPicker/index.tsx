@@ -18,6 +18,7 @@ import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { selectAllTags, createTag } from '../../store/tagsSlice';
+import { DEFAULT_ITEM_COLOR } from '@/theme/colorUtils';
 import styles from './index.module.css';
 
 interface TagPickerProps {
@@ -34,7 +35,7 @@ export const TagPicker = ({ selectedTagIds, onTagsChange }: TagPickerProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newTagName, setNewTagName] = useState('');
-  const [newTagColor, setNewTagColor] = useState('#6366f1');
+  const [newTagColor, setNewTagColor] = useState(DEFAULT_ITEM_COLOR);
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -44,7 +45,7 @@ export const TagPicker = ({ selectedTagIds, onTagsChange }: TagPickerProps) => {
     setAnchorEl(null);
     setIsCreating(false);
     setNewTagName('');
-    setNewTagColor('#6366f1');
+    setNewTagColor(DEFAULT_ITEM_COLOR);
   };
 
   const handleToggleTag = (tagId: string) => {
@@ -70,7 +71,7 @@ export const TagPicker = ({ selectedTagIds, onTagsChange }: TagPickerProps) => {
       }
       setIsCreating(false);
       setNewTagName('');
-      setNewTagColor('#6366f1');
+      setNewTagColor(DEFAULT_ITEM_COLOR);
     }
   };
 

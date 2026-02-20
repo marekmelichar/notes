@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import { tagsApi } from '../services/notesApi';
 import { showSuccess, showError } from '@/store/notificationsSlice';
+import { updateItemById, removeItemById } from '@/store/reducerUtils';
+import { DEFAULT_ITEM_COLOR } from '@/theme/colorUtils';
 import type { Tag, TagsState } from '../types';
 
 const initialState: TagsState = {
@@ -20,7 +22,7 @@ export const createTag = createAsyncThunk(
     try {
       const tagData = {
         name: data.name,
-        color: data.color || '#6366f1',
+        color: data.color || DEFAULT_ITEM_COLOR,
       };
       // Use the server-generated ID
       const id = await tagsApi.create(tagData);
@@ -91,16 +93,11 @@ export const tagsSlice = createSlice({
       })
       // Update tag
       .addCase(updateTag.fulfilled, (state, action) => {
-        if (action.payload) {
-          const index = state.tags.findIndex((t) => t.id === action.payload!.id);
-          if (index !== -1) {
-            state.tags[index] = action.payload;
-          }
-        }
+        updateItemById(state.tags, action.payload);
       })
       // Delete tag
       .addCase(deleteTag.fulfilled, (state, action) => {
-        state.tags = state.tags.filter((t) => t.id !== action.payload);
+        state.tags = removeItemById(state.tags, action.payload);
       });
   },
 });

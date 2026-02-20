@@ -6,6 +6,7 @@
 
 import { http, HttpResponse, delay } from 'msw';
 import type { Note, Folder, Tag } from '@/features/notes/types';
+import { DEFAULT_ITEM_COLOR } from '@/theme/colorUtils';
 
 // Simulate network delay
 const MOCK_DELAY = 100;
@@ -79,7 +80,7 @@ let mockFolders: Folder[] = [
     id: 'folder-1',
     name: 'Work',
     parentId: null,
-    color: '#6366f1',
+    color: DEFAULT_ITEM_COLOR,
     order: 0,
     createdAt: Date.now() - 604800000,
     updatedAt: Date.now() - 604800000,
@@ -269,7 +270,7 @@ export const handlers = [
       id: `folder-${Date.now()}`,
       name: body.name || 'New Folder',
       parentId: body.parentId ?? null,
-      color: body.color || '#6366f1',
+      color: body.color || DEFAULT_ITEM_COLOR,
       order: mockFolders.length,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -332,7 +333,7 @@ export const handlers = [
     const newTag: Tag = {
       id: `tag-${Date.now()}`,
       name: body.name || 'New Tag',
-      color: body.color || '#6366f1',
+      color: body.color || DEFAULT_ITEM_COLOR,
     };
     mockTags.push(newTag);
     return HttpResponse.json(newTag, { status: 201 });

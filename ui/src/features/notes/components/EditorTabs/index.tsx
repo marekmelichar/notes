@@ -26,11 +26,14 @@ import {
   closeTab,
   reorderTabs,
 } from '@/store/tabsSlice';
+import { selectAllNotes } from '../../store/notesSlice';
+import { selectAllFolders } from '../../store/foldersSlice';
 import styles from './index.module.css';
 
 interface SortableTabProps {
   tabId: string;
   title: string;
+  subtitle?: string;
   isActive: boolean;
   hasUnsavedChanges: boolean;
   onTabClick: (tabId: string) => void;
@@ -42,6 +45,7 @@ interface SortableTabProps {
 const SortableTab = ({
   tabId,
   title,
+  subtitle,
   isActive,
   hasUnsavedChanges,
   onTabClick,
@@ -70,7 +74,10 @@ const SortableTab = ({
       onMouseDown={(e) => onMiddleClick(e, tabId)}
     >
       {hasUnsavedChanges && <span className={styles.unsavedDot} />}
-      <span className={styles.tabTitle}>{title}</span>
+      <span className={styles.tabTitle}>
+        {title}
+        {subtitle && <span className={styles.tabSubtitle}> — {subtitle}</span>}
+      </span>
       <button
         data-testid="editor-tab-close"
         className={styles.closeButton}
@@ -89,7 +96,8 @@ export const EditorTabs = () => {
   const dispatch = useAppDispatch();
   const openTabs = useAppSelector(selectOpenTabs);
   const activeTabId = useAppSelector(selectActiveTabId);
-  const notes = useAppSelector((state) => state.notes.notes);
+  const notes = useAppSelector(selectAllNotes);
+  const folders = useAppSelector(selectAllFolders);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -103,6 +111,46 @@ export const EditorTabs = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const tabIds = useMemo(() => openTabs.map((tab) => tab.id), [openTabs]);
+
+  // Detect duplicate tab titles and compute folder-based disambiguation
+  const tabSubtitles = useMemo(() => {
+    const noteMap = new Map(notes.map((n) => [n.id, n]));
+    const folderMap = new Map(folders.map((f) => [f.id, f]));
+
+    const titleCounts = new Map<string, string[]>();
+    for (const tab of openTabs) {
+      const title = noteMap.get(tab.id)?.title || t('Common.Untitled');
+      const existing = titleCounts.get(title) || [];
+      existing.push(tab.id);
+      titleCounts.set(title, existing);
+    }
+
+    const subtitles = new Map<string, string>();
+    for (const [, tabIdsForTitle] of titleCounts) {
+      if (tabIdsForTitle.length <= 1) continue;
+
+      // Check if folder names alone disambiguate
+      const folderNames = tabIdsForTitle.map((id) => {
+        const note = noteMap.get(id);
+        return note?.folderId
+          ? folderMap.get(note.folderId)?.name || t('Notes.Unfiled')
+          : t('Notes.Unfiled');
+      });
+      const hasDuplicateFolders = folderNames.length !== new Set(folderNames).size;
+
+      for (let i = 0; i < tabIdsForTitle.length; i++) {
+        const tabId = tabIdsForTitle[i];
+        let subtitle = folderNames[i];
+        if (hasDuplicateFolders) {
+          const note = noteMap.get(tabId);
+          const date = note ? new Date(note.createdAt).toLocaleDateString() : '';
+          subtitle = `${subtitle}, ${date}`;
+        }
+        subtitles.set(tabId, subtitle);
+      }
+    }
+    return subtitles;
+  }, [openTabs, notes, folders, t]);
 
   const handleTabClick = useCallback(
     (tabId: string) => {
@@ -172,6 +220,7 @@ export const EditorTabs = () => {
                 key={tab.id}
                 tabId={tab.id}
                 title={title}
+                subtitle={tabSubtitles.get(tab.id)}
                 isActive={isActive}
                 hasUnsavedChanges={tab.hasUnsavedChanges}
                 onTabClick={handleTabClick}

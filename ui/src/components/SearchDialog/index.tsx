@@ -3,7 +3,7 @@ import { Dialog, Box, InputBase, Typography, CircularProgress } from '@mui/mater
 import SearchIcon from '@mui/icons-material/Search';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch, useAppSelector, openTab } from '@/store';
+import { useAppDispatch, useAppSelector, openTab, selectIsMobile } from '@/store';
 import { selectAllFolders } from '@/features/notes/store/foldersSlice';
 import { setMobileView } from '@/store/uiSlice';
 import { notesApi } from '@/features/notes/services/notesApi';
@@ -20,7 +20,7 @@ interface SearchDialogProps {
 export const SearchDialog = ({ open, onClose }: SearchDialogProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const isMobile = useAppSelector((state) => state.ui.isMobile);
+  const isMobile = useAppSelector(selectIsMobile);
   const folders = useAppSelector(selectAllFolders);
 
   const [query, setQuery] = useState('');
