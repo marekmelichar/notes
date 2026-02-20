@@ -17,7 +17,7 @@ import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-import { useAppDispatch, useAppSelector, toggleNoteListCollapsed, openTab, selectActiveTabId } from '@/store';
+import { useAppDispatch, useAppSelector, toggleNoteListCollapsed, openTab, selectActiveTabId, selectIsMobile } from '@/store';
 import {
   selectFilteredNotes,
   selectNotesSortBy,
@@ -53,7 +53,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   const selectedNoteId = useAppSelector(selectActiveTabId);
   const isLoading = useAppSelector(selectNotesLoading);
   const isCreating = useAppSelector(selectNotesCreating);
-  const isMobile = useAppSelector((state) => state.ui.isMobile);
+  const isMobile = useAppSelector(selectIsMobile);
 
   const [sortAnchorEl, setSortAnchorEl] = React.useState<null | HTMLElement>(null);
   const virtuosoRef = React.useRef<VirtuosoHandle>(null);
@@ -135,9 +135,11 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
             </Tooltip>
           )}
           <Tooltip title={t("Notes.NewNote")} placement="right">
-            <IconButton size="small" onClick={handleCreateNote} disabled={isCreating} data-testid="collapsed-new-note-button">
-              <AddIcon fontSize="small" />
-            </IconButton>
+            <span>
+              <IconButton size="small" onClick={handleCreateNote} disabled={isCreating} data-testid="collapsed-new-note-button">
+                <AddIcon fontSize="small" />
+              </IconButton>
+            </span>
           </Tooltip>
         </Box>
         <Box className={styles.collapsedList}>

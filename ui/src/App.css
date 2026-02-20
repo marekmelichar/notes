@@ -11,6 +11,13 @@ body {
   font-family: 'Source Sans', Arial, sans-serif !important;
   background-color: var(--mui-palette-background-default);
   color: var(--mui-palette-text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
 }
 
 a,

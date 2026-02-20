@@ -4,13 +4,13 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch, useAppSelector, setMobileView, MobileView, selectActiveTabId } from '@/store';
+import { useAppDispatch, useAppSelector, setMobileView, MobileView, selectActiveTabId, selectMobileView } from '@/store';
 import styles from './index.module.css';
 
 export const MobileNavigation = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const mobileView = useAppSelector((state) => state.ui.mobileView);
+  const mobileView = useAppSelector(selectMobileView);
   const selectedNote = useAppSelector(selectActiveTabId);
 
   const handleChange = (_event: React.SyntheticEvent, newValue: MobileView) => {

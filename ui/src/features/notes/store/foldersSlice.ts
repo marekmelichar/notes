@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, type PayloadAction, createSelector } from '@reduxjs/toolkit';
 import { foldersApi } from '../services/notesApi';
 import { showSuccess, showError } from '@/store/notificationsSlice';
+import { updateItemById, removeItemById } from '@/store/reducerUtils';
+import { DEFAULT_ITEM_COLOR } from '@/theme/colorUtils';
 import type { Folder, FoldersState } from '../types';
 
 const initialState: FoldersState = {
@@ -26,7 +28,7 @@ export const createFolder = createAsyncThunk(
       const folderData = {
         name: data.name,
         parentId: data.parentId ?? null,
-        color: data.color || '#6366f1',
+        color: data.color || DEFAULT_ITEM_COLOR,
         order: maxOrder + 1,
         createdAt: now,
         updatedAt: now,
@@ -127,16 +129,11 @@ export const foldersSlice = createSlice({
       })
       // Update folder
       .addCase(updateFolder.fulfilled, (state, action) => {
-        if (action.payload) {
-          const index = state.folders.findIndex((f) => f.id === action.payload!.id);
-          if (index !== -1) {
-            state.folders[index] = action.payload;
-          }
-        }
+        updateItemById(state.folders, action.payload);
       })
       // Delete folder
       .addCase(deleteFolder.fulfilled, (state, action) => {
-        state.folders = state.folders.filter((f) => f.id !== action.payload);
+        state.folders = removeItemById(state.folders, action.payload);
         state.expandedFolderIds = state.expandedFolderIds.filter((id) => id !== action.payload);
       })
       // Reorder folders

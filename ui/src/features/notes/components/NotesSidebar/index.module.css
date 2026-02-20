@@ -162,33 +162,7 @@
   margin-left: auto;
 }
 
-.folderDragHandle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  color: var(--mui-palette-text-disabled);
-  padding: 0.125rem;
-  border-radius: 0.25rem;
-  transition: color 0.2s, background-color 0.2s, opacity 0.2s;
-  touch-action: none;
-  opacity: 0;
-}
-
-@media (hover: hover) {
-  .folderItem:hover .folderDragHandle {
-    opacity: 1;
-  }
-
-  .folderDragHandle:hover {
-    color: var(--mui-palette-text-secondary);
-    background-color: var(--mui-palette-action-hover);
-  }
-}
-
-.folderDragHandle:active {
-  cursor: grabbing;
-}
+/* Shared drag handle — used by both folder and note items */
 
 .folderDragging {
   opacity: 0.5;
@@ -386,7 +360,8 @@
 }
 
 @media (hover: hover) {
-  .noteTreeItem:hover .dragHandle {
+  .noteTreeItem:hover .dragHandle,
+  .folderItem:hover .dragHandle {
     opacity: 1;
   }
 
@@ -516,11 +491,11 @@
   }
 
   .folderDragHandle {
-    opacity: 1;
+    display: none;
   }
 
   .dragHandle {
-    opacity: 1;
+    display: none;
   }
 
   .tagItem {

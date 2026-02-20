@@ -8,6 +8,9 @@ import { darken, lighten, getContrastRatio } from '@mui/material/styles';
 
 export const DEFAULT_PRIMARY_COLOR = '#007ACC';
 
+/** Default color for newly created tags and folders */
+export const DEFAULT_ITEM_COLOR = '#6366f1';
+
 export interface GeneratedColors {
   primary: {
     main: string;

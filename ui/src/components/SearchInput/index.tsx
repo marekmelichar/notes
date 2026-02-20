@@ -25,7 +25,7 @@ export const SearchInput = ({ onClick }: SearchInputProps) => {
       data-testid="search-trigger"
     >
       <SearchIcon className={styles.searchIcon} />
-      <Typography className={styles.placeholder}>{t('Common.Search')}</Typography>
+      <Typography className={styles.placeholder}>{t('Common.SearchNotes')}</Typography>
       <Box className={styles.shortcutHint}>
         <Typography variant="caption" className={styles.shortcutText}>
           ⌘K

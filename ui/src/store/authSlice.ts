@@ -135,3 +135,6 @@ export const authSlice = createSlice({
 });
 
 export const { setAccessStatus } = authSlice.actions;
+
+// Selectors
+export const selectAuthUser = (state: { auth: IAuthState }) => state.auth.user;

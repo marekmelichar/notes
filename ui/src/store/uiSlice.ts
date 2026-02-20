@@ -64,3 +64,10 @@ export const uiSlice = createSlice({
 });
 
 export const { setMobileView, setIsMobile, setSidebarCollapsed, toggleSidebarCollapsed, setNoteListCollapsed, toggleNoteListCollapsed, setNoteListHidden, toggleNoteListHidden } = uiSlice.actions;
+
+// Selectors
+export const selectIsMobile = (state: { ui: UiState }) => state.ui.isMobile;
+export const selectMobileView = (state: { ui: UiState }) => state.ui.mobileView;
+export const selectSidebarCollapsed = (state: { ui: UiState }) => state.ui.sidebarCollapsed;
+export const selectNoteListCollapsed = (state: { ui: UiState }) => state.ui.noteListCollapsed;
+export const selectNoteListHidden = (state: { ui: UiState }) => state.ui.noteListHidden;

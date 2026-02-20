@@ -17,43 +17,35 @@ import { useTranslation } from "react-i18next";
 import {
   DndContext,
   DragOverlay,
-  useDroppable,
   PointerSensor,
   TouchSensor,
   useSensor,
   useSensors,
-  closestCenter,
   type DragEndEvent,
   type DragStartEvent,
-  type DragOverEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  useSortable,
   verticalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import NoteOutlinedIcon from "@mui/icons-material/NoteOutlined";
 import StarOutlineIcon from "@mui/icons-material/StarOutline";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
-import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import MenuIcon from "@mui/icons-material/Menu";
 import MenuOpenIcon from "@mui/icons-material/MenuOpen";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { useAppDispatch, useAppSelector, toggleSidebarCollapsed, openTab, selectActiveTabId } from "@/store";
+import { useAppDispatch, useAppSelector, toggleSidebarCollapsed, openTab, selectActiveTabId, selectIsMobile, selectNoteListHidden } from "@/store";
 import { setNoteListHidden } from "@/store/uiSlice";
 import {
   setFilter,
@@ -65,11 +57,9 @@ import {
 } from "../../store/notesSlice";
 import {
   selectRootFolders,
-  selectChildFolders,
   selectExpandedFolderIds,
   selectFoldersLoading,
   selectAllFolders,
-  toggleFolderExpanded,
   expandFolder,
   setExpandedFolders,
   createFolder,
@@ -83,269 +73,13 @@ import {
   deleteTag,
 } from "../../store/tagsSlice";
 import type { Folder, Note } from "../../types";
+import { SortableNote } from "./SortableNote";
+import { DroppableFolder } from "./DroppableFolder";
+import { UnfiledDropZone } from "./UnfiledDropZone";
+import { TagFormDialog } from "./TagFormDialog";
 import styles from "./index.module.css";
 
-// Module-level flag to skip Collapse animations during programmatic expansion
-let skipCollapseAnimation = false;
-
-interface SortableNoteProps {
-  note: Note;
-  level: number;
-}
-
-const SortableNote = ({ note, level }: SortableNoteProps) => {
-  const { t } = useTranslation();
-  const dispatch = useAppDispatch();
-  const selectedNoteId = useAppSelector(selectActiveTabId);
-  const isMobile = useAppSelector((state) => state.ui.isMobile);
-  const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
-  const isSelected = selectedNoteId === note.id;
-  const elementRef = React.useRef<HTMLDivElement | null>(null);
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: `note-${note.id}`,
-    data: { type: "note", note },
-  });
-
-  const combinedRef = React.useCallback((node: HTMLDivElement | null) => {
-    setNodeRef(node);
-    elementRef.current = node;
-  }, [setNodeRef]);
-
-  // Scroll into view when selected (skip when note list is hidden)
-  React.useEffect(() => {
-    if (!isSelected || noteListHidden) return;
-    // Small delay for DOM to update after instant folder expansion
-    const timer = requestAnimationFrame(() => {
-      elementRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
-    });
-    return () => cancelAnimationFrame(timer);
-  }, [isSelected, noteListHidden]);
-
-  const step = isMobile ? 10 : 30;
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    paddingLeft: level > 0 ? step + level * step : 12,
-    opacity: isDragging ? 0.5 : 1,
-    "--indent-level": level,
-  } as React.CSSProperties;
-
-  const handleClick = () => {
-    // Only select the note - don't change the filter
-    // The tree view already shows folder context visually
-    dispatch(openTab(note.id));
-  };
-
-  return (
-    <Box
-      ref={combinedRef}
-      className={`${styles.noteTreeItem} ${isSelected ? styles.noteTreeItemActive : ""} ${isDragging ? styles.dragging : ""}`}
-      style={style}
-      onClick={handleClick}
-    >
-      <Box {...listeners} {...attributes} className={styles.dragHandle}>
-        <DragIndicatorIcon fontSize="small" />
-      </Box>
-      <DescriptionOutlinedIcon
-        fontSize="small"
-        className={styles.noteTreeIcon}
-      />
-      <Typography className={styles.noteTreeLabel} noWrap>
-        {note.title || t("Common.Untitled")}
-      </Typography>
-    </Box>
-  );
-};
-
-interface DroppableFolderProps {
-  folder: Folder;
-  level?: number;
-  showNotes?: boolean;
-  onAddSubfolder: (parentId: string) => void;
-}
-
-const DroppableFolder = ({
-  folder,
-  level = 0,
-  showNotes = false,
-  onAddSubfolder,
-}: DroppableFolderProps) => {
-  const { t } = useTranslation();
-  const dispatch = useAppDispatch();
-  const isMobile = useAppSelector((state) => state.ui.isMobile);
-  const expandedIds = useAppSelector(selectExpandedFolderIds);
-  const childFolders = useAppSelector(selectChildFolders(folder.id));
-  const notes = useAppSelector(selectAllNotes);
-
-  const { isOver, setNodeRef: setDroppableRef } = useDroppable({
-    id: `folder-${folder.id}`,
-    data: { type: "folder", folderId: folder.id, folder },
-  });
-
-  const {
-    attributes,
-    listeners,
-    setNodeRef: setSortableRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: `draggable-folder-${folder.id}`,
-    data: { type: "draggable-folder", folder },
-  });
-
-  const isExpanded = expandedIds.includes(folder.id);
-
-  const folderNotes = useMemo(() => {
-    return notes
-      .filter((n) => n.folderId === folder.id && !n.isDeleted)
-      .sort((a, b) => (a.order ?? a.createdAt) - (b.order ?? b.createdAt));
-  }, [notes, folder.id]);
-  const noteIds = useMemo(
-    () => folderNotes.map((n) => `note-${n.id}`),
-    [folderNotes]
-  );
-  const hasChildren =
-    childFolders.length > 0 || (showNotes && folderNotes.length > 0);
-
-  const handleClick = () => {
-    dispatch(
-      setFilter({
-        folderId: folder.id,
-        isDeleted: false,
-        isPinned: null,
-        tagIds: [],
-        searchQuery: "",
-      })
-    );
-    if (!isExpanded) {
-      dispatch(expandFolder(folder.id));
-    }
-  };
-
-  const handleToggleExpand = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    dispatch(toggleFolderExpanded(folder.id));
-  };
-
-  const handleAddSubfolder = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onAddSubfolder(folder.id);
-  };
-
-  // Combine refs for both droppable and sortable
-  const setNodeRef = (node: HTMLElement | null) => {
-    setDroppableRef(node);
-    setSortableRef(node);
-  };
-
-  const step = isMobile ? 10 : 30;
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    paddingLeft: level > 0 ? step + level * step : 12,
-    "--indent-level": level,
-  } as React.CSSProperties;
-
-  return (
-    <>
-      <Box
-        ref={setNodeRef}
-        className={`${styles.folderItem} ${isOver ? styles.dropTarget : ""} ${isDragging ? styles.folderDragging : ""}`}
-        style={style}
-        onClick={handleClick}
-      >
-        <Box {...listeners} {...attributes} className={styles.folderDragHandle}>
-          <DragIndicatorIcon fontSize="small" />
-        </Box>
-        <Box className={styles.folderItemIcon}>
-          {hasChildren ? (
-            <IconButton
-              size="small"
-              onClick={handleToggleExpand}
-              className={styles.expandButton}
-            >
-              {isExpanded ? (
-                <ExpandMoreIcon fontSize="small" />
-              ) : (
-                <ChevronRightIcon fontSize="small" />
-              )}
-            </IconButton>
-          ) : null}
-        </Box>
-        {isExpanded ? (
-          <FolderOpenIcon fontSize="small" sx={{ color: folder.color }} />
-        ) : (
-          <FolderOutlinedIcon fontSize="small" sx={{ color: folder.color }} />
-        )}
-        <Typography className={styles.folderItemLabel}>
-          {folder.name}
-        </Typography>
-        {folderNotes.length > 0 && (
-          <span className={styles.navItemCount}>{folderNotes.length}</span>
-        )}
-        <Tooltip title={t("Folders.AddSubfolder")}>
-          <IconButton
-            size="small"
-            className={styles.addSubfolderButton}
-            onClick={handleAddSubfolder}
-          >
-            <AddIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Box>
-
-      <Collapse in={isExpanded} timeout={skipCollapseAnimation ? 0 : "auto"}>
-        {/* Notes appear first, directly under parent folder */}
-        {showNotes && (
-          <SortableContext
-            items={noteIds}
-            strategy={verticalListSortingStrategy}
-          >
-            {folderNotes.map((note) => (
-              <SortableNote key={note.id} note={note} level={level + 1} />
-            ))}
-          </SortableContext>
-        )}
-        {/* Then child folders */}
-        {childFolders.map((child) => (
-          <DroppableFolder
-            key={child.id}
-            folder={child}
-            level={level + 1}
-            showNotes={showNotes}
-            onAddSubfolder={onAddSubfolder}
-          />
-        ))}
-      </Collapse>
-    </>
-  );
-};
-
-const UnfiledDropZone = ({ children }: { children: React.ReactNode }) => {
-  const { isOver, setNodeRef, node } = useDroppable({
-    id: "unfiled",
-    data: { type: "unfiled", folderId: null },
-  });
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`${styles.unfiledSection} ${isOver ? styles.dropTarget : ""}`}
-      data-droppable-id="unfiled"
-    >
-      {children}
-    </div>
-  );
-};
+const RECENT_NOTES_LIMIT = 5;
 
 interface NotesSidebarProps {
   collapsed?: boolean;
@@ -359,22 +93,19 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const allFolders = useAppSelector(selectAllFolders);
   const rootFolders = useAppSelector(selectRootFolders);
   const expandedIds = useAppSelector(selectExpandedFolderIds);
+  const skipAnimationRef = useRef(false);
   const tags = useAppSelector(selectAllTags);
   const selectedNoteId = useAppSelector(selectActiveTabId);
   const isFoldersLoading = useAppSelector(selectFoldersLoading);
   const isTagsLoading = useAppSelector(selectTagsLoading);
-  const isMobile = useAppSelector((state) => state.ui.isMobile);
-  const noteListHidden = useAppSelector((state) => state.ui.noteListHidden);
+  const isMobile = useAppSelector(selectIsMobile);
+  const noteListHidden = useAppSelector(selectNoteListHidden);
 
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
   const [isEditTagDialogOpen, setIsEditTagDialogOpen] = useState(false);
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
-  const [newTagName, setNewTagName] = useState("");
-  const [newTagColor, setNewTagColor] = useState("#6366f1");
-  const [editTagName, setEditTagName] = useState("");
-  const [editTagColor, setEditTagColor] = useState("#6366f1");
   const [showTreeView, setShowTreeView] = useState(true);
   const [recentExpanded, setRecentExpanded] = useState(true);
   const RECENT_STORAGE_KEY = 'notes-recent-height';
@@ -445,11 +176,13 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
     ? allFolders.find((f) => f.id === parentFolderIdForCreate)
     : null;
 
+  const editingTag = editingTagId ? tags.find((t) => t.id === editingTagId) : undefined;
+
   const recentNotes = useMemo(() => {
     return [...notes]
       .filter((n) => !n.isDeleted)
       .sort((a, b) => b.updatedAt - a.updatedAt)
-      .slice(0, 18);
+      .slice(0, RECENT_NOTES_LIMIT);
   }, [notes]);
 
   const unfiledNotes = useMemo(() => {
@@ -481,7 +214,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
     if (selectedNoteId) {
       const selectedNote = notes.find((n) => n.id === selectedNoteId);
       if (selectedNote?.folderId) {
-        skipCollapseAnimation = true;
+        skipAnimationRef.current = true;
         const expandAncestors = (folderId: string) => {
           dispatch(expandFolder(folderId));
           const folder = allFolders.find((f) => f.id === folderId);
@@ -492,7 +225,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
         expandAncestors(selectedNote.folderId);
         // Reset after the render applies
         requestAnimationFrame(() => {
-          skipCollapseAnimation = false;
+          skipAnimationRef.current = false;
         });
       }
     }
@@ -709,41 +442,25 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
     setIsFolderDialogOpen(false);
   };
 
-  const handleCreateTag = () => {
-    if (newTagName.trim()) {
-      dispatch(createTag({ name: newTagName.trim(), color: newTagColor }));
-      setNewTagName("");
-      setNewTagColor("#6366f1");
-      setIsTagDialogOpen(false);
-    }
+  const handleCreateTag = (name: string, color: string) => {
+    dispatch(createTag({ name, color }));
+    setIsTagDialogOpen(false);
   };
 
   const handleOpenEditTag = (tagId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const tag = tags.find((t) => t.id === tagId);
-    if (tag) {
-      setEditingTagId(tagId);
-      setEditTagName(tag.name);
-      setEditTagColor(tag.color);
-      setIsEditTagDialogOpen(true);
-    }
+    setEditingTagId(tagId);
+    setIsEditTagDialogOpen(true);
   };
 
   const handleCloseEditTagDialog = () => {
     setIsEditTagDialogOpen(false);
     setEditingTagId(null);
-    setEditTagName("");
-    setEditTagColor("#6366f1");
   };
 
-  const handleUpdateTag = () => {
-    if (editingTagId && editTagName.trim()) {
-      dispatch(
-        updateTag({
-          id: editingTagId,
-          updates: { name: editTagName.trim(), color: editTagColor },
-        })
-      );
+  const handleUpdateTag = (name: string, color: string) => {
+    if (editingTagId) {
+      dispatch(updateTag({ id: editingTagId, updates: { name, color } }));
       handleCloseEditTagDialog();
     }
   };
@@ -988,6 +705,7 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
                 folder={folder}
                 showNotes={showTreeView}
                 onAddSubfolder={handleOpenSubfolderDialog}
+                skipAnimationRef={skipAnimationRef}
               />
             ))
           )}
@@ -1141,69 +859,22 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
         </Dialog>
 
         {/* Create Tag Dialog */}
-        <Dialog
+        <TagFormDialog
           open={isTagDialogOpen}
           onClose={() => setIsTagDialogOpen(false)}
-        >
-          <DialogTitle>{t("Tags.CreateTag")}</DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              fullWidth
-              label={t("Tags.TagName")}
-              value={newTagName}
-              onChange={(e) => setNewTagName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreateTag()}
-              className={styles.dialogTextFieldWithMargin}
-            />
-            <Box className={styles.colorPickerRow}>
-              <Typography>{t("Tags.Color")}</Typography>
-              <input
-                type="color"
-                value={newTagColor}
-                onChange={(e) => setNewTagColor(e.target.value)}
-                className={styles.colorPicker}
-              />
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setIsTagDialogOpen(false)}>{t("Common.Cancel")}</Button>
-            <Button onClick={handleCreateTag} variant="contained">
-              {t("Common.Create")}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onSubmit={handleCreateTag}
+          mode="create"
+        />
 
         {/* Edit Tag Dialog */}
-        <Dialog open={isEditTagDialogOpen} onClose={handleCloseEditTagDialog}>
-          <DialogTitle>{t("Tags.EditTag")}</DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              fullWidth
-              label={t("Tags.TagName")}
-              value={editTagName}
-              onChange={(e) => setEditTagName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleUpdateTag()}
-              className={styles.dialogTextFieldWithMargin}
-            />
-            <Box className={styles.colorPickerRow}>
-              <Typography>{t("Tags.Color")}</Typography>
-              <input
-                type="color"
-                value={editTagColor}
-                onChange={(e) => setEditTagColor(e.target.value)}
-                className={styles.colorPicker}
-              />
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseEditTagDialog}>{t("Common.Cancel")}</Button>
-            <Button onClick={handleUpdateTag} variant="contained">
-              {t("Common.Save")}
-            </Button>
-          </DialogActions>
-        </Dialog>
+        <TagFormDialog
+          open={isEditTagDialogOpen}
+          onClose={handleCloseEditTagDialog}
+          onSubmit={handleUpdateTag}
+          initialName={editingTag?.name}
+          initialColor={editingTag?.color}
+          mode="edit"
+        />
       </Box>
 
       {/* Drag Overlay */}
