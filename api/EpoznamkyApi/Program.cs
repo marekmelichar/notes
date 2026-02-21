@@ -34,12 +34,14 @@ builder.Services.AddProblemDetails(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<DataService>();
-builder.Services.AddHostedService<TrashCleanupService>();
-
+builder.Services.AddScoped<NoteService>();
+builder.Services.AddScoped<FolderService>();
+builder.Services.AddScoped<TagService>();
+builder.Services.AddScoped<UserService>();
 builder.Services.Configure<FileStorageSettings>(
     builder.Configuration.GetSection("FileStorage"));
-builder.Services.AddScoped<FileStorageService>();
+builder.Services.AddScoped<FileService>();
+builder.Services.AddHostedService<TrashCleanupService>();
 
 // Health checks
 builder.Services.AddHealthChecks()
@@ -52,11 +54,13 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+    static string GetRateLimitKey(HttpContext context, string fallback = "anonymous") =>
+        context.User?.FindFirst("sub")?.Value ?? fallback;
+
     // Global policy: 100 requests/min per authenticated user (or IP for anonymous)
     options.AddPolicy("global", context =>
     {
-        var userId = context.User?.FindFirst("sub")?.Value;
-        var key = userId ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var key = GetRateLimitKey(context, context.Connection.RemoteIpAddress?.ToString() ?? "unknown");
 
         return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
         {
@@ -67,27 +71,19 @@ builder.Services.AddRateLimiter(options =>
 
     // Stricter policy for file uploads: 10/min
     options.AddPolicy("file-upload", context =>
-    {
-        var userId = context.User?.FindFirst("sub")?.Value ?? "anonymous";
-
-        return RateLimitPartition.GetFixedWindowLimiter($"upload:{userId}", _ => new FixedWindowRateLimiterOptions
+        RateLimitPartition.GetFixedWindowLimiter($"upload:{GetRateLimitKey(context)}", _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 10,
             Window = TimeSpan.FromMinutes(1)
-        });
-    });
+        }));
 
     // Stricter policy for user search: 30/min
     options.AddPolicy("user-search", context =>
-    {
-        var userId = context.User?.FindFirst("sub")?.Value ?? "anonymous";
-
-        return RateLimitPartition.GetFixedWindowLimiter($"search:{userId}", _ => new FixedWindowRateLimiterOptions
+        RateLimitPartition.GetFixedWindowLimiter($"search:{GetRateLimitKey(context)}", _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = 30,
             Window = TimeSpan.FromMinutes(1)
-        });
-    });
+        }));
 });
 
 // Configure JWT Authentication with Keycloak
@@ -204,3 +200,5 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 app.MapControllers().RequireRateLimiting("global");
 
 app.Run();
+
+public partial class Program;
