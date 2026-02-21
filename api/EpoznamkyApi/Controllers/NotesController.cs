@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using EpoznamkyApi.Models;
 using EpoznamkyApi.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -8,63 +9,45 @@ namespace EpoznamkyApi.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Authorize]
-public class NotesController(DataService dataService) : BaseController
+public class NotesController(NoteService noteService, FileService fileService) : BaseController
 {
 
     [HttpGet]
-    public async Task<ActionResult<List<Note>>> GetAll()
+    public async Task<ActionResult<PaginatedResponse<NoteResponse>>> GetAll(
+        [FromQuery][Range(1, 1000)] int limit = 100,
+        [FromQuery][Range(0, int.MaxValue)] int offset = 0)
     {
-        return await dataService.GetNotesAsync(UserId, UserEmail);
+        return await noteService.GetNotesAsync(UserId, UserEmail, limit, offset);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Note>> Get(string id)
+    public async Task<ActionResult<NoteResponse>> Get(string id)
     {
-        var note = await dataService.GetNoteAsync(id, UserId, UserEmail);
+        var note = await noteService.GetNoteAsync(id, UserId, UserEmail);
         if (note == null) return NotFound();
         return note;
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<List<Note>>> Search([FromQuery] string? q)
+    public async Task<ActionResult<List<NoteResponse>>> Search([FromQuery] string? q)
     {
         if (q?.Length > 200)
-            return BadRequest("Search query must not exceed 200 characters.");
+            return Problem(detail: "Search query must not exceed 200 characters.", statusCode: 400);
 
-        return await dataService.SearchNotesAsync(UserId, UserEmail, q ?? "");
+        return await noteService.SearchNotesAsync(UserId, UserEmail, q ?? "");
     }
 
     [HttpPost]
-    public async Task<ActionResult<Note>> Create([FromBody] CreateNoteRequest request)
+    public async Task<ActionResult<NoteResponse>> Create([FromBody] CreateNoteRequest request)
     {
-        var note = new Note
-        {
-            Title = request.Title,
-            Content = request.Content,
-            FolderId = request.FolderId,
-            IsPinned = request.IsPinned,
-            UserId = UserId
-        };
-        var created = await dataService.CreateNoteAsync(note, request.Tags);
+        var created = await noteService.CreateNoteAsync(request, UserId);
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<Note>> Update(string id, [FromBody] UpdateNoteRequest request)
+    public async Task<ActionResult<NoteResponse>> Update(string id, [FromBody] UpdateNoteRequest request)
     {
-        var note = await dataService.UpdateNoteAsync(id, UserId, n =>
-        {
-            if (request.Title != null) n.Title = request.Title;
-            if (request.Content != null) n.Content = request.Content;
-            // FolderId: null means "don't change", empty string means "remove from folder"
-            if (request.FolderId != null)
-            {
-                n.FolderId = request.FolderId == "" ? null : request.FolderId;
-            }
-            if (request.IsPinned.HasValue) n.IsPinned = request.IsPinned.Value;
-            if (request.Order.HasValue) n.Order = request.Order.Value;
-        }, request.Tags);
-
+        var note = await noteService.UpdateNoteAsync(id, UserId, request);
         if (note == null) return NotFound();
         return note;
     }
@@ -72,11 +55,7 @@ public class NotesController(DataService dataService) : BaseController
     [HttpDelete("{id}")]
     public async Task<ActionResult> Delete(string id)
     {
-        var note = await dataService.UpdateNoteAsync(id, UserId, n =>
-        {
-            n.IsDeleted = true;
-            n.DeletedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        });
+        var note = await noteService.SoftDeleteNoteAsync(id, UserId);
         if (note == null) return NotFound();
         return NoContent();
     }
@@ -84,18 +63,24 @@ public class NotesController(DataService dataService) : BaseController
     [HttpDelete("{id}/permanent")]
     public async Task<ActionResult> DeletePermanent(string id)
     {
-        if (!await dataService.DeleteNoteAsync(id, UserId)) return NotFound();
+        // Clean up associated files from disk before deleting the note
+        var storedFiles = await noteService.GetFileStoredNamesForNoteAsync(id);
+
+        if (!await noteService.DeleteNoteAsync(id, UserId)) return NotFound();
+
+        // Best-effort disk cleanup after successful DB delete
+        foreach (var storedFilename in storedFiles)
+        {
+            fileService.DeleteFile(storedFilename);
+        }
+
         return NoContent();
     }
 
     [HttpPost("{id}/restore")]
-    public async Task<ActionResult<Note>> Restore(string id)
+    public async Task<ActionResult<NoteResponse>> Restore(string id)
     {
-        var note = await dataService.UpdateNoteAsync(id, UserId, n =>
-        {
-            n.IsDeleted = false;
-            n.DeletedAt = null;
-        });
+        var note = await noteService.RestoreNoteAsync(id, UserId);
         if (note == null) return NotFound();
         return note;
     }
@@ -103,25 +88,22 @@ public class NotesController(DataService dataService) : BaseController
     [HttpPost("reorder")]
     public async Task<ActionResult> Reorder([FromBody] ReorderNotesRequest request)
     {
-        foreach (var item in request.Items)
-        {
-            await dataService.UpdateNoteAsync(item.Id, UserId, n => n.Order = item.Order);
-        }
+        await noteService.ReorderNotesAsync(UserId, request.Items);
         return NoContent();
     }
 
     [HttpPost("{id}/share")]
-    public async Task<ActionResult<Note>> Share(string id, [FromBody] ShareNoteRequest request)
+    public async Task<ActionResult<NoteResponse>> Share(string id, [FromBody] ShareNoteRequest request)
     {
-        var note = await dataService.ShareNoteAsync(id, UserId, request.Email, request.Permission);
+        var note = await noteService.ShareNoteAsync(id, UserId, request.Email, request.Permission);
         if (note == null) return NotFound();
         return note;
     }
 
     [HttpDelete("{id}/share/{userId}")]
-    public async Task<ActionResult<Note>> RemoveShare(string id, string userId)
+    public async Task<ActionResult<NoteResponse>> RemoveShare(string id, string userId)
     {
-        var note = await dataService.RemoveShareAsync(id, UserId, userId);
+        var note = await noteService.RemoveShareAsync(id, UserId, userId);
         if (note == null) return NotFound();
         return note;
     }

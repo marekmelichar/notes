@@ -8,44 +8,34 @@ namespace EpoznamkyApi.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Authorize]
-public class TagsController(DataService dataService) : BaseController
+public class TagsController(TagService tagService) : BaseController
 {
 
     [HttpGet]
-    public async Task<ActionResult<List<Tag>>> GetAll()
+    public async Task<ActionResult<List<TagResponse>>> GetAll()
     {
-        return await dataService.GetTagsAsync(UserId);
+        return await tagService.GetTagsAsync(UserId);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Tag>> Get(string id)
+    public async Task<ActionResult<TagResponse>> Get(string id)
     {
-        var tag = await dataService.GetTagAsync(id, UserId);
+        var tag = await tagService.GetTagAsync(id, UserId);
         if (tag == null) return NotFound();
         return tag;
     }
 
     [HttpPost]
-    public async Task<ActionResult<Tag>> Create([FromBody] CreateTagRequest request)
+    public async Task<ActionResult<TagResponse>> Create([FromBody] CreateTagRequest request)
     {
-        var tag = new Tag
-        {
-            Name = request.Name,
-            Color = request.Color,
-            UserId = UserId
-        };
-        var created = await dataService.CreateTagAsync(tag);
+        var created = await tagService.CreateTagAsync(request, UserId);
         return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<Tag>> Update(string id, [FromBody] UpdateTagRequest request)
+    public async Task<ActionResult<TagResponse>> Update(string id, [FromBody] UpdateTagRequest request)
     {
-        var tag = await dataService.UpdateTagAsync(id, UserId, t =>
-        {
-            if (request.Name != null) t.Name = request.Name;
-            if (request.Color != null) t.Color = request.Color;
-        });
+        var tag = await tagService.UpdateTagAsync(id, UserId, request);
         if (tag == null) return NotFound();
         return tag;
     }
@@ -53,7 +43,7 @@ public class TagsController(DataService dataService) : BaseController
     [HttpDelete("{id}")]
     public async Task<ActionResult> Delete(string id)
     {
-        if (!await dataService.DeleteTagAsync(id, UserId)) return NotFound();
+        if (!await tagService.DeleteTagAsync(id, UserId)) return NotFound();
         return NoContent();
     }
 }

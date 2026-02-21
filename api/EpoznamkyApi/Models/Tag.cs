@@ -6,7 +6,7 @@ public class Tag
 {
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Name { get; set; } = string.Empty;
-    public string Color { get; set; } = "#6366f1";
+    public string Color { get; set; } = Constants.DefaultColor;
     public long CreatedAt { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     public long UpdatedAt { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     public string UserId { get; set; } = string.Empty;
@@ -20,7 +20,7 @@ public class CreateTagRequest
 
     [Required]
     [RegularExpression(@"^#[0-9a-fA-F]{6}$")]
-    public string Color { get; set; } = "#6366f1";
+    public string Color { get; set; } = Constants.DefaultColor;
 }
 
 public class UpdateTagRequest

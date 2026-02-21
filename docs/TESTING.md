@@ -134,12 +134,18 @@ This document provides a comprehensive checklist for testing all features of not
 
 ## 12. Error Handling
 
+All API errors return RFC 7807 ProblemDetails JSON. See [error-handling.md](error-handling.md) for full details.
+
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Network error notification | | |
 | Session expired handling | | |
 | Invalid input validation | | |
 | 404 page | | |
+| Search query >200 chars shows ProblemDetails error | | `Problem(detail: "Search query must not exceed 200 characters.")` |
+| File upload validation errors (empty, too large, bad type) | | 4 error paths in `FilesController` |
+| Circular folder reference error | | `Problem(detail: "Circular reference detected.")` |
+| ProblemDetails `detail` shown in snackbar | | `getApiErrorMessage()` extracts from Axios errors |
 
 ---
 

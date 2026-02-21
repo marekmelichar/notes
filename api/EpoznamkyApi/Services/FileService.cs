@@ -1,3 +1,6 @@
+using EpoznamkyApi.Data;
+using EpoznamkyApi.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace EpoznamkyApi.Services;
@@ -28,13 +31,44 @@ public class FileStorageSettings
 
     public string[] AllowedExtensions { get; set; } =
     [
-        ".conf"
+        // Images
+        ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".heic", ".heif",
+        // Documents
+        ".pdf", ".docx", ".xlsx", ".xls", ".pptx",
+        // Archives & text
+        ".zip", ".md", ".txt", ".conf"
     ];
 }
 
-public class FileStorageService(IOptions<FileStorageSettings> options, ILogger<FileStorageService> logger)
+public class FileService(AppDbContext db, IOptions<FileStorageSettings> options, ILogger<FileService> logger)
 {
     private readonly FileStorageSettings _settings = options.Value;
+
+    // DB operations
+
+    public async Task<FileUpload> CreateFileUploadAsync(FileUpload fileUpload)
+    {
+        db.FileUploads.Add(fileUpload);
+        await db.SaveChangesAsync();
+        logger.LogInformation("File {FileId} uploaded by user {UserId} ({OriginalFilename}, {Size} bytes)",
+            fileUpload.Id, fileUpload.UserId, fileUpload.OriginalFilename, fileUpload.Size);
+        return fileUpload;
+    }
+
+    public async Task<FileUpload?> GetFileUploadAsync(string id) =>
+        await db.FileUploads.FirstOrDefaultAsync(f => f.Id == id);
+
+    public async Task<FileUpload?> GetFileUploadForUserAsync(string id, string userId) =>
+        await db.FileUploads.FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
+
+    public async Task DeleteFileUploadAsync(FileUpload fileUpload)
+    {
+        db.FileUploads.Remove(fileUpload);
+        await db.SaveChangesAsync();
+        logger.LogInformation("File {FileId} deleted by user {UserId}", fileUpload.Id, fileUpload.UserId);
+    }
+
+    // Disk I/O operations
 
     public async Task<string> SaveFileAsync(Stream fileStream, string storedFilename)
     {
@@ -91,6 +125,8 @@ public class FileStorageService(IOptions<FileStorageSettings> options, ILogger<F
             return false;
         }
     }
+
+    // Validation
 
     public bool IsAllowedContentType(string contentType)
     {

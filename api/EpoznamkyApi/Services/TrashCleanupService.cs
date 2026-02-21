@@ -26,13 +26,23 @@ public class TrashCleanupService(IServiceScopeFactory scopeFactory, ILogger<Tras
     private async Task CleanupAsync()
     {
         using var scope = scopeFactory.CreateScope();
-        var dataService = scope.ServiceProvider.GetRequiredService<DataService>();
+        var noteService = scope.ServiceProvider.GetRequiredService<NoteService>();
+        var fileService = scope.ServiceProvider.GetRequiredService<FileService>();
 
-        var deletedCount = await dataService.CleanupOldTrashAsync(30);
+        // Collect file paths before deleting notes (ExecuteDeleteAsync won't trigger EF navigation)
+        var storedFiles = await noteService.GetStoredFilesForExpiredTrashAsync(30);
+
+        var deletedCount = await noteService.CleanupOldTrashAsync(30);
 
         if (deletedCount > 0)
         {
             logger.LogInformation("Permanently deleted {Count} notes from trash", deletedCount);
+
+            // Best-effort disk cleanup for associated files
+            foreach (var storedFilename in storedFiles)
+            {
+                fileService.DeleteFile(storedFilename);
+            }
         }
     }
 }

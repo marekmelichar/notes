@@ -7,7 +7,7 @@ public class Folder
     public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Name { get; set; } = string.Empty;
     public string? ParentId { get; set; }
-    public string Color { get; set; } = "#6366f1";
+    public string Color { get; set; } = Constants.DefaultColor;
     public int Order { get; set; }
     public long CreatedAt { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     public long UpdatedAt { get; set; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -25,7 +25,7 @@ public class CreateFolderRequest
 
     [Required]
     [RegularExpression(@"^#[0-9a-fA-F]{6}$")]
-    public string Color { get; set; } = "#6366f1";
+    public string Color { get; set; } = Constants.DefaultColor;
 }
 
 public class UpdateFolderRequest

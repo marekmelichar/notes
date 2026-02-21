@@ -9,24 +9,23 @@ namespace EpoznamkyApi.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Authorize]
-public class UsersController(DataService dataService, ILogger<UsersController> logger) : BaseController
+public class UsersController(UserService userService, ILogger<UsersController> logger) : BaseController
 {
     [HttpGet("me")]
-    public ActionResult<object> GetCurrentUser()
+    public ActionResult<UserInfoResponse> GetCurrentUser()
     {
-        return Ok(new
+        return Ok(new UserInfoResponse
         {
-            UserId,
-            UserEmail,
-            UserName
+            UserId = UserId,
+            UserEmail = UserEmail,
+            UserName = UserName
         });
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<User>> Get(string id)
     {
-        // Scope to users who share notes with the requester
-        var user = await dataService.GetUserIfRelatedAsync(id, UserId, UserEmail);
+        var user = await userService.GetUserIfRelatedAsync(id, UserId, UserEmail);
         if (user == null) return NotFound();
         return user;
     }
@@ -36,9 +35,9 @@ public class UsersController(DataService dataService, ILogger<UsersController> l
     public async Task<ActionResult<List<User>>> Search([FromQuery] string email)
     {
         if (email?.Length > 320)
-            return BadRequest("Email search query must not exceed 320 characters.");
+            return Problem(detail: "Email search query must not exceed 320 characters.", statusCode: 400);
 
-        var results = await dataService.SearchUsersAsync(email ?? "");
+        var results = await userService.SearchUsersAsync(email ?? "", UserId, UserEmail);
         logger.LogDebug("User search for '{Email}' returned {Count} results", email, results.Count);
         return results;
     }
