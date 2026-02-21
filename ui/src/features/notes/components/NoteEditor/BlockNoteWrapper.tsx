@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import { useColorMode } from '@/theme/ThemeProvider';
+import { getApiErrorMessage } from '@/lib';
 import { filesApi } from '../../services/filesApi';
 import styles from './index.module.css';
 
@@ -92,11 +93,8 @@ export const BlockNoteWrapper = ({
         const response = await filesApi.upload(file, noteId);
         return response.url;
       } catch (err) {
-        const detail = err instanceof Error ? err.message : '';
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        const serverMsg = (err as { response?: { data?: string } })?.response?.data;
-        const info = serverMsg || (status ? `HTTP ${status}` : detail);
-        enqueueSnackbar(`${t('Files.UploadError')}: ${info}`, { variant: 'error' });
+        const detail = getApiErrorMessage(err, t('Files.UploadError'));
+        enqueueSnackbar(detail, { variant: 'error' });
         throw err;
       }
     },

@@ -40,7 +40,8 @@
     "CollapseSidebar": "Sbalit panel",
     "ExpandSidebar": "Rozbalit panel",
     "CollapseNoteList": "Sbalit seznam",
-    "ExpandNoteList": "Rozbalit seznam"
+    "ExpandNoteList": "Rozbalit seznam",
+    "SearchError": "Vyhledávání selhalo"
   },
   "Notes": {
     "AllNotes": "Všechny",
@@ -69,7 +70,10 @@
     "Recent": "Nedávné",
     "Restore": "Obnovit",
     "NoteRestored": "Poznámka obnovena",
+    "CreateError": "Nepodařilo se vytvořit poznámku",
     "SaveError": "Nepodařilo se uložit poznámku",
+    "DeleteError": "Nepodařilo se smazat poznámku",
+    "RestoreError": "Nepodařilo se obnovit poznámku",
     "AutoSaveIn": "Automatické uložení za",
     "Words": "slov",
     "Characters": "znaků",
@@ -86,7 +90,10 @@
     "CollapseAll": "Sbalit",
     "ExpandAll": "Rozbalit",
     "ShowFoldersOnly": "Jen složky",
-    "ShowTreeWithNotes": "S poznámkami"
+    "ShowTreeWithNotes": "S poznámkami",
+    "CreateError": "Nepodařilo se vytvořit složku",
+    "UpdateError": "Nepodařilo se aktualizovat složku",
+    "DeleteError": "Nepodařilo se smazat složku"
   },
   "Tags": {
     "Tags": "Štítky",
@@ -99,7 +106,10 @@
     "Color": "Barva:",
     "ManageTags": "Spravovat štítky",
     "CreateNew": "Vytvořit nový štítek",
-    "NoTagsYet": "Zatím žádné štítky"
+    "NoTagsYet": "Zatím žádné štítky",
+    "CreateError": "Nepodařilo se vytvořit štítek",
+    "UpdateError": "Nepodařilo se aktualizovat štítek",
+    "DeleteError": "Nepodařilo se smazat štítek"
   },
   "Sort": {
     "Sort": "Řadit",

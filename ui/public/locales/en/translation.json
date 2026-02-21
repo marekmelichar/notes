@@ -40,7 +40,8 @@
     "CollapseSidebar": "Collapse sidebar",
     "ExpandSidebar": "Expand sidebar",
     "CollapseNoteList": "Collapse note list",
-    "ExpandNoteList": "Expand note list"
+    "ExpandNoteList": "Expand note list",
+    "SearchError": "Search failed"
   },
   "Notes": {
     "AllNotes": "All Notes",
@@ -69,7 +70,10 @@
     "Recent": "Recent",
     "Restore": "Restore",
     "NoteRestored": "Note restored",
+    "CreateError": "Failed to create note",
     "SaveError": "Failed to save note",
+    "DeleteError": "Failed to delete note",
+    "RestoreError": "Failed to restore note",
     "AutoSaveIn": "Auto-save in",
     "Words": "words",
     "Characters": "characters",
@@ -86,7 +90,10 @@
     "CollapseAll": "Collapse all",
     "ExpandAll": "Expand all",
     "ShowFoldersOnly": "Show folders only",
-    "ShowTreeWithNotes": "Show tree with notes"
+    "ShowTreeWithNotes": "Show tree with notes",
+    "CreateError": "Failed to create folder",
+    "UpdateError": "Failed to update folder",
+    "DeleteError": "Failed to delete folder"
   },
   "Tags": {
     "Tags": "Tags",
@@ -99,7 +106,10 @@
     "Color": "Color:",
     "ManageTags": "Manage tags",
     "CreateNew": "Create new tag",
-    "NoTagsYet": "No tags yet"
+    "NoTagsYet": "No tags yet",
+    "CreateError": "Failed to create tag",
+    "UpdateError": "Failed to update tag",
+    "DeleteError": "Failed to delete tag"
   },
   "Sort": {
     "Sort": "Sort",

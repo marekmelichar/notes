@@ -3,7 +3,8 @@ import { Dialog, Box, InputBase, Typography, CircularProgress } from '@mui/mater
 import SearchIcon from '@mui/icons-material/Search';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch, useAppSelector, openTab, selectIsMobile } from '@/store';
+import { useAppDispatch, useAppSelector, openTab, selectIsMobile, showError } from '@/store';
+import { getApiErrorMessage } from '@/lib';
 import { selectAllFolders } from '@/features/notes/store/foldersSlice';
 import { setMobileView } from '@/store/uiSlice';
 import { notesApi } from '@/features/notes/services/notesApi';
@@ -64,8 +65,9 @@ export const SearchDialog = ({ open, onClose }: SearchDialogProps) => {
         const notes = await notesApi.search(query);
         setResults(notes);
         setSelectedIndex(0);
-      } catch {
+      } catch (error) {
         setResults([]);
+        dispatch(showError(getApiErrorMessage(error, t('Common.SearchError'))));
       } finally {
         setIsLoading(false);
       }
@@ -76,7 +78,7 @@ export const SearchDialog = ({ open, onClose }: SearchDialogProps) => {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [query]);
+  }, [query, dispatch, t]);
 
   // Get folder name by ID
   const getFolderName = useCallback(

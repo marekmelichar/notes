@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, type PayloadAction, createSelector } from '@reduxjs/toolkit';
 import { foldersApi } from '../services/notesApi';
 import { showSuccess, showError } from '@/store/notificationsSlice';
+import { getApiErrorMessage } from '@/lib';
+import i18n from '@/i18n';
 import { updateItemById, removeItemById } from '@/store/reducerUtils';
 import { DEFAULT_ITEM_COLOR } from '@/theme/colorUtils';
 import type { Folder, FoldersState } from '../types';
@@ -38,7 +40,7 @@ export const createFolder = createAsyncThunk(
       dispatch(showSuccess('Folder created'));
       return { ...folderData, id } as Folder;
     } catch (error) {
-      dispatch(showError('Failed to create folder'));
+      dispatch(showError(getApiErrorMessage(error, i18n.t('Folders.CreateError'))));
       throw error;
     }
   },
@@ -53,7 +55,7 @@ export const updateFolder = createAsyncThunk(
       dispatch(showSuccess('Folder updated'));
       return folder;
     } catch (error) {
-      dispatch(showError('Failed to update folder'));
+      dispatch(showError(getApiErrorMessage(error, i18n.t('Folders.UpdateError'))));
       throw error;
     }
   },
@@ -67,7 +69,7 @@ export const deleteFolder = createAsyncThunk(
       dispatch(showSuccess('Folder deleted'));
       return id;
     } catch (error) {
-      dispatch(showError('Failed to delete folder'));
+      dispatch(showError(getApiErrorMessage(error, i18n.t('Folders.DeleteError'))));
       throw error;
     }
   },

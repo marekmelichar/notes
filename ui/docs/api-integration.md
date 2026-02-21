@@ -429,59 +429,19 @@ npm run dev:mock  # Starts with MOCK_MODE=true
 
 ## Error Handling
 
-### API Error Types
-
-`src/types/apiErrors.ts`:
+The API returns [RFC 7807 ProblemDetails](https://tools.ietf.org/html/rfc7807) JSON for all errors. The UI extracts the `detail` field using `getApiErrorMessage()` from `src/lib/apiError.ts`.
 
 ```typescript
-export interface ApiError {
-  status: number;
-  message: string;
-  code?: string;
-  details?: Record<string, string[]>;
+import { getApiErrorMessage } from '@/lib';
+
+try {
+  await notesApi.create(data);
+} catch (error) {
+  dispatch(showError(getApiErrorMessage(error, 'Failed to create note')));
 }
-
-export const isApiError = (error: unknown): error is ApiError => {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'status' in error &&
-    'message' in error
-  );
-};
 ```
 
-### Error Handler Utility
-
-`src/utils/errorHandler.ts`:
-
-```typescript
-import { AxiosError } from 'axios';
-import i18n from '@/i18n';
-
-export const handleApiError = (error: unknown): string => {
-  if (error instanceof AxiosError) {
-    const status = error.response?.status;
-
-    switch (status) {
-      case 400:
-        return i18n.t('Errors.BadRequest');
-      case 401:
-        return i18n.t('Errors.Unauthorized');
-      case 403:
-        return i18n.t('Errors.Forbidden');
-      case 404:
-        return i18n.t('Errors.NotFound');
-      case 500:
-        return i18n.t('Errors.ServerError');
-      default:
-        return error.message || i18n.t('Errors.Unknown');
-    }
-  }
-
-  return i18n.t('Errors.Unknown');
-};
-```
+For full cross-project error handling documentation, see **[docs/error-handling.md](../../docs/error-handling.md)**.
 
 ## Query Client Configuration
 

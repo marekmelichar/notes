@@ -11,6 +11,20 @@ import { DEFAULT_ITEM_COLOR } from '@/theme/colorUtils';
 // Simulate network delay
 const MOCK_DELAY = 100;
 
+// RFC 7807 ProblemDetails response helper
+function problemDetails(detail: string, status: number, title: string) {
+  return HttpResponse.json(
+    {
+      type: `https://tools.ietf.org/html/rfc7231#section-6.5.${status === 404 ? '4' : '1'}`,
+      title,
+      status,
+      detail,
+      traceId: `mock-${Date.now()}`,
+    },
+    { status },
+  );
+}
+
 // In-memory store for mock data
 let mockNotes: Note[] = [
   {
@@ -139,7 +153,7 @@ export const handlers = [
     await delay(MOCK_DELAY);
     const note = mockNotes.find((n) => n.id === params.id);
     if (!note) {
-      return new HttpResponse(null, { status: 404 });
+      return problemDetails('Note not found.', 404, 'Not Found');
     }
     return HttpResponse.json(note);
   }),
@@ -173,7 +187,7 @@ export const handlers = [
     const body = (await request.json()) as Partial<Note>;
     const index = mockNotes.findIndex((n) => n.id === params.id);
     if (index === -1) {
-      return new HttpResponse(null, { status: 404 });
+      return problemDetails('Note not found.', 404, 'Not Found');
     }
     mockNotes[index] = {
       ...mockNotes[index],
@@ -188,7 +202,7 @@ export const handlers = [
     await delay(MOCK_DELAY);
     const index = mockNotes.findIndex((n) => n.id === params.id);
     if (index === -1) {
-      return new HttpResponse(null, { status: 404 });
+      return problemDetails('Note not found.', 404, 'Not Found');
     }
     mockNotes[index].isDeleted = true;
     mockNotes[index].deletedAt = Date.now();
@@ -208,7 +222,7 @@ export const handlers = [
     await delay(MOCK_DELAY);
     const index = mockNotes.findIndex((n) => n.id === params.id);
     if (index === -1) {
-      return new HttpResponse(null, { status: 404 });
+      return problemDetails('Note not found.', 404, 'Not Found');
     }
     mockNotes[index].isDeleted = false;
     mockNotes[index].deletedAt = null;
@@ -220,11 +234,17 @@ export const handlers = [
   http.get('/api/v1/notes/search', async ({ request }) => {
     await delay(MOCK_DELAY);
     const url = new URL(request.url);
-    const query = url.searchParams.get('q')?.toLowerCase() || '';
+    const query = url.searchParams.get('q') || '';
+
+    if (query.length > 200) {
+      return problemDetails('Search query must not exceed 200 characters.', 400, 'Bad Request');
+    }
+
+    const queryLower = query.toLowerCase();
     const results = mockNotes.filter(
       (n) =>
         !n.isDeleted &&
-        (n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query))
+        (n.title.toLowerCase().includes(queryLower) || n.content.toLowerCase().includes(queryLower))
     );
     return HttpResponse.json(results);
   }),
@@ -257,7 +277,7 @@ export const handlers = [
     await delay(MOCK_DELAY);
     const folder = mockFolders.find((f) => f.id === params.id);
     if (!folder) {
-      return new HttpResponse(null, { status: 404 });
+      return problemDetails('Folder not found.', 404, 'Not Found');
     }
     return HttpResponse.json(folder);
   }),
@@ -285,7 +305,7 @@ export const handlers = [
     const body = (await request.json()) as Partial<Folder>;
     const index = mockFolders.findIndex((f) => f.id === params.id);
     if (index === -1) {
-      return new HttpResponse(null, { status: 404 });
+      return problemDetails('Folder not found.', 404, 'Not Found');
     }
     mockFolders[index] = {
       ...mockFolders[index],
@@ -321,7 +341,7 @@ export const handlers = [
     await delay(MOCK_DELAY);
     const tag = mockTags.find((t) => t.id === params.id);
     if (!tag) {
-      return new HttpResponse(null, { status: 404 });
+      return problemDetails('Tag not found.', 404, 'Not Found');
     }
     return HttpResponse.json(tag);
   }),
@@ -345,7 +365,7 @@ export const handlers = [
     const body = (await request.json()) as Partial<Tag>;
     const index = mockTags.findIndex((t) => t.id === params.id);
     if (index === -1) {
-      return new HttpResponse(null, { status: 404 });
+      return problemDetails('Tag not found.', 404, 'Not Found');
     }
     mockTags[index] = {
       ...mockTags[index],

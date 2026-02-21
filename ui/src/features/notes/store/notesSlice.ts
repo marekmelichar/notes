@@ -6,6 +6,8 @@ import {
 } from "@reduxjs/toolkit";
 import { notesApi } from "../services/notesApi";
 import { showSuccess, showError } from "@/store/notificationsSlice";
+import { getApiErrorMessage } from "@/lib";
+import i18n from "@/i18n";
 import { updateItemById, removeItemById } from "@/store/reducerUtils";
 import type {
   Note,
@@ -65,7 +67,7 @@ export const createNote = createAsyncThunk(
       const id = await notesApi.create(noteData);
       return { ...noteData, id } as Note;
     } catch (error) {
-      dispatch(showError("Failed to create note"));
+      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.CreateError"))));
       throw error;
     }
   }
@@ -79,7 +81,7 @@ export const updateNote = createAsyncThunk(
       const updatedNote = await notesApi.getById(id);
       return updatedNote;
     } catch (error) {
-      dispatch(showError("Failed to save note"));
+      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.SaveError"))));
       throw error;
     }
   }
@@ -93,7 +95,7 @@ export const deleteNote = createAsyncThunk(
       dispatch(showSuccess("Note moved to trash"));
       return id;
     } catch (error) {
-      dispatch(showError("Failed to delete note"));
+      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.DeleteError"))));
       throw error;
     }
   }
@@ -108,7 +110,7 @@ export const restoreNote = createAsyncThunk(
       dispatch(showSuccess("Note restored"));
       return note;
     } catch (error) {
-      dispatch(showError("Failed to restore note"));
+      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.RestoreError"))));
       throw error;
     }
   }
@@ -122,7 +124,7 @@ export const permanentDeleteNote = createAsyncThunk(
       dispatch(showSuccess("Note permanently deleted"));
       return id;
     } catch (error) {
-      dispatch(showError("Failed to delete note"));
+      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.DeleteError"))));
       throw error;
     }
   }

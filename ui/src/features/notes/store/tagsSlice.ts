@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import { tagsApi } from '../services/notesApi';
 import { showSuccess, showError } from '@/store/notificationsSlice';
+import { getApiErrorMessage } from '@/lib';
+import i18n from '@/i18n';
 import { updateItemById, removeItemById } from '@/store/reducerUtils';
 import { DEFAULT_ITEM_COLOR } from '@/theme/colorUtils';
 import type { Tag, TagsState } from '../types';
@@ -29,7 +31,7 @@ export const createTag = createAsyncThunk(
       dispatch(showSuccess('Tag created'));
       return { ...tagData, id } as Tag;
     } catch (error) {
-      dispatch(showError('Failed to create tag'));
+      dispatch(showError(getApiErrorMessage(error, i18n.t('Tags.CreateError'))));
       throw error;
     }
   },
@@ -44,7 +46,7 @@ export const updateTag = createAsyncThunk(
       dispatch(showSuccess('Tag updated'));
       return tag;
     } catch (error) {
-      dispatch(showError('Failed to update tag'));
+      dispatch(showError(getApiErrorMessage(error, i18n.t('Tags.UpdateError'))));
       throw error;
     }
   },
@@ -58,7 +60,7 @@ export const deleteTag = createAsyncThunk(
       dispatch(showSuccess('Tag deleted'));
       return id;
     } catch (error) {
-      dispatch(showError('Failed to delete tag'));
+      dispatch(showError(getApiErrorMessage(error, i18n.t('Tags.DeleteError'))));
       throw error;
     }
   },

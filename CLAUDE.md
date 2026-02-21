@@ -186,5 +186,7 @@ Note content is stored as **BlockNote JSON** (stringified array of blocks).
 | ESLint config | `ui/.eslintrc.cjs` |
 | Prettier config | `ui/.prettierrc` |
 | Pre-commit hook | `.husky/pre-commit` |
+| API error utility | `ui/src/lib/apiError.ts` |
 | Styling guide | `ui/docs/styling-guide.md` |
+| Error handling | `docs/error-handling.md` |
 | Git flow | `docs/git-flow.md` |

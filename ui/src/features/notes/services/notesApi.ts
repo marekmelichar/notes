@@ -6,8 +6,10 @@ const API_BASE = '/api/v1';
 // Note operations via API
 export const notesApi = {
   async getAll(): Promise<Note[]> {
-    const response = await apiManager.get<Note[]>(`${API_BASE}/notes`);
-    return response.data;
+    const response = await apiManager.get<{ items: Note[]; totalCount: number }>(
+      `${API_BASE}/notes`,
+    );
+    return response.data.items;
   },
 
   async getById(id: string): Promise<Note | undefined> {
