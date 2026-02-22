@@ -6,11 +6,17 @@ const API_BASE = '/api/v1';
 // Note operations via API
 export const notesApi = {
   async getAll(): Promise<Note[]> {
-    const response = await apiManager.get<{ items: Note[]; totalCount: number }>(
+    const first = await apiManager.get<{ items: Note[]; totalCount: number }>(
       `${API_BASE}/notes`,
-      { params: { limit: 1000 } },
     );
-    return response.data.items;
+    const { items, totalCount } = first.data;
+    if (items.length >= totalCount) return items;
+
+    const rest = await apiManager.get<{ items: Note[]; totalCount: number }>(
+      `${API_BASE}/notes`,
+      { params: { limit: totalCount, offset: 0 } },
+    );
+    return rest.data.items;
   },
 
   async getById(id: string): Promise<Note | undefined> {
