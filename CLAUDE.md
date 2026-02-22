@@ -131,6 +131,10 @@ Key file: `ui/src/components/MobileNavigation/index.tsx`
 - **API prefix**: `/api/v1` (defined in `ui/src/features/notes/services/notesApi.ts`)
 - **Routes**: `/api/v1/notes`, `/api/v1/folders`, `/api/v1/tags`
 
+### Pagination
+- Only the **notes** endpoint (`GET /api/v1/notes`) uses pagination (`limit`/`offset`). Folders, tags, and other endpoints return all results directly.
+- `limit=0` means "no limit" — returns all items (skips `.Take()` in the query). The frontend uses `limit=0` in `notesApi.getAll()` to fetch all notes in a single request.
+
 ## Common Issues & Fixes
 
 ### Mobile Navigation Not Working

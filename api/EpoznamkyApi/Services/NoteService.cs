@@ -19,10 +19,8 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
 
         var totalCount = await query.CountAsync();
 
-        var notes = await query
-            .Skip(offset)
-            .Take(limit)
-            .ToListAsync();
+        var paginated = limit > 0 ? query.Skip(offset).Take(limit) : query.Skip(offset);
+        var notes = await paginated.ToListAsync();
 
         await PopulateNoteRelationsAsync(notes);
 
