@@ -14,7 +14,7 @@ public class NotesController(NoteService noteService, FileService fileService) :
 
     [HttpGet]
     public async Task<ActionResult<PaginatedResponse<NoteResponse>>> GetAll(
-        [FromQuery][Range(1, 1000)] int limit = 100,
+        [FromQuery][Range(0, 1000)] int limit = 100,
         [FromQuery][Range(0, int.MaxValue)] int offset = 0)
     {
         return await noteService.GetNotesAsync(UserId, UserEmail, limit, offset);

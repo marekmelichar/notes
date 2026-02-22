@@ -148,7 +148,7 @@ export const handlers = [
     const url = new URL(request.url);
     const limit = parseInt(url.searchParams.get('limit') || '100', 10);
     const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-    const paged = mockNotes.slice(offset, offset + limit);
+    const paged = limit === 0 ? mockNotes.slice(offset) : mockNotes.slice(offset, offset + limit);
     return HttpResponse.json({
       items: paged,
       totalCount: mockNotes.length,
