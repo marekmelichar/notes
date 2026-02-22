@@ -142,10 +142,19 @@ export const handlers = [
   // NOTES ENDPOINTS
   // ============================================
 
-  // Get all notes
-  http.get('/api/v1/notes', async () => {
+  // Get all notes (paginated response matching API's PaginatedResponse<NoteResponse>)
+  http.get('/api/v1/notes', async ({ request }) => {
     await delay(MOCK_DELAY);
-    return HttpResponse.json(mockNotes);
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '100', 10);
+    const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+    const paged = mockNotes.slice(offset, offset + limit);
+    return HttpResponse.json({
+      items: paged,
+      totalCount: mockNotes.length,
+      limit,
+      offset,
+    });
   }),
 
   // Get note by ID

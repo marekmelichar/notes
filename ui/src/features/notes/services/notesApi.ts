@@ -8,6 +8,7 @@ export const notesApi = {
   async getAll(): Promise<Note[]> {
     const response = await apiManager.get<{ items: Note[]; totalCount: number }>(
       `${API_BASE}/notes`,
+      { params: { limit: 1000 } },
     );
     return response.data.items;
   },
