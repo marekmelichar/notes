@@ -164,6 +164,12 @@
     "SuccessWithWarning": "Note exported with {{count}} missing image(s)",
     "Error": "Failed to export note"
   },
+  "NoAccess": {
+    "Title": "Access Denied",
+    "Message": "You don't have permission to access this application.",
+    "LoggedInAs": "Logged in as",
+    "TryDifferentAccount": "Try a different account"
+  },
   "ErrorPage": {
     "Title": "Something went wrong",
     "Message": "An unexpected error occurred. Please try reloading the page.",

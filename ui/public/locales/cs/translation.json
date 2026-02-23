@@ -164,6 +164,12 @@
     "SuccessWithWarning": "Poznámka exportována s {{count}} chybějícím obrázkem/y",
     "Error": "Export poznámky se nezdařil"
   },
+  "NoAccess": {
+    "Title": "Přístup zamítnut",
+    "Message": "Nemáte oprávnění k přístupu do této aplikace.",
+    "LoggedInAs": "Přihlášen jako",
+    "TryDifferentAccount": "Zkusit jiný účet"
+  },
   "ErrorPage": {
     "Title": "Něco se pokazilo",
     "Message": "Došlo k chybě. Zkuste obnovit stránku.",

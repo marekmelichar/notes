@@ -4,7 +4,7 @@ import { getApiBaseUrl } from '@/config';
 import { enqueueSnackbar, closeSnackbar } from 'notistack';
 import i18n from '@/i18n';
 import { Button } from '@mui/material';
-import { logout, setAccessStatus } from '@/store/authSlice';
+import { logout, setAccessStatus, updateToken } from '@/store/authSlice';
 import { store } from '@/store';
 import { keycloak } from '@/features/auth/utils/keycloak';
 
@@ -139,10 +139,9 @@ apiManager.interceptors.response.use(
 
         if (refreshed && keycloak.token) {
           console.debug('Token refresh successful, retrying request');
-          // Update stored token
           setAuthToken(keycloak.token);
+          store.dispatch(updateToken(keycloak.token));
 
-          // Process queued requests with new token
           processQueue(null, keycloak.token);
 
           // Retry original request with new token
@@ -168,9 +167,13 @@ apiManager.interceptors.response.use(
     }
 
     // Handle 403 Forbidden - user authenticated but lacks permissions
+    // Only set unauthorized on initial access check (when status is still unknown)
+    // This prevents a single 403 on one endpoint from locking the entire app
     if (statusCode === 403) {
-      store.dispatch(setAccessStatus('unauthorized'));
-      // Don't show session expired - ProtectedRoute will redirect to NoAccess page
+      const currentStatus = store.getState().auth.accessStatus;
+      if (currentStatus === 'unknown') {
+        store.dispatch(setAccessStatus('unauthorized'));
+      }
     }
 
     return Promise.reject(error);

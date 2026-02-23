@@ -1,6 +1,11 @@
-import { initKeycloak, keycloak } from '@/features/auth/utils/keycloak';
-import { setAuthToken } from '@/lib';
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  initKeycloak,
+  keycloak,
+  clearScheduledRefresh,
+  setTokenRefreshCallback,
+} from '@/features/auth/utils/keycloak';
+import { clearAuthToken, setAuthToken } from '@/lib';
+import { createAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 export type AccessStatus = 'unknown' | 'authorized' | 'unauthorized';
 
@@ -41,14 +46,16 @@ const mockUser = {
   realmRoles: ['admin'],
 };
 
+// Action dispatched internally when token is refreshed
+export const updateToken = createAction<string>('auth/updateToken');
+
 // Async thunk for initializing Keycloak
 export const initializeAuth = createAsyncThunk(
   'auth/initialize',
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
       const authenticated = await initKeycloak();
       if (authenticated) {
-        // In mock mode, return mock user data
         if (window.MOCK_MODE) {
           return {
             authenticated: true,
@@ -56,6 +63,12 @@ export const initializeAuth = createAsyncThunk(
             user: mockUser,
           };
         }
+
+        // Register callback to sync future token refreshes to Redux + localStorage
+        setTokenRefreshCallback((token) => {
+          setAuthToken(token);
+          dispatch(updateToken(token));
+        });
 
         return {
           authenticated,
@@ -84,6 +97,8 @@ export const login = createAsyncThunk('auth/login', async () => {
 
 // Async thunk for logout
 export const logout = createAsyncThunk('auth/logout', async () => {
+  clearScheduledRefresh();
+  clearAuthToken();
   keycloak.logout({
     redirectUri: window.location.origin,
   });
@@ -115,6 +130,11 @@ export const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = false;
         state.error = action.payload as string;
+      })
+
+      // Token refreshed silently
+      .addCase(updateToken, (state, action) => {
+        state.token = action.payload;
       })
 
       // Login
