@@ -100,6 +100,17 @@ export const BlockNoteWrapper = ({
     },
   });
 
+  // Disable automatic URL-to-link conversion by removing the autolink ProseMirror plugin
+  useEffect(() => {
+    const { state, view } = editor._tiptapEditor;
+    const filtered = state.plugins.filter(
+      (p) => !(p as unknown as { key: string }).key.startsWith('autolink$'),
+    );
+    if (filtered.length < state.plugins.length) {
+      view.updateState(state.reconfigure({ plugins: filtered }));
+    }
+  }, [editor]);
+
   // Mark editor as mounted after first render
   useEffect(() => {
     // Small delay to ensure BlockNote's internal view is ready
