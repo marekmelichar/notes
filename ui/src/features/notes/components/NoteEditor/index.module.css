@@ -53,10 +53,9 @@
 .editorContent {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
 }
 
-/* Toolbar */
+/* Toolbar — sits outside the scrollable area */
 .toolbar {
   display: flex;
   align-items: center;
@@ -64,10 +63,8 @@
   padding: 0.375rem 0.5rem;
   border-bottom: 1px solid var(--mui-palette-divider);
   flex-wrap: wrap;
-  position: sticky;
-  top: 0;
   background-color: var(--mui-palette-background-paper);
-  z-index: 1;
+  flex-shrink: 0;
 }
 
 .toolbarGroup {
@@ -80,6 +77,65 @@
   font-size: 0.75rem;
   font-weight: 700;
   line-height: 1;
+}
+
+/* Shared prose typography — used by both ProseMirror and markdown preview */
+.prose h1 { font-size: 1.75rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+.prose h2 { font-size: 1.375rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+.prose h3 { font-size: 1.125rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+.prose p { margin: 0.5rem 0; }
+
+.prose ul,
+.prose ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+.prose li { margin: 0.25rem 0; }
+
+.prose blockquote {
+  margin: 0.75rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--mui-palette-divider);
+  color: var(--mui-palette-text-secondary);
+}
+
+.prose code {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 0.875em;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  background-color: var(--mui-palette-action-hover);
+}
+
+.prose pre {
+  margin: 0.75rem 0;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  background-color: var(--mui-palette-action-hover);
+  overflow-x: auto;
+}
+
+.prose pre code {
+  padding: 0;
+  background: none;
+}
+
+.prose hr {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid var(--mui-palette-divider);
+}
+
+.prose a {
+  color: var(--mui-palette-primary-main);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.prose a:hover {
+  text-decoration: underline;
+}
+
+.prose img {
+  max-width: 100%;
+  border-radius: 0.375rem;
 }
 
 /* TipTap editor fills the container */
@@ -103,63 +159,17 @@
   height: 0;
 }
 
-.tiptapContainer :global(.ProseMirror h1) { font-size: 1.75rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
-.tiptapContainer :global(.ProseMirror h2) { font-size: 1.375rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
-.tiptapContainer :global(.ProseMirror h3) { font-size: 1.125rem; font-weight: 600; margin: 1rem 0 0.5rem; }
-
-.tiptapContainer :global(.ProseMirror p) { margin: 0.5rem 0; }
-
-.tiptapContainer :global(.ProseMirror ul),
-.tiptapContainer :global(.ProseMirror ol) { margin: 0.5rem 0; padding-left: 1.5rem; }
-.tiptapContainer :global(.ProseMirror li) { margin: 0.25rem 0; }
-
-.tiptapContainer :global(.ProseMirror blockquote) {
-  margin: 0.75rem 0;
-  padding: 0.5rem 1rem;
-  border-left: 3px solid var(--mui-palette-divider);
-  color: var(--mui-palette-text-secondary);
+/* Link popover */
+.linkPopover {
+  border-radius: 0.5rem;
 }
 
-.tiptapContainer :global(.ProseMirror code) {
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-  font-size: 0.875em;
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-  background-color: var(--mui-palette-action-hover);
-}
-
-.tiptapContainer :global(.ProseMirror pre) {
-  margin: 0.75rem 0;
-  padding: 1rem;
-  border-radius: 0.375rem;
-  background-color: var(--mui-palette-action-hover);
-  overflow-x: auto;
-}
-
-.tiptapContainer :global(.ProseMirror pre code) {
-  padding: 0;
-  background: none;
-}
-
-.tiptapContainer :global(.ProseMirror hr) {
-  margin: 1.5rem 0;
-  border: none;
-  border-top: 1px solid var(--mui-palette-divider);
-}
-
-.tiptapContainer :global(.ProseMirror a) {
-  color: var(--mui-palette-primary-main);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.tiptapContainer :global(.ProseMirror a:hover) {
-  text-decoration: underline;
-}
-
-.tiptapContainer :global(.ProseMirror img) {
-  max-width: 100%;
-  border-radius: 0.375rem;
+.linkPopoverContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  min-width: 18rem;
 }
 
 .footer {
@@ -194,95 +204,13 @@
 }
 
 .markdownPreview {
+  composes: prose;
   width: 100%;
   min-height: 100%;
   padding: 2rem 2.5rem;
   color: var(--mui-palette-text-primary);
   font-size: 1rem;
   line-height: 1.7;
-}
-
-.markdownPreview h1,
-.markdownPreview h2,
-.markdownPreview h3 {
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.markdownPreview h1 {
-  font-size: 1.75rem;
-}
-
-.markdownPreview h2 {
-  font-size: 1.375rem;
-}
-
-.markdownPreview h3 {
-  font-size: 1.125rem;
-}
-
-.markdownPreview p {
-  margin: 0.5rem 0;
-}
-
-.markdownPreview ul,
-.markdownPreview ol {
-  margin: 0.5rem 0;
-  padding-left: 1.5rem;
-}
-
-.markdownPreview li {
-  margin: 0.25rem 0;
-}
-
-.markdownPreview a {
-  color: var(--mui-palette-primary-main);
-  text-decoration: none;
-}
-
-.markdownPreview a:hover {
-  text-decoration: underline;
-}
-
-.markdownPreview code {
-  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
-  font-size: 0.875em;
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-  background-color: var(--mui-palette-action-hover);
-}
-
-.markdownPreview pre {
-  margin: 0.75rem 0;
-  padding: 1rem;
-  border-radius: 0.375rem;
-  background-color: var(--mui-palette-action-hover);
-  overflow-x: auto;
-}
-
-.markdownPreview pre code {
-  padding: 0;
-  background: none;
-}
-
-.markdownPreview hr {
-  margin: 1.5rem 0;
-  border: none;
-  border-top: 1px solid var(--mui-palette-divider);
-}
-
-.markdownPreview blockquote {
-  margin: 0.75rem 0;
-  padding: 0.5rem 1rem;
-  border-left: 3px solid var(--mui-palette-divider);
-  color: var(--mui-palette-text-secondary);
-}
-
-.markdownPreview img {
-  max-width: 100%;
-  border-radius: 0.375rem;
 }
 
 .markdownPreview table {
@@ -437,16 +365,11 @@
     font-size: 3rem;
   }
 
-  .editorContent {
-    padding: 0.5rem;
-  }
-
   .tiptapContainer :global(.ProseMirror) {
     padding: 1rem 1.5rem;
   }
 
   .markdownPreview {
     padding: 1rem 1.5rem;
-    font-size: 0.9375rem;
   }
 }

@@ -1,85 +1,28 @@
-import React, { useCallback, useEffect, useState, useRef, useMemo } from 'react';
-import {
-  Box,
-  IconButton,
-  Tooltip,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Button,
-  CircularProgress,
-  useMediaQuery,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { Box, useMediaQuery } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { showError, showSuccess } from '@/store/notificationsSlice';
-import type { JSONContent } from '@tiptap/core';
-import PushPinIcon from '@mui/icons-material/PushPin';
-import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import RestoreIcon from '@mui/icons-material/Restore';
-import FolderIcon from '@mui/icons-material/Folder';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import SaveIcon from '@mui/icons-material/Save';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
-import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
-import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { useAutoSave } from '@/hooks';
 import { setTabUnsaved } from '@/store/tabsSlice';
 import {
-  selectAllNotes,
+  selectNoteById,
   updateNote,
   deleteNote,
   restoreNote,
 } from '../../store/notesSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
-import { TagPicker } from '../TagPicker';
 import {
   TiptapEditor,
+  type TiptapEditorHandle,
+  type EditorStats,
   type ExportFormat,
-  type NoteExportFunctions,
 } from './TiptapEditor';
+import { EditorHeader } from './EditorHeader';
+import { EditorFooter } from './EditorFooter';
 import { migrateContent } from './contentMigration';
 import styles from './index.module.css';
-
-// Parse and migrate content from storage (handles both BlockNote and TipTap formats)
-function parseContent(content: string | undefined): JSONContent | undefined {
-  return migrateContent(content);
-}
-
-// Error boundary to catch editor initialization errors
-interface EditorErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback: React.ReactNode;
-}
-
-interface EditorErrorBoundaryState {
-  hasError: boolean;
-}
-
-class EditorErrorBoundary extends React.Component<
-  EditorErrorBoundaryProps,
-  EditorErrorBoundaryState
-> {
-  state: EditorErrorBoundaryState = { hasError: false };
-
-  static getDerivedStateFromError(): EditorErrorBoundaryState {
-    return { hasError: true };
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback;
-    }
-    return this.props.children;
-  }
-}
 
 interface SingleNoteEditorProps {
   noteId: string;
@@ -89,31 +32,18 @@ interface SingleNoteEditorProps {
 export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const notes = useAppSelector(selectAllNotes);
-  const note = useMemo(() => notes.find((n) => n.id === noteId) ?? null, [notes, noteId]);
+  const note = useAppSelector((state) => selectNoteById(state, noteId));
   const folders = useAppSelector(selectAllFolders);
   const isMobile = useMediaQuery('(max-width: 48rem)');
   const [title, setTitle] = useState(note?.title || '');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [folderMenuAnchor, setFolderMenuAnchor] = useState<null | HTMLElement>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [showMobileTags, setShowMobileTags] = useState(false);
-  const [showMobileControls, setShowMobileControls] = useState(false);
+  const isSavingRef = useRef(false);
   const [viewMode, setViewMode] = useState<'editor' | 'markdown'>('editor');
+  const [stats, setStats] = useState<EditorStats>({ wordCount: 0, charCount: 0 });
 
-  // Content getter (replaces window global) - async to support markdown parsing
-  const getContentRef = useRef<(() => Promise<string>) | null>(null);
-  const handleContentGetterReady = useCallback((getter: (() => Promise<string>) | null) => {
-    getContentRef.current = getter;
-  }, []);
-
-  // Export functions
-  const exportRef = useRef<NoteExportFunctions | null>(null);
-  const handleExportReady = useCallback((exporter: NoteExportFunctions | null) => {
-    exportRef.current = exporter;
-  }, []);
-  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
-  const [isExporting, setIsExporting] = useState(false);
+  // Editor ref for content access and export
+  const editorRef = useRef<TiptapEditorHandle>(null);
 
   // Track the last saved values
   const lastSavedContentRef = useRef<string>(note?.content || '');
@@ -126,9 +56,9 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
 
   // Perform the actual save operation
   const performSave = useCallback(async () => {
-    if (!note || isSaving) return;
+    if (!note || isSavingRef.current) return;
 
-    const content = getContentRef.current ? await getContentRef.current() : '[]';
+    const content = editorRef.current ? await editorRef.current.getContent() : '[]';
     const currentTitle = titleRef.current;
     const updates: { content?: string; title?: string } = {};
 
@@ -148,6 +78,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
     }
 
     if (hasContentChanged || hasTitleChanged) {
+      isSavingRef.current = true;
       setIsSaving(true);
       try {
         await dispatch(updateNote({ id: note.id, updates })).unwrap();
@@ -158,17 +89,20 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
         lastSavedTitleRef.current = previousTitle;
         dispatch(showError(t('Notes.SaveError')));
       } finally {
+        isSavingRef.current = false;
         setIsSaving(false);
       }
     }
-  }, [note, dispatch, isSaving, t]);
+  }, [note, dispatch, t]);
 
   const {
     hasUnsavedChanges,
+    hasUnsavedChangesRef,
     autoSaveCountdown,
     markDirty,
     markClean,
     saveNow,
+    flush,
   } = useAutoSave({
     delayMs: 10_000,
     onSave: performSave,
@@ -176,7 +110,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   markCleanRef.current = markClean;
 
   // Update title when note changes externally
-  React.useEffect(() => {
+  useEffect(() => {
     if (note) {
       setTitle(note.title || '');
       lastSavedContentRef.current = note.content || '';
@@ -187,8 +121,18 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
 
   // Get initial content for the editor
   const initialContent = useMemo(() => {
-    return parseContent(note?.content);
+    return migrateContent(note?.content);
   }, [note?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Capture initial stats after editor mounts
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      if (editorRef.current) {
+        setStats(editorRef.current.getStats());
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [noteId]);
 
   // Report unsaved changes to tabsSlice
   useEffect(() => {
@@ -197,6 +141,9 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
 
   const handleEditorChange = useCallback(() => {
     markDirty();
+    if (editorRef.current) {
+      setStats(editorRef.current.getStats());
+    }
   }, [markDirty]);
 
   const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,7 +152,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   }, [markDirty]);
 
   // Keyboard shortcut for save (Ctrl/Cmd + S) — only when active
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isActive) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -220,6 +167,23 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [saveNow, isActive]);
+
+  // Warn about unsaved changes on tab close; best-effort save on unmount.
+  // Note: flush() fires an async save that may not complete before teardown.
+  // The beforeunload warning is the primary protection against data loss.
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChangesRef.current) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      flush();
+    };
+  }, [flush, hasUnsavedChangesRef]);
 
   const handleTogglePin = useCallback(() => {
     if (note) {
@@ -240,20 +204,11 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
     }
   }, [note, dispatch, t]);
 
-  const handleFolderMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    setFolderMenuAnchor(event.currentTarget);
-  }, []);
-
-  const handleFolderMenuClose = useCallback(() => {
-    setFolderMenuAnchor(null);
-  }, []);
-
   const handleFolderChange = useCallback(
     (folderId: string | null) => {
       if (note) {
         dispatch(updateNote({ id: note.id, updates: { folderId: folderId ?? '' } }));
       }
-      setFolderMenuAnchor(null);
     },
     [note, dispatch],
   );
@@ -269,12 +224,10 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
-      setExportMenuAnchor(null);
-      if (!exportRef.current || !note) return;
+      if (!editorRef.current || !note) return;
 
-      setIsExporting(true);
       try {
-        const { blob } = await exportRef.current.exportTo(format, note.title);
+        const { blob } = await editorRef.current.exportTo(format, note.title);
         const ext = format === 'markdown' ? 'md' : format;
         const safeTitle = (note.title || t('Common.Untitled')).replace(/[/\\:*?"<>|]/g, '-');
         const filename = `${safeTitle}.${ext}`;
@@ -287,17 +240,12 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         dispatch(showSuccess(t('Export.Success')));
-      } catch (err) {
-        console.error('Export failed:', err);
+      } catch {
         dispatch(showError(t('Export.Error')));
-      } finally {
-        setIsExporting(false);
       }
     },
     [note, t, dispatch],
   );
-
-  const currentFolder = folders.find((f) => f.id === note?.folderId);
 
   if (!note) {
     return null;
@@ -307,225 +255,54 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
     <Box
       className={`${styles.editorContainer} ${!isActive ? styles.editorHidden : ''}`}
     >
-      <Box className={`${styles.header} ${isMobile ? `${styles.headerMobile} ${!showMobileControls ? styles.headerMobileCollapsed : ''}` : ''}`}>
-        {/* Row 1: Title + toggle on mobile */}
-        <Box className={styles.titleRow}>
-          <input
-            type="text"
-            className={styles.titleInput}
-            value={title}
-            onChange={handleTitleChange}
-            placeholder={t('Common.Untitled')}
-          />
-          {isMobile && (
-            <Tooltip title={t('Notes.Controls')}>
-              <IconButton
-                data-testid="editor-controls-toggle"
-                size="small"
-                onClick={() => setShowMobileControls(!showMobileControls)}
-                color={showMobileControls ? 'primary' : 'default'}
-                className={styles.controlsToggle}
-              >
-                <MoreHorizIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-
-        {/* Row 2: Actions — always on desktop, collapsible on mobile */}
-        <Box
-          className={`${styles.headerActions} ${isMobile ? (showMobileControls ? styles.controlsOpen : styles.controlsCollapsed) : ''}`}
-        >
-          <ToggleButtonGroup
-            value={viewMode}
-            exclusive
-            onChange={(_, newMode) => newMode && setViewMode(newMode)}
-            size="small"
-            className={styles.viewToggle}
-          >
-            <ToggleButton value="editor">
-              <Tooltip title={t('View.Editor')}>
-                <EditOutlinedIcon fontSize="small" />
-              </Tooltip>
-            </ToggleButton>
-            <ToggleButton value="markdown">
-              <Tooltip title={t('View.Preview')}>
-                <CodeOutlinedIcon fontSize="small" />
-              </Tooltip>
-            </ToggleButton>
-          </ToggleButtonGroup>
-          <Tooltip title={t('Notes.MoveToFolder')}>
-            <Button
-              size="small"
-              variant="outlined"
-              color="inherit"
-              onClick={handleFolderMenuOpen}
-              startIcon={<FolderIcon fontSize="small" />}
-              className={styles.folderButton}
-            >
-              {currentFolder?.name || t('Notes.NoFolder')}
-            </Button>
-          </Tooltip>
-          <Menu
-            anchorEl={folderMenuAnchor}
-            open={Boolean(folderMenuAnchor)}
-            onClose={handleFolderMenuClose}
-          >
-            <MenuItem onClick={() => handleFolderChange(null)} selected={!note.folderId}>
-              <ListItemIcon>
-                <FolderOpenIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{t('Notes.NoFolder')}</ListItemText>
-            </MenuItem>
-            {folders.map((folder) => (
-              <MenuItem
-                key={folder.id}
-                onClick={() => handleFolderChange(folder.id)}
-                selected={note.folderId === folder.id}
-              >
-                <ListItemIcon>
-                  <FolderIcon fontSize="small" sx={{ color: folder.color }} />
-                </ListItemIcon>
-                <ListItemText>{folder.name}</ListItemText>
-              </MenuItem>
-            ))}
-          </Menu>
-          <Tooltip title={t('Notes.SaveShortcut')}>
-            <span>
-              <Button
-                size="small"
-                variant={hasUnsavedChanges ? 'contained' : 'outlined'}
-                color={hasUnsavedChanges ? 'primary' : 'inherit'}
-                onClick={saveNow}
-                disabled={isSaving}
-                startIcon={
-                  isSaving ? (
-                    <CircularProgress size={16} color="inherit" />
-                  ) : (
-                    <SaveIcon fontSize="small" />
-                  )
-                }
-                className={styles.saveButton}
-              >
-                {isSaving
-                  ? t('Common.Saving')
-                  : hasUnsavedChanges
-                    ? t('Common.Save')
-                    : t('Common.Saved')}
-              </Button>
-            </span>
-          </Tooltip>
-          <Tooltip title={note.isPinned ? t('Notes.Unpin') : t('Notes.Pin')}>
-            <IconButton size="small" onClick={handleTogglePin}>
-              {note.isPinned ? (
-                <PushPinIcon fontSize="small" color="primary" />
-              ) : (
-                <PushPinOutlinedIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t('Export.Export')}>
-            <span>
-              <IconButton
-                size="small"
-                onClick={(e) => setExportMenuAnchor(e.currentTarget)}
-                disabled={isExporting}
-              >
-                {isExporting ? (
-                  <CircularProgress size={18} />
-                ) : (
-                  <FileDownloadOutlinedIcon fontSize="small" />
-                )}
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Menu
-            anchorEl={exportMenuAnchor}
-            open={Boolean(exportMenuAnchor)}
-            onClose={() => setExportMenuAnchor(null)}
-          >
-            <MenuItem onClick={() => handleExport('markdown')}>
-              <ListItemIcon>
-                <CodeOutlinedIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{t('Export.Markdown')}</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => handleExport('html')}>
-              <ListItemIcon>
-                <HtmlOutlinedIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{t('Export.HTML')}</ListItemText>
-            </MenuItem>
-          </Menu>
-          {isMobile ? (
-            <Tooltip title={t('Tags.Tags')}>
-              <IconButton
-                size="small"
-                onClick={() => setShowMobileTags(!showMobileTags)}
-                color={showMobileTags || note.tags.length > 0 ? 'primary' : 'default'}
-              >
-                <LocalOfferOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <TagPicker selectedTagIds={note.tags} onTagsChange={handleTagsChange} />
-          )}
-          <Box className={styles.actionSpacer} />
-          {note.isDeleted ? (
-            <Tooltip title={t('Notes.Restore')}>
-              <IconButton size="small" onClick={handleRestore} color="success">
-                <RestoreIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title={t('Common.Delete')}>
-              <IconButton size="small" onClick={handleDelete} color="error">
-                <DeleteOutlineIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-
-        {/* Row 3: Tags (mobile only - toggleable) */}
-        {isMobile && showMobileTags && showMobileControls && (
-          <Box className={styles.headerTags}>
-            <TagPicker selectedTagIds={note.tags} onTagsChange={handleTagsChange} />
-          </Box>
-        )}
-      </Box>
+      <EditorHeader
+        note={note}
+        title={title}
+        onTitleChange={handleTitleChange}
+        isMobile={isMobile}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        folders={folders}
+        hasUnsavedChanges={hasUnsavedChanges}
+        isSaving={isSaving}
+        onSave={saveNow}
+        onTogglePin={handleTogglePin}
+        onDelete={handleDelete}
+        onRestore={handleRestore}
+        onFolderChange={handleFolderChange}
+        onTagsChange={handleTagsChange}
+        onExport={handleExport}
+      />
 
       {/* Key forces remount when note changes */}
-      <EditorErrorBoundary
+      <ErrorBoundary
         key={note.id}
         fallback={
           <TiptapEditor
             initialContent={undefined}
             noteId={note.id}
             onChange={handleEditorChange}
-
-            lastSaved={lastSaved}
-            lastSavedLabel={t('Notes.LastSaved')}
-            autoSaveCountdown={autoSaveCountdown}
-            autoSaveLabel={t('Notes.AutoSaveIn')}
-            onContentGetterReady={handleContentGetterReady}
-            onExportReady={handleExportReady}
             viewMode={viewMode}
           />
         }
       >
         <TiptapEditor
+          ref={editorRef}
           initialContent={initialContent}
           noteId={note.id}
           onChange={handleEditorChange}
-          lastSaved={lastSaved}
-          lastSavedLabel={t('Notes.LastSaved')}
-          autoSaveCountdown={autoSaveCountdown}
-          autoSaveLabel={t('Notes.AutoSaveIn')}
-          onContentGetterReady={handleContentGetterReady}
-          onExportReady={handleExportReady}
           viewMode={viewMode}
         />
-      </EditorErrorBoundary>
+      </ErrorBoundary>
+
+      <EditorFooter
+        wordCount={stats.wordCount}
+        charCount={stats.charCount}
+        autoSaveCountdown={autoSaveCountdown}
+        autoSaveLabel={t('Notes.AutoSaveIn')}
+        lastSaved={lastSaved}
+        lastSavedLabel={t('Notes.LastSaved')}
+      />
     </Box>
   );
 };

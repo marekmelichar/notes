@@ -6,7 +6,7 @@ A full-stack note-taking application (Czech: "e-poznámky" = "e-notes") with off
 
 ## Tech Stack
 
-**Frontend (ui/)**: React 19, TypeScript, Vite, MUI v6, Redux Toolkit, React Query, BlockNote editor, Dexie (IndexedDB)
+**Frontend (ui/)**: React 19, TypeScript, Vite, MUI v6, Redux Toolkit, React Query, TipTap editor (ProseMirror), Dexie (IndexedDB)
 
 **Backend (api/)**: .NET 10, Entity Framework Core, PostgreSQL 16
 
@@ -169,7 +169,7 @@ Note -> folderId?, Tags (many-to-many), SharedWith
 Folder -> parentId? (hierarchical)
 ```
 
-Note content is stored as **BlockNote JSON** (stringified array of blocks).
+Note content is stored as **TipTap JSON** (ProseMirror document format). Legacy BlockNote JSON (array of blocks) is auto-migrated on load via `contentMigration.ts`.
 
 ## Useful Files to Know
 
@@ -177,7 +177,8 @@ Note content is stored as **BlockNote JSON** (stringified array of blocks).
 |---------|------|
 | Mobile navigation | `ui/src/components/MobileNavigation/index.tsx` |
 | Notes page layout | `ui/src/pages/NotesPage/index.tsx` |
-| Note editor | `ui/src/features/notes/components/NoteEditor/index.tsx` |
+| Note editor | `ui/src/features/notes/components/NoteEditor/SingleNoteEditor.tsx` |
+| Editor architecture | `ui/docs/editor-architecture.md` |
 | UI state (mobile view) | `ui/src/store/uiSlice.ts` |
 | Notes state | `ui/src/features/notes/store/notesSlice.ts` |
 | Folders state | `ui/src/features/notes/store/foldersSlice.ts` |

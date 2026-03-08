@@ -152,7 +152,9 @@
   "Files": {
     "OfflineError": "Nelze nahrát soubory bez připojení",
     "TooLarge": "Soubor je příliš velký (max 100 MB)",
-    "UploadError": "Nahrání souboru se nezdařilo"
+    "UploadError": "Nahrání souboru se nezdařilo",
+    "Uploading": "Nahrávám obrázek...",
+    "UploadingFile": "Nahrávám {{name}}..."
   },
   "Editor": {
     "Placeholder": "Začněte psát...",
@@ -172,6 +174,7 @@
     "Link": "Přidat odkaz",
     "Unlink": "Odebrat odkaz",
     "Image": "Vložit obrázek",
+    "AttachFile": "Připojit soubor",
     "EnterUrl": "Zadejte URL:"
   },
   "Export": {

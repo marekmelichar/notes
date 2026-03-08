@@ -152,7 +152,9 @@
   "Files": {
     "OfflineError": "Cannot upload files while offline",
     "TooLarge": "File is too large (max 100 MB)",
-    "UploadError": "Failed to upload file"
+    "UploadError": "Failed to upload file",
+    "Uploading": "Uploading image...",
+    "UploadingFile": "Uploading {{name}}..."
   },
   "Editor": {
     "Placeholder": "Start writing...",
@@ -172,6 +174,7 @@
     "Link": "Add link",
     "Unlink": "Remove link",
     "Image": "Insert image",
+    "AttachFile": "Attach file",
     "EnterUrl": "Enter URL:"
   },
   "Export": {

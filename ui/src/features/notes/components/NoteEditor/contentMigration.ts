@@ -56,13 +56,18 @@ function convertInlineContent(content: BlockNoteInline[] | undefined): JSONConte
       if (marks.length > 0) node.marks = marks;
       result.push(node);
     } else if (item.type === 'link' && item.href) {
-      // Link wraps inner content with a link mark
-      const innerNodes = convertInlineContent(item.content);
-      for (const inner of innerNodes) {
-        const linkMark: MarkDef = { type: 'link', attrs: { href: item.href, target: '_blank' } };
-        const existingMarks = (inner.marks || []) as MarkDef[];
-        inner.marks = [...existingMarks, linkMark];
-        result.push(inner);
+      // Block dangerous protocols (javascript:, data:, vbscript:)
+      if (/^(javascript|data|vbscript):/i.test(item.href.trim())) {
+        // Strip the link mark but keep inner text
+        result.push(...convertInlineContent(item.content));
+      } else {
+        const innerNodes = convertInlineContent(item.content);
+        for (const inner of innerNodes) {
+          const linkMark: MarkDef = { type: 'link', attrs: { href: item.href, target: '_blank' } };
+          const existingMarks = (inner.marks || []) as MarkDef[];
+          inner.marks = [...existingMarks, linkMark];
+          result.push(inner);
+        }
       }
     }
   }
@@ -155,6 +160,58 @@ function convertBlocks(blocks: BlockNoteBlock[]): JSONContent[] {
           return { type: 'listItem', content: listItemContent };
         }),
       });
+    } else if (block.type === 'checkListItem') {
+      // Group consecutive checkListItem blocks into a bulletList.
+      // Prepend checkbox indicator (☑ / ☐) since TaskList extension is not installed.
+      const items: BlockNoteBlock[] = [];
+
+      while (i < blocks.length && blocks[i].type === 'checkListItem') {
+        items.push(blocks[i]);
+        i++;
+      }
+
+      result.push({
+        type: 'bulletList',
+        content: items.map((item) => {
+          const checked = item.props?.checked === true;
+          const prefix = checked ? '☑ ' : '☐ ';
+          const inlineContent = convertInlineContent(item.content as BlockNoteInline[]);
+          const prefixedContent: JSONContent[] = [
+            { type: 'text', text: prefix },
+            ...inlineContent,
+          ];
+
+          const listItemContent: JSONContent[] = [
+            { type: 'paragraph', content: prefixedContent },
+          ];
+
+          if (item.children && item.children.length > 0) {
+            listItemContent.push(...convertBlocks(item.children));
+          }
+
+          return { type: 'listItem', content: listItemContent };
+        }),
+      });
+    } else if (block.type === 'table') {
+      // BlockNote table: { type: "table", content: { type: "tableContent", rows: [{ cells: [[inline...]] }] } }
+      // Graceful degradation: convert each row to a paragraph with cells joined by " | "
+      const tableContent = block.content as Record<string, unknown> | undefined;
+      const rows = (tableContent?.rows as Array<{ cells: BlockNoteInline[][] }>) || [];
+
+      for (const row of rows) {
+        if (!row.cells || !Array.isArray(row.cells)) continue;
+        const rowContent: JSONContent[] = [];
+        for (let c = 0; c < row.cells.length; c++) {
+          if (c > 0) {
+            rowContent.push({ type: 'text', text: ' | ' });
+          }
+          rowContent.push(...convertInlineContent(row.cells[c]));
+        }
+        if (rowContent.length > 0) {
+          result.push({ type: 'paragraph', content: rowContent });
+        }
+      }
+      i++;
     } else {
       result.push(convertBlock(block));
       i++;
