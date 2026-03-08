@@ -80,8 +80,6 @@ export const BlockNoteWrapper = ({
 
   const editor = useCreateBlockNote({
     initialContent,
-    // Disable paste rules to prevent pasted URLs from auto-converting to links
-    _tiptapOptions: { enablePasteRules: false },
     uploadFile: async (file: File) => {
       if (!navigator.onLine) {
         enqueueSnackbar(t('Files.OfflineError'), { variant: 'error' });
@@ -101,22 +99,6 @@ export const BlockNoteWrapper = ({
       }
     },
   });
-
-  // Disable automatic URL-to-link conversion (typing and pasting over selection)
-  // - autolink: converts typed URLs to links
-  // - handlePasteLink: converts pasted URL over selected text to a link
-  // - enablePasteRules: false (above) prevents pasted text containing URLs from auto-linking
-  useEffect(() => {
-    const { state, view } = editor._tiptapEditor;
-    const disabledPlugins = ['autolink$', 'handlePasteLink$'];
-    const filtered = state.plugins.filter((p) => {
-      const key = (p as unknown as { key: string }).key;
-      return !disabledPlugins.some((prefix) => key.startsWith(prefix));
-    });
-    if (filtered.length < state.plugins.length) {
-      view.updateState(state.reconfigure({ plugins: filtered }));
-    }
-  }, [editor]);
 
   // Mark editor as mounted after first render
   useEffect(() => {
