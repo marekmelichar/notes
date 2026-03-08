@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { showError, showSuccess } from '@/store/notificationsSlice';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { useAutoSave } from '@/hooks';
+import { useAutoSave, useScrollDirection } from '@/hooks';
 import { setTabUnsaved } from '@/store/tabsSlice';
 import {
   selectNoteById,
@@ -44,6 +44,8 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
 
   // Editor ref for content access and export
   const editorRef = useRef<TiptapEditorHandle>(null);
+  const editorScrollRef = useRef<HTMLDivElement>(null);
+  useScrollDirection(editorScrollRef);
 
   // Track the last saved values
   const lastSavedContentRef = useRef<string>(note?.content || '');
@@ -292,6 +294,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
           noteId={note.id}
           onChange={handleEditorChange}
           viewMode={viewMode}
+          scrollRef={editorScrollRef}
         />
       </ErrorBoundary>
 

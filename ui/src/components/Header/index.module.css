@@ -7,6 +7,11 @@
   background-color: var(--mui-palette-background-default);
   border-bottom: 1px solid var(--mui-palette-outlineVariant);
   color: var(--mui-palette-text-primary);
+  transition: transform 0.3s ease;
+}
+
+.headerHidden {
+  transform: translateY(-100%);
 }
 
 @media (max-width: 48rem) {

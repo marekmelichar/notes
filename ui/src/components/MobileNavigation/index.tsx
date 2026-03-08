@@ -4,7 +4,7 @@ import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import EditNoteOutlinedIcon from '@mui/icons-material/EditNoteOutlined';
 import { useTranslation } from 'react-i18next';
-import { useAppDispatch, useAppSelector, setMobileView, MobileView, selectActiveTabId, selectMobileView } from '@/store';
+import { useAppDispatch, useAppSelector, setMobileView, MobileView, selectActiveTabId, selectMobileView, selectScrollHidden } from '@/store';
 import styles from './index.module.css';
 
 export const MobileNavigation = () => {
@@ -12,13 +12,14 @@ export const MobileNavigation = () => {
   const dispatch = useAppDispatch();
   const mobileView = useAppSelector(selectMobileView);
   const selectedNote = useAppSelector(selectActiveTabId);
+  const scrollHidden = useAppSelector(selectScrollHidden);
 
   const handleChange = (_event: React.SyntheticEvent, newValue: MobileView) => {
     dispatch(setMobileView(newValue));
   };
 
   return (
-    <Box className={styles.container}>
+    <Box className={`${styles.container} ${scrollHidden ? styles.containerHidden : ''}`}>
       <BottomNavigation
         value={mobileView}
         onChange={handleChange}
