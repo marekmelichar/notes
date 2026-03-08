@@ -67,6 +67,24 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 48rem) {
+  .toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolbarGroup {
+    flex-shrink: 0;
+  }
+}
+
 .toolbarGroup {
   display: flex;
   align-items: center;
