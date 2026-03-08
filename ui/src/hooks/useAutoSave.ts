@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 
 interface UseAutoSaveOptions {
   /** Delay in milliseconds before auto-save triggers (default: 10000) */
@@ -10,6 +10,8 @@ interface UseAutoSaveOptions {
 interface UseAutoSaveReturn {
   /** Whether there are unsaved changes */
   hasUnsavedChanges: boolean;
+  /** Ref tracking unsaved state (safe for use in effects/unmount) */
+  hasUnsavedChangesRef: MutableRefObject<boolean>;
   /** Countdown in seconds until auto-save fires, or null if idle */
   autoSaveCountdown: number | null;
   /** Call when content changes to mark as dirty and schedule auto-save */
@@ -18,6 +20,8 @@ interface UseAutoSaveReturn {
   markClean: () => void;
   /** Trigger an immediate save, cancelling any pending auto-save */
   saveNow: () => void;
+  /** Save immediately if dirty — intended for unmount / navigation away */
+  flush: () => void;
 }
 
 export function useAutoSave({
@@ -25,6 +29,7 @@ export function useAutoSave({
   onSave,
 }: UseAutoSaveOptions): UseAutoSaveReturn {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const hasUnsavedChangesRef = useRef(false);
   const [autoSaveCountdown, setAutoSaveCountdown] = useState<number | null>(null);
 
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -58,17 +63,26 @@ export function useAutoSave({
 
   const markDirty = useCallback(() => {
     setHasUnsavedChanges(true);
+    hasUnsavedChangesRef.current = true;
     scheduleAutoSave();
   }, [scheduleAutoSave]);
 
   const markClean = useCallback(() => {
     setHasUnsavedChanges(false);
+    hasUnsavedChangesRef.current = false;
     clearTimers();
   }, [clearTimers]);
 
   const saveNow = useCallback(() => {
     clearTimers();
     onSaveRef.current();
+  }, [clearTimers]);
+
+  const flush = useCallback(() => {
+    if (hasUnsavedChangesRef.current) {
+      clearTimers();
+      onSaveRef.current();
+    }
   }, [clearTimers]);
 
   // Cleanup on unmount
@@ -81,9 +95,11 @@ export function useAutoSave({
 
   return {
     hasUnsavedChanges,
+    hasUnsavedChangesRef,
     autoSaveCountdown,
     markDirty,
     markClean,
     saveNow,
+    flush,
   };
 }

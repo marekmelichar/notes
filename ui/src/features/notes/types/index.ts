@@ -1,7 +1,7 @@
 export interface Note {
   id: string;
   title: string;
-  content: string; // BlockNote JSON stringified
+  content: string; // Editor JSON stringified (TipTap format, with legacy BlockNote migration)
   folderId: string | null;
   tags: string[]; // Tag IDs
   isPinned: boolean;

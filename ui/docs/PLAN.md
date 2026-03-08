@@ -10,7 +10,7 @@ A full-featured note-taking application with rich text editing, hierarchical org
 |-----------|------------|
 | Frontend | React 19 + TypeScript + MUI |
 | State Management | Redux Toolkit + React Query |
-| Rich Text Editor | BlockNote |
+| Rich Text Editor | TipTap (ProseMirror) — see `editor-architecture.md` |
 | Local Storage | IndexedDB (via Dexie.js) |
 | Backend API | REST API (Orval for generation) |
 | Authentication | Keycloak (existing) |
@@ -79,35 +79,33 @@ interface SharedUser {
 
 ---
 
-## Phase 2: Note Editor
+## Phase 2: Note Editor ✅
 
-### 2.1 Install & Configure BlockNote
+> **Completed.** Originally planned with BlockNote, migrated to TipTap (ProseMirror) in March 2026. See `editor-architecture.md` for current design.
 
-Extensions to include:
-- Basic formatting (bold, italic, underline, strikethrough)
-- Headings (H1, H2, H3)
-- Lists (bullet, numbered, task)
-- Blockquotes
-- Code blocks with syntax highlighting
-- Links
-- Images
-- Tables
+### Implemented
 
-### 2.2 Create NoteEditor Component
-
-- Formatting toolbar with icon buttons
-- Title input field
-- Content area with BlockNote editor
-- Auto-save with debounce (2 second delay)
-- Word/character count
+- TipTap with StarterKit, Link, Image, Underline, Placeholder extensions
+- Formatting toolbar (headings, bold, italic, underline, strike, code, lists, blockquote, code block, horizontal rule, links, images, file attachments)
+- Title input, folder/tag pickers, pin, delete, export (markdown/HTML)
+- Auto-save with 10-second debounce and visible countdown
+- Word/character count in footer
 - Last saved indicator
+- Markdown preview mode (react-markdown + remarkGfm)
+- File upload via paste/drop with placeholder nodes
+- Content migration layer (BlockNote JSON → TipTap JSON)
 
 ### Deliverables
-- [x] Install BlockNote packages
-- [ ] `src/features/notes/components/NoteEditor/index.tsx`
-- [ ] `src/features/notes/components/NoteEditor/Toolbar.tsx`
-- [ ] `src/features/notes/components/NoteEditor/extensions.ts`
-- [ ] `src/features/notes/hooks/useAutoSave.ts`
+- [x] `src/features/notes/components/NoteEditor/SingleNoteEditor.tsx`
+- [x] `src/features/notes/components/NoteEditor/TiptapEditor.tsx`
+- [x] `src/features/notes/components/NoteEditor/TiptapToolbar.tsx`
+- [x] `src/features/notes/components/NoteEditor/EditorHeader.tsx`
+- [x] `src/features/notes/components/NoteEditor/EditorFooter.tsx`
+- [x] `src/features/notes/components/NoteEditor/useTiptapEditor.ts`
+- [x] `src/features/notes/components/NoteEditor/useFileUpload.ts`
+- [x] `src/features/notes/components/NoteEditor/useEditorExport.ts`
+- [x] `src/features/notes/components/NoteEditor/contentMigration.ts`
+- [x] `src/hooks/useAutoSave.ts`
 
 ---
 
@@ -358,8 +356,8 @@ src/
 ## Dependencies to Install
 
 ```bash
-# Rich text editor
-npm install @blocknote/core @blocknote/react @blocknote/mantine
+# Rich text editor (TipTap — replaced BlockNote)
+npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-link @tiptap/extension-image @tiptap/extension-underline @tiptap/extension-placeholder
 
 # Local database
 npm install dexie dexie-react-hooks

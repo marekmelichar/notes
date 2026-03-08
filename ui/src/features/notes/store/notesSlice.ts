@@ -249,6 +249,9 @@ export const {
 export const selectAllNotes = (state: { notes: NotesState }) =>
   state.notes.notes;
 
+export const selectNoteById = (state: { notes: NotesState }, id: string) =>
+  state.notes.notes.find((n) => n.id === id) ?? null;
+
 const selectNotesState = (state: { notes: NotesState }) => state.notes;
 
 export const selectFilteredNotes = createSelector(
