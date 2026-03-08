@@ -12,6 +12,7 @@ interface UiState {
   sidebarCollapsed: boolean;
   noteListCollapsed: boolean;
   noteListHidden: boolean;
+  scrollHidden: boolean;
 }
 
 const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
@@ -24,6 +25,7 @@ const initialState: UiState = {
   sidebarCollapsed: localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true',
   noteListCollapsed: localStorage.getItem(NOTELIST_COLLAPSED_KEY) === 'true',
   noteListHidden: localStorage.getItem(NOTELIST_HIDDEN_KEY) === 'true',
+  scrollHidden: false,
 };
 
 export const uiSlice = createSlice({
@@ -60,10 +62,13 @@ export const uiSlice = createSlice({
       state.noteListHidden = !state.noteListHidden;
       localStorage.setItem(NOTELIST_HIDDEN_KEY, state.noteListHidden.toString());
     },
+    setScrollHidden: (state, action: PayloadAction<boolean>) => {
+      state.scrollHidden = action.payload;
+    },
   },
 });
 
-export const { setMobileView, setIsMobile, setSidebarCollapsed, toggleSidebarCollapsed, setNoteListCollapsed, toggleNoteListCollapsed, setNoteListHidden, toggleNoteListHidden } = uiSlice.actions;
+export const { setMobileView, setIsMobile, setSidebarCollapsed, toggleSidebarCollapsed, setNoteListCollapsed, toggleNoteListCollapsed, setNoteListHidden, toggleNoteListHidden, setScrollHidden } = uiSlice.actions;
 
 // Selectors
 export const selectIsMobile = (state: { ui: UiState }) => state.ui.isMobile;
@@ -71,3 +76,4 @@ export const selectMobileView = (state: { ui: UiState }) => state.ui.mobileView;
 export const selectSidebarCollapsed = (state: { ui: UiState }) => state.ui.sidebarCollapsed;
 export const selectNoteListCollapsed = (state: { ui: UiState }) => state.ui.noteListCollapsed;
 export const selectNoteListHidden = (state: { ui: UiState }) => state.ui.noteListHidden;
+export const selectScrollHidden = (state: { ui: UiState }) => state.ui.scrollHidden;

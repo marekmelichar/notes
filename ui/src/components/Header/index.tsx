@@ -26,7 +26,7 @@ import { LanguageSwitch } from '../LanguageSwitch';
 import { SearchInput } from '../SearchInput';
 import { SearchDialog } from '../SearchDialog';
 import { useColorMode } from '@/theme/ThemeProvider';
-import { useAppDispatch, useAppSelector, selectNoteListHidden, selectIsMobile, selectAuthUser } from '@/store';
+import { useAppDispatch, useAppSelector, selectNoteListHidden, selectIsMobile, selectAuthUser, selectScrollHidden } from '@/store';
 import { logout } from '@/store/authSlice';
 import { toggleNoteListHidden } from '@/store/uiSlice';
 import { createNote, selectNotesFilter, selectNotesCreating } from '@/features/notes/store/notesSlice';
@@ -41,6 +41,7 @@ export const Header = () => {
   const user = useAppSelector(selectAuthUser);
   const noteListHidden = useAppSelector(selectNoteListHidden);
   const isMobile = useAppSelector(selectIsMobile);
+  const scrollHidden = useAppSelector(selectScrollHidden);
   const filter = useAppSelector(selectNotesFilter);
   const isCreating = useAppSelector(selectNotesCreating);
   const { version } = useAppVersion();
@@ -97,7 +98,7 @@ export const Header = () => {
   };
 
   return (
-    <Box data-testid="header" className={styles.header}>
+    <Box data-testid="header" className={`${styles.header} ${isMobile && scrollHidden ? styles.headerHidden : ''}`}>
       <Link to={ROUTE_HOME} data-testid="header-logo-link" className={styles.logoLink}>
         <Logo className={styles.logoIcon} />
       </Link>

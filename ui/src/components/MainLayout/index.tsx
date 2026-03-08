@@ -5,10 +5,11 @@ import styles from './index.module.css';
 import { HEADER_HEIGHT, MOBILE_NAV_HEIGHT, MOBILE_BREAKPOINT } from '@/config';
 import { Header } from '../Header';
 import { MobileNavigation } from '../MobileNavigation';
-import { useAppDispatch, setIsMobile } from '@/store';
+import { useAppDispatch, useAppSelector, setIsMobile, selectScrollHidden } from '@/store';
 
 const MainLayout = () => {
   const dispatch = useAppDispatch();
+  const scrollHidden = useAppSelector(selectScrollHidden);
   const isMobileWidth = useMediaQuery(`(max-width:${MOBILE_BREAKPOINT}px)`);
   const isLandscapeMobile = useMediaQuery('(max-height: 500px) and (orientation: landscape)');
   const isMobile = isMobileWidth || isLandscapeMobile;
@@ -27,6 +28,11 @@ const MainLayout = () => {
           height: isMobile
             ? `calc(100vh - ${HEADER_HEIGHT}px - ${MOBILE_NAV_HEIGHT}px)`
             : `calc(100vh - ${HEADER_HEIGHT}px)`,
+          transition: isMobile ? 'height 0.3s ease, transform 0.3s ease' : undefined,
+          ...(isMobile && scrollHidden && {
+            height: '100vh',
+            transform: `translateY(-${HEADER_HEIGHT}px)`,
+          }),
         }}
       >
         <Outlet />

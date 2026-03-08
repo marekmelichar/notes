@@ -29,6 +29,7 @@ interface TiptapEditorProps {
   noteId?: string;
   onChange: () => void;
   viewMode: 'editor' | 'markdown';
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const DANGEROUS_PROTOCOL = /^(javascript|data|vbscript):/i;
@@ -45,7 +46,7 @@ const markdownComponents: ComponentProps<typeof Markdown>['components'] = {
 };
 
 const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
-  ({ initialContent, noteId, onChange, viewMode }, ref) => {
+  ({ initialContent, noteId, onChange, viewMode, scrollRef }, ref) => {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -134,7 +135,7 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             onFilePicker={handleOpenFilePicker}
           />
         )}
-        <Box className={styles.editorContent}>
+        <Box ref={scrollRef} className={styles.editorContent}>
           {viewMode === 'editor' ? (
             <>
               <EditorContent editor={editor} className={styles.tiptapContainer} />
