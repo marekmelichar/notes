@@ -154,6 +154,26 @@
     "TooLarge": "File is too large (max 100 MB)",
     "UploadError": "Failed to upload file"
   },
+  "Editor": {
+    "Placeholder": "Start writing...",
+    "Heading1": "Heading 1",
+    "Heading2": "Heading 2",
+    "Heading3": "Heading 3",
+    "Bold": "Bold",
+    "Italic": "Italic",
+    "Underline": "Underline",
+    "Strikethrough": "Strikethrough",
+    "InlineCode": "Inline code",
+    "BulletList": "Bullet list",
+    "OrderedList": "Numbered list",
+    "Blockquote": "Quote",
+    "CodeBlock": "Code block",
+    "HorizontalRule": "Horizontal rule",
+    "Link": "Add link",
+    "Unlink": "Remove link",
+    "Image": "Insert image",
+    "EnterUrl": "Enter URL:"
+  },
   "Export": {
     "Export": "Export",
     "PDF": "PDF",

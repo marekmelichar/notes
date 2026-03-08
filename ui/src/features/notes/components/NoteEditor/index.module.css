@@ -56,19 +56,110 @@
   padding: 1rem;
 }
 
-/* BlockNote editor fills the container but can grow with content */
-.editorContent > div,
-.editorContent :global(.bn-container),
-.editorContent :global(.bn-editor) {
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid var(--mui-palette-divider);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  background-color: var(--mui-palette-background-paper);
+  z-index: 1;
+}
+
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.headingButton {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* TipTap editor fills the container */
+.tiptapContainer {
   min-height: 100%;
 }
 
-.editorContent :global(.bn-editor) {
+.tiptapContainer :global(.ProseMirror) {
+  min-height: 100%;
   font-size: 1rem;
   color: var(--mui-palette-text-primary);
-  padding-top: 2rem;
-  padding-bottom: 2rem;
-  padding-inline: 2.5rem;
+  padding: 2rem 2.5rem;
+  outline: none;
+}
+
+.tiptapContainer :global(.ProseMirror p.is-editor-empty:first-child::before) {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--mui-palette-text-secondary);
+  pointer-events: none;
+  height: 0;
+}
+
+.tiptapContainer :global(.ProseMirror h1) { font-size: 1.75rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+.tiptapContainer :global(.ProseMirror h2) { font-size: 1.375rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+.tiptapContainer :global(.ProseMirror h3) { font-size: 1.125rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+
+.tiptapContainer :global(.ProseMirror p) { margin: 0.5rem 0; }
+
+.tiptapContainer :global(.ProseMirror ul),
+.tiptapContainer :global(.ProseMirror ol) { margin: 0.5rem 0; padding-left: 1.5rem; }
+.tiptapContainer :global(.ProseMirror li) { margin: 0.25rem 0; }
+
+.tiptapContainer :global(.ProseMirror blockquote) {
+  margin: 0.75rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--mui-palette-divider);
+  color: var(--mui-palette-text-secondary);
+}
+
+.tiptapContainer :global(.ProseMirror code) {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 0.875em;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  background-color: var(--mui-palette-action-hover);
+}
+
+.tiptapContainer :global(.ProseMirror pre) {
+  margin: 0.75rem 0;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  background-color: var(--mui-palette-action-hover);
+  overflow-x: auto;
+}
+
+.tiptapContainer :global(.ProseMirror pre code) {
+  padding: 0;
+  background: none;
+}
+
+.tiptapContainer :global(.ProseMirror hr) {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 1px solid var(--mui-palette-divider);
+}
+
+.tiptapContainer :global(.ProseMirror a) {
+  color: var(--mui-palette-primary-main);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tiptapContainer :global(.ProseMirror a:hover) {
+  text-decoration: underline;
+}
+
+.tiptapContainer :global(.ProseMirror img) {
+  max-width: 100%;
+  border-radius: 0.375rem;
 }
 
 .footer {
@@ -350,12 +441,8 @@
     padding: 0.5rem;
   }
 
-  .editorContent :global(.bn-editor) {
-    font-size: 1rem;
-    color: var(--mui-palette-text-primary);
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    padding-inline: 1.5rem;
+  .tiptapContainer :global(.ProseMirror) {
+    padding: 1rem 1.5rem;
   }
 
   .markdownPreview {

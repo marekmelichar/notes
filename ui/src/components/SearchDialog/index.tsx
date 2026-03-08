@@ -9,6 +9,7 @@ import { selectAllFolders } from '@/features/notes/store/foldersSlice';
 import { setMobileView } from '@/store/uiSlice';
 import { notesApi } from '@/features/notes/services/notesApi';
 import type { Note } from '@/features/notes/types';
+import { extractTextFromContent } from '@/features/notes/components/NoteEditor/contentMigration';
 import styles from './index.module.css';
 
 const DEBOUNCE_MS = 300;
@@ -90,26 +91,9 @@ export const SearchDialog = ({ open, onClose }: SearchDialogProps) => {
     [folders]
   );
 
-  // Extract text snippet from BlockNote content
+  // Extract text snippet from editor content (handles both BlockNote and TipTap JSON)
   const getContentSnippet = useCallback((content: string, maxLength = 100): string => {
-    try {
-      const blocks = JSON.parse(content);
-      let text = '';
-      for (const block of blocks) {
-        if (block.content && Array.isArray(block.content)) {
-          for (const item of block.content) {
-            if (item.text) {
-              text += item.text + ' ';
-            }
-          }
-        }
-        if (text.length >= maxLength) break;
-      }
-      return text.trim().slice(0, maxLength) || '';
-    } catch {
-      // If not JSON, return the raw content truncated
-      return content.slice(0, maxLength);
-    }
+    return extractTextFromContent(content, maxLength);
   }, []);
 
   // Handle note selection

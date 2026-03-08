@@ -14,8 +14,8 @@ import {
   ToggleButtonGroup,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { showError, showSuccess, showWarning } from '@/store/notificationsSlice';
-import { PartialBlock } from '@blocknote/core';
+import { showError, showSuccess } from '@/store/notificationsSlice';
+import type { JSONContent } from '@tiptap/core';
 import PushPinIcon from '@mui/icons-material/PushPin';
 import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -24,8 +24,6 @@ import FolderIcon from '@mui/icons-material/Folder';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SaveIcon from '@mui/icons-material/Save';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
-import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
 import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
@@ -43,38 +41,19 @@ import {
 import { selectAllFolders } from '../../store/foldersSlice';
 import { TagPicker } from '../TagPicker';
 import {
-  BlockNoteWrapper,
+  TiptapEditor,
   type ExportFormat,
   type NoteExportFunctions,
-} from './BlockNoteWrapper';
+} from './TiptapEditor';
+import { migrateContent } from './contentMigration';
 import styles from './index.module.css';
 
-// Validate a block has minimum required structure for BlockNote
-function isValidBlock(block: unknown): boolean {
-  if (!block || typeof block !== 'object') return false;
-  const b = block as Record<string, unknown>;
-  if (typeof b.type !== 'string') return false;
-  // Content can be an array (inline content) or an object (table content, etc.)
-  if (b.content !== undefined && typeof b.content !== 'object') return false;
-  if (b.children !== undefined && !Array.isArray(b.children)) return false;
-  return true;
+// Parse and migrate content from storage (handles both BlockNote and TipTap formats)
+function parseContent(content: string | undefined): JSONContent | undefined {
+  return migrateContent(content);
 }
 
-// Parse BlockNote content from storage
-function parseContent(content: string | undefined): PartialBlock[] | undefined {
-  if (!content) return undefined;
-
-  try {
-    const parsed = JSON.parse(content);
-    if (!Array.isArray(parsed) || parsed.length === 0) return undefined;
-    if (!parsed.every(isValidBlock)) return undefined;
-    return parsed;
-  } catch {
-    return undefined;
-  }
-}
-
-// Error boundary to catch BlockNote initialization errors
+// Error boundary to catch editor initialization errors
 interface EditorErrorBoundaryProps {
   children: React.ReactNode;
   fallback: React.ReactNode;
@@ -295,7 +274,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
 
       setIsExporting(true);
       try {
-        const { blob, failedImages } = await exportRef.current.exportTo(format, note.title);
+        const { blob } = await exportRef.current.exportTo(format, note.title);
         const ext = format === 'markdown' ? 'md' : format;
         const safeTitle = (note.title || t('Common.Untitled')).replace(/[/\\:*?"<>|]/g, '-');
         const filename = `${safeTitle}.${ext}`;
@@ -307,11 +286,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        if (failedImages > 0) {
-          dispatch(showWarning(t('Export.SuccessWithWarning', { count: failedImages })));
-        } else {
-          dispatch(showSuccess(t('Export.Success')));
-        }
+        dispatch(showSuccess(t('Export.Success')));
       } catch (err) {
         console.error('Export failed:', err);
         dispatch(showError(t('Export.Error')));
@@ -469,18 +444,6 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
             open={Boolean(exportMenuAnchor)}
             onClose={() => setExportMenuAnchor(null)}
           >
-            <MenuItem onClick={() => handleExport('pdf')}>
-              <ListItemIcon>
-                <PictureAsPdfOutlinedIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{t('Export.PDF')}</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => handleExport('docx')}>
-              <ListItemIcon>
-                <DescriptionOutlinedIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{t('Export.DOCX')}</ListItemText>
-            </MenuItem>
             <MenuItem onClick={() => handleExport('markdown')}>
               <ListItemIcon>
                 <CodeOutlinedIcon fontSize="small" />
@@ -535,7 +498,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
       <EditorErrorBoundary
         key={note.id}
         fallback={
-          <BlockNoteWrapper
+          <TiptapEditor
             initialContent={undefined}
             noteId={note.id}
             onChange={handleEditorChange}
@@ -550,7 +513,7 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
           />
         }
       >
-        <BlockNoteWrapper
+        <TiptapEditor
           initialContent={initialContent}
           noteId={note.id}
           onChange={handleEditorChange}

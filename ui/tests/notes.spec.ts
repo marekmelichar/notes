@@ -19,8 +19,8 @@ test.describe('Notes CRUD Operations', () => {
     // Click on a note card in the list
     await page.locator('[class*="noteCardTitle"]').first().click();
 
-    // Wait for editor to show - look for BlockNote editor container
-    const editor = page.locator('.bn-container, .bn-editor, [data-node-view-wrapper]');
+    // Wait for editor to show - look for TipTap editor container
+    const editor = page.locator('.ProseMirror, .tiptap-editor');
     await expect(editor.first()).toBeVisible({ timeout: 5000 });
   });
 

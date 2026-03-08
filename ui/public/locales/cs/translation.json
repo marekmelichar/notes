@@ -154,6 +154,26 @@
     "TooLarge": "Soubor je příliš velký (max 100 MB)",
     "UploadError": "Nahrání souboru se nezdařilo"
   },
+  "Editor": {
+    "Placeholder": "Začněte psát...",
+    "Heading1": "Nadpis 1",
+    "Heading2": "Nadpis 2",
+    "Heading3": "Nadpis 3",
+    "Bold": "Tučné",
+    "Italic": "Kurzíva",
+    "Underline": "Podtržené",
+    "Strikethrough": "Přeškrtnuté",
+    "InlineCode": "Kód",
+    "BulletList": "Odrážkový seznam",
+    "OrderedList": "Číslovaný seznam",
+    "Blockquote": "Citace",
+    "CodeBlock": "Blok kódu",
+    "HorizontalRule": "Vodorovná čára",
+    "Link": "Přidat odkaz",
+    "Unlink": "Odebrat odkaz",
+    "Image": "Vložit obrázek",
+    "EnterUrl": "Zadejte URL:"
+  },
   "Export": {
     "Export": "Exportovat",
     "PDF": "PDF",
