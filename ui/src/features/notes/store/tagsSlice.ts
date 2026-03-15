@@ -41,8 +41,7 @@ export const updateTag = createAsyncThunk(
   'tags/updateTag',
   async ({ id, updates }: { id: string; updates: Partial<Tag> }, { dispatch }) => {
     try {
-      await tagsApi.update(id, updates);
-      const tag = await tagsApi.getById(id);
+      const tag = await tagsApi.update(id, updates);
       dispatch(showSuccess('Tag updated'));
       return tag;
     } catch (error) {
@@ -112,12 +111,17 @@ export const selectAllTags = (state: { tags: TagsState }) => state.tags.tags;
 export const selectTagById = (id: string) => (state: { tags: TagsState }) =>
   state.tags.tags.find((t) => t.id === id);
 
-// Memoized selector factory for tags by IDs
+// Memoized selector factory for tags by IDs (bounded cache)
 type TagsByIdsSelector = (state: { tags: TagsState }) => Tag[];
+const SELECTOR_CACHE_MAX = 100;
 const tagsByIdsCache = new Map<string, TagsByIdsSelector>();
 export const selectTagsByIds = (ids: string[]): TagsByIdsSelector => {
   const cacheKey = [...ids].sort().join(',');
   if (!tagsByIdsCache.has(cacheKey)) {
+    if (tagsByIdsCache.size >= SELECTOR_CACHE_MAX) {
+      const firstKey = tagsByIdsCache.keys().next().value;
+      if (firstKey !== undefined) tagsByIdsCache.delete(firstKey);
+    }
     tagsByIdsCache.set(
       cacheKey,
       createSelector(

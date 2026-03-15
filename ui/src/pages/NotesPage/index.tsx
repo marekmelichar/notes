@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed, ope
 import { loadNotes, selectAllNotes } from '@/features/notes/store/notesSlice';
 import { loadFolders } from '@/features/notes/store/foldersSlice';
 import { loadTags } from '@/features/notes/store/tagsSlice';
+import { MOBILE_BREAKPOINT, MEDIUM_BREAKPOINT } from '@/config';
 import { NotesSidebar } from '@/features/notes/components/NotesSidebar';
 import { NoteList } from '@/features/notes/components/NoteList';
 import { EditorPanel } from '@/features/notes/components/EditorPanel';
@@ -22,7 +23,6 @@ const NOTELIST_DEFAULT_WIDTH = 350;
 const NOTELIST_COLLAPSED_WIDTH = 60;
 const SIDEBAR_STORAGE_KEY = 'notes-sidebar-width';
 const NOTELIST_STORAGE_KEY = 'notes-notelist-width';
-const MEDIUM_BREAKPOINT = 1024;
 
 const NotesPage = () => {
   const dispatch = useAppDispatch();
@@ -40,27 +40,30 @@ const NotesPage = () => {
     [notes, activeTabId],
   );
 
-  // Sync URL → Redux: open tab from URL on mount
-  const urlSyncRef = useRef(false);
-  useEffect(() => {
-    if (urlNoteId && urlNoteId !== activeTabId) {
-      urlSyncRef.current = true;
-      dispatch(openTab(urlNoteId));
-    }
-  }, [urlNoteId, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Bidirectional sync: URL ↔ Redux active tab
+  // URL wins on mount/URL change; Redux wins when user selects a tab
+  const prevUrlNoteId = useRef(urlNoteId);
+  const prevActiveTabId = useRef(activeTabId);
 
-  // Sync Redux → URL: update URL when active tab changes
   useEffect(() => {
-    if (urlSyncRef.current) {
-      urlSyncRef.current = false;
-      return;
+    const urlChanged = urlNoteId !== prevUrlNoteId.current;
+    const tabChanged = activeTabId !== prevActiveTabId.current;
+
+    if (urlChanged && urlNoteId && urlNoteId !== activeTabId) {
+      // URL changed (browser nav, direct link) → sync to Redux
+      dispatch(openTab(urlNoteId));
+    } else if (tabChanged) {
+      // Active tab changed in Redux → sync to URL
+      if (activeTabId && activeTabId !== urlNoteId) {
+        navigate(`/notes/${activeTabId}`, { replace: true });
+      } else if (!activeTabId && urlNoteId) {
+        navigate('/', { replace: true });
+      }
     }
-    if (activeTabId && activeTabId !== urlNoteId) {
-      navigate(`/notes/${activeTabId}`, { replace: true });
-    } else if (!activeTabId && urlNoteId) {
-      navigate('/', { replace: true });
-    }
-  }, [activeTabId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    prevUrlNoteId.current = urlNoteId;
+    prevActiveTabId.current = activeTabId;
+  }, [urlNoteId, activeTabId, dispatch, navigate]);
 
   // Resize state
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -77,7 +80,7 @@ const NotesPage = () => {
     const handleResize = () => {
       const width = window.innerWidth;
       // Auto-collapse when entering medium breakpoint, auto-expand when leaving
-      if (width <= MEDIUM_BREAKPOINT && width > 768 && !sidebarCollapsed) {
+      if (width <= MEDIUM_BREAKPOINT && width > MOBILE_BREAKPOINT && !sidebarCollapsed) {
         dispatch(setSidebarCollapsed(true));
       }
     };
@@ -113,16 +116,14 @@ const NotesPage = () => {
     };
   }, [activeNote?.title]);
 
-  // Track previous active tab to detect new selections
-  const prevActiveTabId = useRef<string | null>(null);
-
   // Switch to editor view only when a NEW tab is activated on mobile
+  const prevMobileTabId = useRef<string | null>(null);
   useEffect(() => {
-    const isNewSelection = activeTabId && activeTabId !== prevActiveTabId.current;
+    const isNewSelection = activeTabId && activeTabId !== prevMobileTabId.current;
     if (isMobile && isNewSelection && mobileView === 'list') {
       dispatch(setMobileView('editor'));
     }
-    prevActiveTabId.current = activeTabId;
+    prevMobileTabId.current = activeTabId;
   }, [dispatch, isMobile, activeTabId, mobileView]);
 
   // Resize handlers

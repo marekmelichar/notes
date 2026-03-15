@@ -13,18 +13,9 @@ export const notesApi = {
     return response.data.items;
   },
 
-  async getById(id: string): Promise<Note | undefined> {
-    try {
-      const response = await apiManager.get<Note>(`${API_BASE}/notes/${id}`);
-      return response.data;
-    } catch {
-      return undefined;
-    }
-  },
-
-  async getByFolder(folderId: string | null): Promise<Note[]> {
-    const notes = await this.getAll();
-    return notes.filter((note) => note.folderId === folderId);
+  async getById(id: string): Promise<Note> {
+    const response = await apiManager.get<Note>(`${API_BASE}/notes/${id}`);
+    return response.data;
   },
 
   async create(note: Omit<Note, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<string> {
@@ -38,8 +29,9 @@ export const notesApi = {
     return response.data.id;
   },
 
-  async update(id: string, updates: Partial<Note>): Promise<void> {
-    await apiManager.put(`${API_BASE}/notes/${id}`, updates);
+  async update(id: string, updates: Partial<Note>): Promise<Note> {
+    const response = await apiManager.put<Note>(`${API_BASE}/notes/${id}`, updates);
+    return response.data;
   },
 
   async delete(id: string): Promise<void> {
@@ -64,12 +56,6 @@ export const notesApi = {
   async reorderNotes(noteOrders: { id: string; order: number }[]): Promise<void> {
     await apiManager.post(`${API_BASE}/notes/reorder`, { items: noteOrders });
   },
-
-  async getMaxOrderInFolder(folderId: string | null): Promise<number> {
-    const notes = await this.getByFolder(folderId);
-    if (notes.length === 0) return 0;
-    return Math.max(...notes.map((n) => n.order ?? 0));
-  },
 };
 
 // Folder operations via API
@@ -79,18 +65,9 @@ export const foldersApi = {
     return response.data;
   },
 
-  async getById(id: string): Promise<Folder | undefined> {
-    try {
-      const response = await apiManager.get<Folder>(`${API_BASE}/folders/${id}`);
-      return response.data;
-    } catch {
-      return undefined;
-    }
-  },
-
-  async getChildren(parentId: string | null): Promise<Folder[]> {
-    const folders = await this.getAll();
-    return folders.filter((folder) => folder.parentId === parentId);
+  async getById(id: string): Promise<Folder> {
+    const response = await apiManager.get<Folder>(`${API_BASE}/folders/${id}`);
+    return response.data;
   },
 
   async create(folder: Omit<Folder, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<string> {
@@ -102,8 +79,9 @@ export const foldersApi = {
     return response.data.id;
   },
 
-  async update(id: string, updates: Partial<Folder>): Promise<void> {
-    await apiManager.put(`${API_BASE}/folders/${id}`, updates);
+  async update(id: string, updates: Partial<Folder>): Promise<Folder> {
+    const response = await apiManager.put<Folder>(`${API_BASE}/folders/${id}`, updates);
+    return response.data;
   },
 
   async delete(id: string): Promise<void> {
@@ -118,13 +96,9 @@ export const tagsApi = {
     return response.data;
   },
 
-  async getById(id: string): Promise<Tag | undefined> {
-    try {
-      const response = await apiManager.get<Tag>(`${API_BASE}/tags/${id}`);
-      return response.data;
-    } catch {
-      return undefined;
-    }
+  async getById(id: string): Promise<Tag> {
+    const response = await apiManager.get<Tag>(`${API_BASE}/tags/${id}`);
+    return response.data;
   },
 
   async create(tag: Omit<Tag, 'id'>): Promise<string> {
@@ -135,8 +109,9 @@ export const tagsApi = {
     return response.data.id;
   },
 
-  async update(id: string, updates: Partial<Tag>): Promise<void> {
-    await apiManager.put(`${API_BASE}/tags/${id}`, updates);
+  async update(id: string, updates: Partial<Tag>): Promise<Tag> {
+    const response = await apiManager.put<Tag>(`${API_BASE}/tags/${id}`, updates);
+    return response.data;
   },
 
   async delete(id: string): Promise<void> {

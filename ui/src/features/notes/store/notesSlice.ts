@@ -44,15 +44,20 @@ export const loadNotes = createAsyncThunk("notes/loadNotes", async () => {
 
 export const createNote = createAsyncThunk(
   "notes/createNote",
-  async (data: { title?: string; folderId?: string | null }, { dispatch }) => {
+  async (data: { title?: string; folderId?: string | null }, { dispatch, getState }) => {
     try {
+      // Compute max order from Redux state instead of fetching from API
+      const state = getState() as { notes: NotesState };
+      const folderId = data.folderId ?? null;
+      const maxOrder = state.notes.notes
+        .filter((n) => n.folderId === folderId && !n.isDeleted)
+        .reduce((max, n) => Math.max(max, n.order ?? 0), 0);
+
       const now = Date.now();
-      // Get the max order in the folder and add 1
-      const maxOrder = await notesApi.getMaxOrderInFolder(data.folderId ?? null);
       const noteData = {
         title: data.title || "Untitled",
         content: "",
-        folderId: data.folderId ?? null,
+        folderId,
         tags: [] as string[],
         isPinned: false,
         isDeleted: false,
@@ -77,8 +82,8 @@ export const updateNote = createAsyncThunk(
   "notes/updateNote",
   async ({ id, updates }: { id: string; updates: Partial<Note> }, { dispatch }) => {
     try {
-      await notesApi.update(id, updates);
-      const updatedNote = await notesApi.getById(id);
+      // API PUT returns the updated entity — no need for a separate GET
+      const updatedNote = await notesApi.update(id, updates);
       return updatedNote;
     } catch (error) {
       dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.SaveError"))));
@@ -277,13 +282,10 @@ export const selectFilteredNotes = createSelector(
       if (filter.isPinned !== null && note.isPinned !== filter.isPinned)
         return false;
 
-      // Filter by search query
+      // Filter by search query (title only — content search is delegated to server via SearchDialog)
       if (filter.searchQuery) {
         const query = filter.searchQuery.toLowerCase();
-        if (
-          !note.title.toLowerCase().includes(query) &&
-          !note.content.toLowerCase().includes(query)
-        ) {
+        if (!note.title.toLowerCase().includes(query)) {
           return false;
         }
       }
@@ -322,6 +324,22 @@ export const selectFilteredNotes = createSelector(
 
     return filtered;
   }
+);
+
+// Memoized note count selectors for sidebar
+export const selectActiveNotesCount = createSelector(
+  [selectAllNotes],
+  (notes) => notes.filter((n) => !n.isDeleted).length
+);
+
+export const selectFavoritesCount = createSelector(
+  [selectAllNotes],
+  (notes) => notes.filter((n) => n.isPinned && !n.isDeleted).length
+);
+
+export const selectTrashCount = createSelector(
+  [selectAllNotes],
+  (notes) => notes.filter((n) => n.isDeleted).length
 );
 
 export const selectNotesLoading = (state: { notes: NotesState }) =>

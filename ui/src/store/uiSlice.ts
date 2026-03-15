@@ -3,6 +3,7 @@
 // ========================================================
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { MOBILE_BREAKPOINT } from '@/config';
 
 export type MobileView = 'sidebar' | 'list' | 'editor';
 
@@ -21,7 +22,7 @@ const NOTELIST_HIDDEN_KEY = 'notelist-hidden';
 
 const initialState: UiState = {
   mobileView: 'list',
-  isMobile: window.innerWidth <= 768,
+  isMobile: window.innerWidth <= MOBILE_BREAKPOINT,
   sidebarCollapsed: localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true',
   noteListCollapsed: localStorage.getItem(NOTELIST_COLLAPSED_KEY) === 'true',
   noteListHidden: localStorage.getItem(NOTELIST_HIDDEN_KEY) === 'true',

@@ -31,8 +31,6 @@ vi.mock('../services/notesApi', () => ({
     restore: vi.fn(),
     search: vi.fn(),
     reorderNotes: vi.fn(),
-    getMaxOrderInFolder: vi.fn(),
-    getByFolder: vi.fn(),
   },
 }));
 
@@ -92,7 +90,6 @@ describe('notesSlice error handling with ProblemDetails', () => {
 
   it('should show server detail when createNote fails with ProblemDetails', async () => {
     const store = createTestStore();
-    mockedApi.getMaxOrderInFolder.mockResolvedValue(0);
     mockedApi.create.mockRejectedValue(
       problemDetails('Note title must not exceed 500 characters.'),
     );
@@ -106,7 +103,6 @@ describe('notesSlice error handling with ProblemDetails', () => {
 
   it('should show fallback when createNote fails without ProblemDetails', async () => {
     const store = createTestStore();
-    mockedApi.getMaxOrderInFolder.mockResolvedValue(0);
     mockedApi.create.mockRejectedValue(new Error('Network Error'));
 
     await store.dispatch(createNote({ title: 'Test' }));
@@ -214,7 +210,6 @@ describe('notesSlice error handling with ProblemDetails', () => {
 
   it('should not show error notification on successful operations', async () => {
     const store = createTestStore();
-    mockedApi.getMaxOrderInFolder.mockResolvedValue(0);
     mockedApi.create.mockResolvedValue('new-id');
 
     await store.dispatch(createNote({ title: 'Success' }));

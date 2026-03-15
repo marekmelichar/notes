@@ -26,7 +26,11 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const NoAccessPage = lazy(() => import('./pages/NoAccessPage'));
 
-const StyledSnackbar = styled(MaterialDesignContent)(() => ({
+const snackbarVariantStyles = {
+  '& .MuiSvgIcon-root': { marginRight: '0.5rem' },
+};
+
+const StyledSnackbar = styled(MaterialDesignContent)(({ theme }) => ({
   '&.notistack-MuiContent': {
     display: 'flex',
     alignItems: 'center',
@@ -35,28 +39,28 @@ const StyledSnackbar = styled(MaterialDesignContent)(() => ({
     boxShadow: 'none !important',
   },
   '&.notistack-MuiContent-success': {
-    backgroundColor: '#2A4631',
-    color: '#94D1A5',
-    '& .MuiButtonBase-root': { color: '#94D1A5' },
-    '& .MuiSvgIcon-root': { marginRight: '0.5rem' },
+    backgroundColor: theme.palette.success.dark,
+    color: theme.palette.success.light,
+    '& .MuiButtonBase-root': { color: theme.palette.success.light },
+    ...snackbarVariantStyles,
   },
   '&.notistack-MuiContent-error': {
-    backgroundColor: '#462D2D',
-    color: '#FF5977',
-    '& .MuiButtonBase-root': { color: '#FF5977' },
-    '& .MuiSvgIcon-root': { marginRight: '0.5rem' },
+    backgroundColor: theme.palette.error.dark,
+    color: theme.palette.error.light,
+    '& .MuiButtonBase-root': { color: theme.palette.error.light },
+    ...snackbarVariantStyles,
   },
   '&.notistack-MuiContent-info': {
-    backgroundColor: '#1C4586',
-    color: '#C9DAF8',
-    '& .MuiButtonBase-root': { color: '#C9DAF8' },
-    '& .MuiSvgIcon-root': { marginRight: '0.5rem' },
+    backgroundColor: theme.palette.info.dark,
+    color: theme.palette.info.light,
+    '& .MuiButtonBase-root': { color: theme.palette.info.light },
+    ...snackbarVariantStyles,
   },
   '&.notistack-MuiContent-warning': {
-    backgroundColor: '#654D01',
-    color: '#FFD966',
-    '& .MuiButtonBase-root': { color: '#FFD966' },
-    '& .MuiSvgIcon-root': { marginRight: '0.5rem' },
+    backgroundColor: theme.palette.warning.dark,
+    color: theme.palette.warning.light,
+    '& .MuiButtonBase-root': { color: theme.palette.warning.light },
+    ...snackbarVariantStyles,
   },
 }));
 

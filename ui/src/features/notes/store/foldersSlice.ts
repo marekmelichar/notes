@@ -50,8 +50,7 @@ export const updateFolder = createAsyncThunk(
   'folders/updateFolder',
   async ({ id, updates }: { id: string; updates: Partial<Folder> }, { dispatch }) => {
     try {
-      await foldersApi.update(id, updates);
-      const folder = await foldersApi.getById(id);
+      const folder = await foldersApi.update(id, updates);
       dispatch(showSuccess('Folder updated'));
       return folder;
     } catch (error) {
@@ -155,11 +154,16 @@ export const selectRootFolders = createSelector(
   (folders) => folders.filter((f) => f.parentId === null).sort((a, b) => a.order - b.order)
 );
 
-// Memoized selector factory for child folders
+// Memoized selector factory for child folders (bounded cache)
 type ChildFoldersSelector = (state: { folders: FoldersState }) => Folder[];
+const SELECTOR_CACHE_MAX = 100;
 const childFoldersCache = new Map<string, ChildFoldersSelector>();
 export const selectChildFolders = (parentId: string): ChildFoldersSelector => {
   if (!childFoldersCache.has(parentId)) {
+    if (childFoldersCache.size >= SELECTOR_CACHE_MAX) {
+      const firstKey = childFoldersCache.keys().next().value;
+      if (firstKey !== undefined) childFoldersCache.delete(firstKey);
+    }
     childFoldersCache.set(
       parentId,
       createSelector(

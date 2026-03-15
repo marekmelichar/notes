@@ -52,6 +52,9 @@ import {
   resetFilter,
   selectNotesFilter,
   selectAllNotes,
+  selectActiveNotesCount,
+  selectFavoritesCount,
+  selectTrashCount,
   updateNote,
   reorderNotes,
 } from "../../store/notesSlice";
@@ -90,6 +93,9 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const dispatch = useAppDispatch();
   const filter = useAppSelector(selectNotesFilter);
   const notes = useAppSelector(selectAllNotes);
+  const allNotesCount = useAppSelector(selectActiveNotesCount);
+  const favoritesCount = useAppSelector(selectFavoritesCount);
+  const trashCount = useAppSelector(selectTrashCount);
   const allFolders = useAppSelector(selectAllFolders);
   const rootFolders = useAppSelector(selectRootFolders);
   const expandedIds = useAppSelector(selectExpandedFolderIds);
@@ -365,10 +371,6 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
       }
     }
   };
-
-  const allNotesCount = notes.filter((n) => !n.isDeleted).length;
-  const favoritesCount = notes.filter((n) => n.isPinned && !n.isDeleted).length;
-  const trashCount = notes.filter((n) => n.isDeleted).length;
 
   const showNoteListIfHidden = () => {
     if (noteListHidden) dispatch(setNoteListHidden(false));
