@@ -1,15 +1,17 @@
-import { memo, forwardRef, useCallback, useImperativeHandle, useRef, type ComponentProps } from 'react';
+import { lazy, Suspense, memo, forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { EditorContent } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
-import Markdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { useFileUpload, isImageFile, FILE_ACCEPT } from './useFileUpload';
 import { useEditorExport, type ExportFormat, type ExportResult } from './useEditorExport';
 import { useTiptapEditor } from './useTiptapEditor';
 import { TiptapToolbar } from './TiptapToolbar';
 import styles from './index.module.css';
+
+const MarkdownPreview = lazy(() =>
+  import('./MarkdownPreview').then((m) => ({ default: m.MarkdownPreview })),
+);
 
 export type { ExportFormat, ExportResult } from './useEditorExport';
 
@@ -31,19 +33,6 @@ interface TiptapEditorProps {
   viewMode: 'editor' | 'markdown';
   scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
-
-const DANGEROUS_PROTOCOL = /^(javascript|data|vbscript):/i;
-
-const markdownComponents: ComponentProps<typeof Markdown>['components'] = {
-  a: ({ children, href, ...props }) => {
-    const safeHref = href && DANGEROUS_PROTOCOL.test(href.trim()) ? undefined : href;
-    return (
-      <a href={safeHref} target="_blank" rel="noopener noreferrer" {...props}>
-        {children}
-      </a>
-    );
-  },
-};
 
 const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
   ({ initialContent, noteId, onChange, viewMode, scrollRef }, ref) => {
@@ -148,11 +137,9 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               />
             </>
           ) : (
-            <div className={styles.markdownPreview}>
-              <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                {markdownContent}
-              </Markdown>
-            </div>
+            <Suspense>
+              <MarkdownPreview content={markdownContent} />
+            </Suspense>
           )}
         </Box>
       </>

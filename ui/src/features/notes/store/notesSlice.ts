@@ -71,12 +71,24 @@ export const loadNotes = createAsyncThunk(
   async (_, { getState }) => {
     const { notes: notesState } = getState() as { notes: NotesState };
     return await notesApi.getList(buildListParams(notesState));
-  }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { notes } = getState() as { notes: NotesState };
+      return !notes.isLoading;
+    },
+  },
 );
 
 export const loadNoteDetail = createAsyncThunk(
   "notes/loadNoteDetail",
   async (id: string) => await notesApi.getById(id),
+  {
+    condition: (id, { getState }) => {
+      const { notes } = getState() as { notes: NotesState };
+      return !notes.noteDetails[id];
+    },
+  },
 );
 
 export const createNote = createAsyncThunk(

@@ -15,9 +15,18 @@ const initialState: FoldersState = {
 };
 
 // Async thunks
-export const loadFolders = createAsyncThunk('folders/loadFolders', async () => {
-  return await foldersApi.getAll();
-});
+export const loadFolders = createAsyncThunk(
+  'folders/loadFolders',
+  async () => {
+    return await foldersApi.getAll();
+  },
+  {
+    condition: (_, { getState }) => {
+      const { folders } = getState() as { folders: FoldersState };
+      return !folders.isLoading;
+    },
+  },
+);
 
 export const createFolder = createAsyncThunk(
   'folders/createFolder',

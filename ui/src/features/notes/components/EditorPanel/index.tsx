@@ -1,5 +1,5 @@
 import { lazy, Suspense, useRef, useEffect, useCallback, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Skeleton } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import { useAppDispatch, useAppSelector } from '@/store';
@@ -14,6 +14,17 @@ export interface EditorSaveHandle {
 
 const SingleNoteEditor = lazy(() =>
   import('../NoteEditor/SingleNoteEditor').then((m) => ({ default: m.SingleNoteEditor })),
+);
+
+const EditorSkeleton = () => (
+  <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Skeleton variant="text" width="40%" height={36} />
+    <Skeleton variant="rectangular" height={36} />
+    <Skeleton variant="text" width="90%" />
+    <Skeleton variant="text" width="75%" />
+    <Skeleton variant="text" width="85%" />
+    <Skeleton variant="text" width="60%" />
+  </Box>
 );
 
 export const EditorPanel = () => {
@@ -72,7 +83,7 @@ export const EditorPanel = () => {
     <Box className={styles.panel}>
       <EditorTabs />
       <Box className={styles.editorsContainer}>
-        <Suspense>
+        <Suspense fallback={<EditorSkeleton />}>
           {readyTabId && noteDetail && (
             <SingleNoteEditor
               key={readyTabId}
