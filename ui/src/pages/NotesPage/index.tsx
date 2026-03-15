@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed, openTab, selectActiveTabId, selectIsMobile, selectMobileView, selectSidebarCollapsed, selectNoteListCollapsed, selectNoteListHidden } from '@/store';
@@ -6,6 +6,8 @@ import { loadNotes, selectAllNotes } from '@/features/notes/store/notesSlice';
 import { loadFolders } from '@/features/notes/store/foldersSlice';
 import { loadTags } from '@/features/notes/store/tagsSlice';
 import { MOBILE_BREAKPOINT, MEDIUM_BREAKPOINT } from '@/config';
+import { useResizablePanel } from '@/hooks';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { NotesSidebar } from '@/features/notes/components/NotesSidebar';
 import { NoteList } from '@/features/notes/components/NoteList';
 import { EditorPanel } from '@/features/notes/components/EditorPanel';
@@ -13,16 +15,8 @@ import styles from './index.module.css';
 
 const DEFAULT_TITLE = 'notes';
 
-const SIDEBAR_MIN_WIDTH = 180;
-const SIDEBAR_MAX_WIDTH = 800;
-const SIDEBAR_DEFAULT_WIDTH = 240;
 const SIDEBAR_COLLAPSED_WIDTH = 60;
-const NOTELIST_MIN_WIDTH = 200;
-const NOTELIST_MAX_WIDTH = 600;
-const NOTELIST_DEFAULT_WIDTH = 350;
 const NOTELIST_COLLAPSED_WIDTH = 60;
-const SIDEBAR_STORAGE_KEY = 'notes-sidebar-width';
-const NOTELIST_STORAGE_KEY = 'notes-notelist-width';
 
 const NotesPage = () => {
   const dispatch = useAppDispatch();
@@ -40,8 +34,27 @@ const NotesPage = () => {
     [notes, activeTabId],
   );
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Resizable panels
+  const sidebar = useResizablePanel(containerRef, {
+    storageKey: 'notes-sidebar-width',
+    defaultWidth: 240,
+    minWidth: 180,
+    maxWidth: 800,
+  });
+
+  const effectiveSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebar.width;
+
+  const noteList = useResizablePanel(containerRef, {
+    storageKey: 'notes-notelist-width',
+    defaultWidth: 350,
+    minWidth: 200,
+    maxWidth: 600,
+    offsetLeft: effectiveSidebarWidth,
+  });
+
   // Bidirectional sync: URL ↔ Redux active tab
-  // URL wins on mount/URL change; Redux wins when user selects a tab
   const prevUrlNoteId = useRef(urlNoteId);
   const prevActiveTabId = useRef(activeTabId);
 
@@ -50,10 +63,8 @@ const NotesPage = () => {
     const tabChanged = activeTabId !== prevActiveTabId.current;
 
     if (urlChanged && urlNoteId && urlNoteId !== activeTabId) {
-      // URL changed (browser nav, direct link) → sync to Redux
       dispatch(openTab(urlNoteId));
     } else if (tabChanged) {
-      // Active tab changed in Redux → sync to URL
       if (activeTabId && activeTabId !== urlNoteId) {
         navigate(`/notes/${activeTabId}`, { replace: true });
       } else if (!activeTabId && urlNoteId) {
@@ -65,36 +76,22 @@ const NotesPage = () => {
     prevActiveTabId.current = activeTabId;
   }, [urlNoteId, activeTabId, dispatch, navigate]);
 
-  // Resize state
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    const saved = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    return saved ? parseInt(saved, 10) : SIDEBAR_DEFAULT_WIDTH;
-  });
-  const [noteListWidth, setNoteListWidth] = useState(() => {
-    const saved = localStorage.getItem(NOTELIST_STORAGE_KEY);
-    return saved ? parseInt(saved, 10) : NOTELIST_DEFAULT_WIDTH;
-  });
-
   // Auto-collapse sidebar at medium breakpoint
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      // Auto-collapse when entering medium breakpoint, auto-expand when leaving
       if (width <= MEDIUM_BREAKPOINT && width > MOBILE_BREAKPOINT && !sidebarCollapsed) {
         dispatch(setSidebarCollapsed(true));
       }
     };
 
-    // Check on mount
-    if (window.innerWidth <= MEDIUM_BREAKPOINT && window.innerWidth > 768) {
+    if (window.innerWidth <= MEDIUM_BREAKPOINT && window.innerWidth > MOBILE_BREAKPOINT) {
       dispatch(setSidebarCollapsed(true));
     }
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [dispatch, sidebarCollapsed]);
-  const [resizingPanel, setResizingPanel] = useState<'sidebar' | 'notelist' | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Load data on mount
   useEffect(() => {
@@ -126,68 +123,13 @@ const NotesPage = () => {
     prevMobileTabId.current = activeTabId;
   }, [dispatch, isMobile, activeTabId, mobileView]);
 
-  // Resize handlers
-  const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setResizingPanel('sidebar');
-  }, []);
-
-  const handleNoteListResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setResizingPanel('notelist');
-  }, []);
-
-  const handleResizeMove = useCallback((e: MouseEvent) => {
-    if (!resizingPanel || !containerRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - containerRect.left;
-
-    if (resizingPanel === 'sidebar') {
-      const clampedWidth = Math.min(Math.max(x, SIDEBAR_MIN_WIDTH), SIDEBAR_MAX_WIDTH);
-      setSidebarWidth(clampedWidth);
-    } else {
-      const currentSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth;
-      const newWidth = x - currentSidebarWidth;
-      const clampedWidth = Math.min(Math.max(newWidth, NOTELIST_MIN_WIDTH), NOTELIST_MAX_WIDTH);
-      setNoteListWidth(clampedWidth);
-    }
-  }, [resizingPanel, sidebarCollapsed, sidebarWidth]);
-
-  const handleResizeEnd = useCallback(() => {
-    if (resizingPanel === 'sidebar') {
-      localStorage.setItem(SIDEBAR_STORAGE_KEY, sidebarWidth.toString());
-    } else if (resizingPanel === 'notelist') {
-      localStorage.setItem(NOTELIST_STORAGE_KEY, noteListWidth.toString());
-    }
-    setResizingPanel(null);
-  }, [resizingPanel, sidebarWidth, noteListWidth]);
-
-  // Attach global mouse events for resize
-  useEffect(() => {
-    if (resizingPanel) {
-      document.addEventListener('mousemove', handleResizeMove);
-      document.addEventListener('mouseup', handleResizeEnd);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleResizeMove);
-      document.removeEventListener('mouseup', handleResizeEnd);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [resizingPanel, handleResizeMove, handleResizeEnd]);
-
   // Helper to get panel visibility class
   const getPanelClass = (panel: 'sidebar' | 'list' | 'editor') => {
     if (!isMobile) return '';
     return mobileView === panel ? styles.mobileVisible : styles.mobileHidden;
   };
 
-  const effectiveSidebarWidth = sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth;
-  const effectiveNoteListWidth = noteListCollapsed ? NOTELIST_COLLAPSED_WIDTH : noteListWidth;
+  const effectiveNoteListWidth = noteListCollapsed ? NOTELIST_COLLAPSED_WIDTH : noteList.width;
   const gridStyle = isMobile
     ? undefined
     : noteListHidden
@@ -196,31 +138,37 @@ const NotesPage = () => {
 
   return (
     <Box ref={containerRef} className={styles.container} style={gridStyle}>
-      <Box className={`${styles.sidebar} ${getPanelClass('sidebar')} ${sidebarCollapsed && !isMobile ? styles.sidebarCollapsed : ''}`}>
-        <NotesSidebar collapsed={sidebarCollapsed && !isMobile} />
-      </Box>
+      <ErrorBoundary>
+        <Box className={`${styles.sidebar} ${getPanelClass('sidebar')} ${sidebarCollapsed && !isMobile ? styles.sidebarCollapsed : ''}`}>
+          <NotesSidebar collapsed={sidebarCollapsed && !isMobile} />
+        </Box>
+      </ErrorBoundary>
       {!isMobile && !sidebarCollapsed && (
         <Box
-          className={`${styles.resizeHandle} ${resizingPanel === 'sidebar' ? styles.resizeHandleActive : ''}`}
+          className={`${styles.resizeHandle} ${sidebar.isResizing ? styles.resizeHandleActive : ''}`}
           style={{ left: effectiveSidebarWidth - 2 }}
-          onMouseDown={handleSidebarResizeStart}
+          onMouseDown={sidebar.onResizeStart}
         />
       )}
       {!(noteListHidden && !isMobile) && (
-        <Box className={`${styles.noteList} ${getPanelClass('list')} ${noteListCollapsed ? styles.noteListCollapsed : ''}`}>
-          <NoteList collapsed={noteListCollapsed} />
-        </Box>
+        <ErrorBoundary>
+          <Box className={`${styles.noteList} ${getPanelClass('list')} ${noteListCollapsed ? styles.noteListCollapsed : ''}`}>
+            <NoteList collapsed={noteListCollapsed} />
+          </Box>
+        </ErrorBoundary>
       )}
       {!isMobile && !noteListCollapsed && !noteListHidden && (
         <Box
-          className={`${styles.resizeHandle} ${resizingPanel === 'notelist' ? styles.resizeHandleActive : ''}`}
+          className={`${styles.resizeHandle} ${noteList.isResizing ? styles.resizeHandleActive : ''}`}
           style={{ left: effectiveSidebarWidth + effectiveNoteListWidth - 2 }}
-          onMouseDown={handleNoteListResizeStart}
+          onMouseDown={noteList.onResizeStart}
         />
       )}
-      <Box className={`${styles.editor} ${getPanelClass('editor')}`}>
-        <EditorPanel />
-      </Box>
+      <ErrorBoundary>
+        <Box className={`${styles.editor} ${getPanelClass('editor')}`}>
+          <EditorPanel />
+        </Box>
+      </ErrorBoundary>
     </Box>
   );
 };

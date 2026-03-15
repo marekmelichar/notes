@@ -29,4 +29,6 @@ i18n
     },
   });
 
+export type { TranslationKey } from './keys';
+
 export default i18n;

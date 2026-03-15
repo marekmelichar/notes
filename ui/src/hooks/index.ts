@@ -5,3 +5,4 @@ export * from './useAppVersion';
 export * from './useAuth';
 export * from './useAutoSave';
 export * from './useScrollDirection';
+export * from './useResizablePanel';
