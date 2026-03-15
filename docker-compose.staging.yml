@@ -1,0 +1,79 @@
+name: nettio-staging
+
+services:
+  # PostgreSQL Database (staging)
+  postgres-staging:
+    image: postgres:16
+    container_name: nettio-staging-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${STAGING_POSTGRES_PASSWORD:?STAGING_POSTGRES_PASSWORD required}
+    volumes:
+      - staging_postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Keycloak Authentication (staging)
+  keycloak-staging:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: nettio-staging-auth
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${STAGING_KEYCLOAK_ADMIN_PASSWORD:?STAGING_KEYCLOAK_ADMIN_PASSWORD required}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-staging:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
+      KC_DB_PASSWORD: ${STAGING_POSTGRES_PASSWORD:?STAGING_POSTGRES_PASSWORD required}
+      KC_HOSTNAME: https://staging.notes.nettio.eu
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: "true"
+    command: start --import-realm
+    volumes:
+      - ./notes-prod-realm.json:/opt/keycloak/data/import/notes-realm.json:ro
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # .NET API (staging)
+  api-staging:
+    image: ghcr.io/${GITHUB_REPOSITORY:-local}/api:staging
+    container_name: nettio-staging-api
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres-staging;Database=notes;Username=${POSTGRES_USER:-postgres};Password=${STAGING_POSTGRES_PASSWORD}"
+      Keycloak__Authority: "http://keycloak-staging:8080/realms/notes"
+      Keycloak__Issuer: "https://staging.notes.nettio.eu/realms/notes"
+      ASPNETCORE_ENVIRONMENT: Staging
+      FileStorage__UploadDirectory: "/app/uploads"
+    volumes:
+      - staging_uploads_data:/app/uploads
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      keycloak-staging:
+        condition: service_started
+    restart: unless-stopped
+
+  # Frontend (staging)
+  frontend-staging:
+    image: ghcr.io/${GITHUB_REPOSITORY:-local}/frontend:staging
+    container_name: nettio-staging-frontend
+    environment:
+      API_URL: "https://staging.notes.nettio.eu"
+      KEYCLOAK_URL: "https://staging.notes.nettio.eu"
+      KEYCLOAK_REALM: "notes"
+      KEYCLOAK_CLIENT_ID: "notes-frontend"
+      MOCK_MODE: "false"
+    depends_on:
+      - api-staging
+      - keycloak-staging
+    restart: unless-stopped
+
+volumes:
+  staging_postgres_data:
+  staging_uploads_data:
