@@ -36,16 +36,6 @@ export interface SharedUser {
   permission: "view" | "edit";
 }
 
-export interface SyncQueueItem {
-  id: string;
-  type: "note" | "folder" | "tag";
-  action: "create" | "update" | "delete";
-  entityId: string;
-  data: unknown;
-  createdAt: number;
-  retries: number;
-}
-
 export type NotesSortBy = "createdAt" | "updatedAt" | "title";
 export type NotesSortOrder = "asc" | "desc";
 export type NotesViewMode = "grid" | "list";
@@ -82,10 +72,3 @@ export interface TagsState {
   error: string | null;
 }
 
-export interface SyncState {
-  isSyncing: boolean;
-  lastSyncedAt: number | null;
-  pendingChanges: number;
-  isOnline: boolean;
-  error: string | null;
-}

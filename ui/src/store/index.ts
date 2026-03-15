@@ -11,7 +11,6 @@ import { tabsSlice } from './tabsSlice';
 import { notesSlice } from '@/features/notes/store/notesSlice';
 import { foldersSlice } from '@/features/notes/store/foldersSlice';
 import { tagsSlice } from '@/features/notes/store/tagsSlice';
-import { syncSlice } from '@/features/notes/store/syncSlice';
 
 // Export slices
 export * from './authSlice';
@@ -31,7 +30,6 @@ export const store = configureStore({
     notes: notesSlice.reducer,
     folders: foldersSlice.reducer,
     tags: tagsSlice.reducer,
-    sync: syncSlice.reducer,
   },
 });
 

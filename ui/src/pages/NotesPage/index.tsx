@@ -5,7 +5,6 @@ import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed, ope
 import { loadNotes, selectAllNotes } from '@/features/notes/store/notesSlice';
 import { loadFolders } from '@/features/notes/store/foldersSlice';
 import { loadTags } from '@/features/notes/store/tagsSlice';
-import { checkPendingChanges, setOnlineStatus } from '@/features/notes/store/syncSlice';
 import { NotesSidebar } from '@/features/notes/components/NotesSidebar';
 import { NoteList } from '@/features/notes/components/NoteList';
 import { EditorPanel } from '@/features/notes/components/EditorPanel';
@@ -99,21 +98,6 @@ const NotesPage = () => {
     dispatch(loadNotes());
     dispatch(loadFolders());
     dispatch(loadTags());
-    dispatch(checkPendingChanges());
-  }, [dispatch]);
-
-  // Track online status
-  useEffect(() => {
-    const handleOnline = () => dispatch(setOnlineStatus(true));
-    const handleOffline = () => dispatch(setOnlineStatus(false));
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
   }, [dispatch]);
 
   // Update page title based on active tab's note
