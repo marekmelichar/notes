@@ -60,11 +60,7 @@ keycloak.onTokenExpired = () => {
     });
 };
 
-const initKeycloakMock = (): Promise<boolean> => {
-  return Promise.resolve(true);
-};
-
-const initKeycloakReal = (): Promise<boolean> => {
+const initKeycloak = (): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     keycloak
       .init({
@@ -88,7 +84,5 @@ const initKeycloakReal = (): Promise<boolean> => {
       });
   });
 };
-
-const initKeycloak = window.MOCK_MODE ? initKeycloakMock : initKeycloakReal;
 
 export { keycloak, initKeycloak, clearScheduledRefresh };

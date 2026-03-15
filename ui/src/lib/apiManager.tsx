@@ -110,12 +110,6 @@ apiManager.interceptors.response.use(
 
     // Handle 401 Unauthorized - attempt silent token refresh
     if (statusCode === 401 && originalRequest && !originalRequest._retry) {
-      // In mock mode, don't attempt refresh - just show error
-      if (window.MOCK_MODE) {
-        showSessionExpiredMessage();
-        return Promise.reject(error);
-      }
-
       // If already refreshing, queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

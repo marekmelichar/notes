@@ -35,17 +35,6 @@ const initialState: IAuthState = {
   accessStatus: 'unknown',
 };
 
-// Mock user for development mode
-const mockUser = {
-  id: 'mock-user-id',
-  username: 'Mock User',
-  email: 'mock@example.com',
-  firstName: 'Mock',
-  lastName: 'User',
-  roles: ['admin'],
-  realmRoles: ['admin'],
-};
-
 // Action dispatched internally when token is refreshed
 export const updateToken = createAction<string>('auth/updateToken');
 
@@ -56,14 +45,6 @@ export const initializeAuth = createAsyncThunk(
     try {
       const authenticated = await initKeycloak();
       if (authenticated) {
-        if (window.MOCK_MODE) {
-          return {
-            authenticated: true,
-            token: 'mock-token',
-            user: mockUser,
-          };
-        }
-
         // Register callback to sync future token refreshes to Redux + localStorage
         setTokenRefreshCallback((token) => {
           setAuthToken(token);
