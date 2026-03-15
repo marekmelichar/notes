@@ -9,8 +9,6 @@ vi.mock('@/lib', async () => {
     getApiErrorMessage,
     apiManager: {},
     getAuthToken: vi.fn(),
-    setAuthToken: vi.fn(),
-    clearAuthToken: vi.fn(),
   };
 });
 
@@ -22,7 +20,7 @@ vi.mock('@/i18n', () => ({
 // Mock the API service
 vi.mock('../services/notesApi', () => ({
   notesApi: {
-    getAll: vi.fn(),
+    getList: vi.fn(),
     getById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
@@ -30,6 +28,7 @@ vi.mock('../services/notesApi', () => ({
     permanentDelete: vi.fn(),
     restore: vi.fn(),
     search: vi.fn(),
+    searchList: vi.fn(),
     reorderNotes: vi.fn(),
   },
 }));
@@ -139,14 +138,14 @@ describe('notesSlice error handling with ProblemDetails', () => {
   it('should show server detail when deleteNote fails with ProblemDetails', async () => {
     const store = createTestStore();
     mockedApi.delete.mockRejectedValue(
-      problemDetails('Cannot delete a shared note.'),
+      problemDetails('Cannot delete a note that no longer exists.'),
     );
 
     await store.dispatch(deleteNote('note-1'));
 
     const errors = getErrorNotifications(store);
     expect(errors).toHaveLength(1);
-    expect(errors[0].message).toBe('Cannot delete a shared note.');
+    expect(errors[0].message).toBe('Cannot delete a note that no longer exists.');
   });
 
   it('should show fallback when deleteNote fails without ProblemDetails', async () => {
@@ -210,7 +209,20 @@ describe('notesSlice error handling with ProblemDetails', () => {
 
   it('should not show error notification on successful operations', async () => {
     const store = createTestStore();
-    mockedApi.create.mockResolvedValue('new-id');
+    mockedApi.create.mockResolvedValue({
+      id: 'new-id',
+      title: 'Success',
+      content: '',
+      folderId: null,
+      tags: [],
+      isPinned: false,
+      isDeleted: false,
+      deletedAt: null,
+      order: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      syncedAt: null,
+    });
 
     await store.dispatch(createNote({ title: 'Success' }));
 

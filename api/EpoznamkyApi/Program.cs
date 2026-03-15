@@ -37,7 +37,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<NoteService>();
 builder.Services.AddScoped<FolderService>();
 builder.Services.AddScoped<TagService>();
-builder.Services.AddScoped<UserService>();
 builder.Services.Configure<FileStorageSettings>(
     builder.Configuration.GetSection("FileStorage"));
 builder.Services.AddScoped<FileService>();
@@ -77,13 +76,6 @@ builder.Services.AddRateLimiter(options =>
             Window = TimeSpan.FromMinutes(1)
         }));
 
-    // Stricter policy for user search: 30/min
-    options.AddPolicy("user-search", context =>
-        RateLimitPartition.GetFixedWindowLimiter($"search:{GetRateLimitKey(context)}", _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 30,
-            Window = TimeSpan.FromMinutes(1)
-        }));
 });
 
 // Configure JWT Authentication with Keycloak
@@ -122,15 +114,15 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 // Configure CORS
+var corsOrigins = isDevelopment
+    ? new[] { "http://localhost:3000", "http://localhost:5173", "https://notes.nettio.eu" }
+    : new[] { "https://notes.nettio.eu" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "https://notes.nettio.eu"
-            )
+        policy.WithOrigins(corsOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -145,9 +137,10 @@ if (!isDevelopment)
 
 var app = builder.Build();
 
-// Apply pending migrations on startup (for development/Docker)
-using (var scope = app.Services.CreateScope())
+// Apply pending migrations on startup in local development.
+if (isDevelopment)
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }

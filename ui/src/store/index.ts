@@ -43,8 +43,8 @@ export const store = configureStore({
 /**
  * Data types
  */
-type RootState = ReturnType<typeof store.getState>;
-type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
 
 // Correctly typed React hooks
 // Use these instead of the original ones from react-redux library!

@@ -85,7 +85,6 @@ export const DroppableFolder = React.memo(({
         isDeleted: false,
         isPinned: null,
         tagIds: [],
-        searchQuery: "",
       })
     );
     if (!isExpanded) {

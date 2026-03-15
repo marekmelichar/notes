@@ -69,6 +69,8 @@
     "WillBeDeleted": "Bude trvale smazáno po 30 dnech v koši",
     "Recent": "Nedávné",
     "Restore": "Obnovit",
+    "MovedToTrash": "Poznámka přesunuta do koše",
+    "PermanentlyDeleted": "Poznámka trvale smazána",
     "NoteRestored": "Poznámka obnovena",
     "CreateError": "Nepodařilo se vytvořit poznámku",
     "SaveError": "Nepodařilo se uložit poznámku",

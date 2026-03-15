@@ -7,7 +7,7 @@ import { useAppDispatch, useAppSelector } from '@/store';
 import { useAutoSave, useScrollDirection } from '@/hooks';
 import { setTabUnsaved } from '@/store/tabsSlice';
 import {
-  selectNoteById,
+  selectNoteDetail,
   updateNote,
   deleteNote,
   restoreNote,
@@ -21,18 +21,21 @@ import {
 } from './TiptapEditor';
 import { EditorHeader } from './EditorHeader';
 import { EditorFooter } from './EditorFooter';
+import { EditorErrorFallback } from './EditorErrorFallback';
 import { migrateContent } from './contentMigration';
+import type { EditorSaveHandle } from '../EditorPanel';
 import styles from './index.module.css';
 
 interface SingleNoteEditorProps {
   noteId: string;
   isActive: boolean;
+  saveRef?: (handle: EditorSaveHandle | null) => void;
 }
 
-export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) => {
+export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditorProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const note = useAppSelector((state) => selectNoteById(state, noteId));
+  const note = useAppSelector((state) => selectNoteDetail(state, noteId));
   const folders = useAppSelector(selectAllFolders);
   const isMobile = useMediaQuery('(max-width: 48rem)');
   const [title, setTitle] = useState(note?.title || '');
@@ -111,6 +114,20 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   });
   markCleanRef.current = markClean;
 
+  // Expose imperative save handle to parent (EditorPanel)
+  useEffect(() => {
+    if (saveRef) {
+      saveRef({
+        saveNow: async () => {
+          if (hasUnsavedChangesRef.current) {
+            await performSave();
+          }
+        },
+      });
+      return () => saveRef(null);
+    }
+  }, [saveRef, performSave, hasUnsavedChangesRef]);
+
   // Update title when note changes externally
   useEffect(() => {
     if (note) {
@@ -171,8 +188,6 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   }, [saveNow, isActive]);
 
   // Warn about unsaved changes on tab close; best-effort save on unmount.
-  // Note: flush() fires an async save that may not complete before teardown.
-  // The beforeunload warning is the primary protection against data loss.
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChangesRef.current) {
@@ -202,9 +217,8 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
   const handleRestore = useCallback(async () => {
     if (note) {
       await dispatch(restoreNote(note.id));
-      dispatch(showSuccess(t('Notes.NoteRestored')));
     }
-  }, [note, dispatch, t]);
+  }, [note, dispatch]);
 
   const handleFolderChange = useCallback(
     (folderId: string | null) => {
@@ -276,17 +290,9 @@ export const SingleNoteEditor = ({ noteId, isActive }: SingleNoteEditorProps) =>
         onExport={handleExport}
       />
 
-      {/* Key forces remount when note changes */}
       <ErrorBoundary
         key={note.id}
-        fallback={
-          <TiptapEditor
-            initialContent={undefined}
-            noteId={note.id}
-            onChange={handleEditorChange}
-            viewMode={viewMode}
-          />
-        }
+        fallback={<EditorErrorFallback />}
       >
         <TiptapEditor
           ref={editorRef}

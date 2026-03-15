@@ -9,8 +9,6 @@ vi.mock('@/lib', async () => {
     getApiErrorMessage,
     apiManager: {},
     getAuthToken: vi.fn(),
-    setAuthToken: vi.fn(),
-    clearAuthToken: vi.fn(),
   };
 });
 
@@ -75,7 +73,6 @@ describe('foldersSlice error handling with ProblemDetails', () => {
 
   it('should show server detail when createFolder fails with ProblemDetails', async () => {
     const store = createTestStore();
-    mockedApi.getAll.mockResolvedValue([]);
     mockedApi.create.mockRejectedValue(
       problemDetails('Folder name must not be empty.'),
     );
@@ -89,7 +86,6 @@ describe('foldersSlice error handling with ProblemDetails', () => {
 
   it('should show fallback when createFolder fails without ProblemDetails', async () => {
     const store = createTestStore();
-    mockedApi.getAll.mockResolvedValue([]);
     mockedApi.create.mockRejectedValue(new Error('Network Error'));
 
     await store.dispatch(createFolder({ name: 'Test' }));
@@ -155,8 +151,15 @@ describe('foldersSlice error handling with ProblemDetails', () => {
 
   it('should not show error on successful folder creation', async () => {
     const store = createTestStore();
-    mockedApi.getAll.mockResolvedValue([]);
-    mockedApi.create.mockResolvedValue('new-folder-id');
+    mockedApi.create.mockResolvedValue({
+      id: 'new-folder-id',
+      name: 'New Folder',
+      parentId: null,
+      color: '#6366f1',
+      order: 0,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
 
     await store.dispatch(createFolder({ name: 'New Folder' }));
 

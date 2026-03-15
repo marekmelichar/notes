@@ -4,6 +4,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { closeSnackbar, MaterialDesignContent, SnackbarProvider } from 'notistack';
 import { ErrorBoundary, LoadingFallback, NotificationListener } from './components';
+import { SessionExpiredBanner } from './components/SessionExpiredBanner';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import { ROUTE_HOME, ROUTE_NO_ACCESS, SNACKBARS_AUTOHIDE_DURATION } from './config';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
@@ -131,6 +132,7 @@ export const App = () => {
         }}
       >
         <NotificationListener />
+        <SessionExpiredBanner />
         <ErrorBoundary>
           <Suspense fallback={<LoadingFallback />}>
             <RouterProvider router={router} />

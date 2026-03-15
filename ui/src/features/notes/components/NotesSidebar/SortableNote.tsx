@@ -6,11 +6,11 @@ import { CSS } from "@dnd-kit/utilities";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useAppDispatch, useAppSelector, openTab, selectActiveTabId, selectIsMobile, selectNoteListHidden } from "@/store";
-import type { Note } from "../../types";
+import type { NoteListItem } from "../../types";
 import styles from "./index.module.css";
 
 interface SortableNoteProps {
-  note: Note;
+  note: NoteListItem;
   level: number;
 }
 

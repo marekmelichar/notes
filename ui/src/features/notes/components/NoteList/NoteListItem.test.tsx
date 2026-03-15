@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NoteListItem } from './NoteListItem';
-import type { Note, Tag } from '../../types';
+import type { NoteListItem as NoteListItemType, Tag } from '../../types';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string, opts?: Record<string, unknown>) => {
@@ -11,20 +11,17 @@ vi.mock('react-i18next', () => ({
   }}),
 }));
 
-const makeNote = (overrides: Partial<Note> = {}): Note => ({
+const makeNote = (overrides: Partial<NoteListItemType> = {}): NoteListItemType => ({
   id: 'note-1',
   title: 'Test Note',
-  content: '',
   folderId: null,
   tags: [],
   isPinned: false,
   isDeleted: false,
   deletedAt: null,
-  sharedWith: [],
   order: 1,
   createdAt: Date.now() - 60000,
   updatedAt: Date.now(),
-  syncedAt: null,
   ...overrides,
 });
 
@@ -50,31 +47,6 @@ describe('NoteListItem', () => {
   it('should render "Untitled" for notes without title', () => {
     render(<NoteListItem {...defaultProps} note={makeNote({ title: '' })} />);
     expect(screen.getByText('Common.Untitled')).toBeInTheDocument();
-  });
-
-  it('should render content preview from JSON content', () => {
-    const content = JSON.stringify({
-      type: 'doc',
-      content: [{ type: 'text', text: 'Hello world preview text' }],
-    });
-    render(<NoteListItem {...defaultProps} note={makeNote({ content })} />);
-    expect(screen.getByText('Hello world preview text')).toBeInTheDocument();
-  });
-
-  it('should render content preview from HTML fallback', () => {
-    render(<NoteListItem {...defaultProps} note={makeNote({ content: '<p>Some HTML</p>' })} />);
-    expect(screen.getByText('Some HTML')).toBeInTheDocument();
-  });
-
-  it('should truncate long content previews to 80 chars', () => {
-    const longText = 'A'.repeat(200);
-    const content = JSON.stringify({
-      type: 'doc',
-      content: [{ type: 'text', text: longText }],
-    });
-    render(<NoteListItem {...defaultProps} note={makeNote({ content })} />);
-    const preview = screen.getByText('A'.repeat(80));
-    expect(preview.textContent).toHaveLength(80);
   });
 
   it('should show pin icon for pinned notes', () => {

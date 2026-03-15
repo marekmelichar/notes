@@ -26,7 +26,6 @@ const makeNote = (overrides: Partial<Note> = {}): Note => ({
   isPinned: false,
   isDeleted: false,
   deletedAt: null,
-  sharedWith: [],
   order: 1,
   createdAt: Date.now(),
   updatedAt: Date.now(),

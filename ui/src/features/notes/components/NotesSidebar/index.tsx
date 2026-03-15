@@ -46,7 +46,7 @@ import {
   expandFolder,
   updateFolder,
 } from '../../store/foldersSlice';
-import type { Folder, Note } from '../../types';
+import type { Folder, Note, NotesFilter } from '../../types';
 import { QuickFilters } from './QuickFilters';
 import { RecentNotes } from './RecentNotes';
 import { FoldersSection } from './FoldersSection';
@@ -215,24 +215,14 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
     if (noteListHidden) dispatch(setNoteListHidden(false));
   };
 
-  const handleAllNotes = () => {
-    dispatch(resetFilter());
+  const makeFilterHandler = (filter: Partial<NotesFilter> | null) => () => {
+    dispatch(filter === null ? resetFilter() : setFilter(filter));
     showNoteListIfHidden();
   };
 
-  const handleFavorites = () => {
-    dispatch(
-      setFilter({ isPinned: true, isDeleted: false, folderId: null, tagIds: [], searchQuery: '' }),
-    );
-    showNoteListIfHidden();
-  };
-
-  const handleTrash = () => {
-    dispatch(
-      setFilter({ isDeleted: true, isPinned: null, folderId: null, tagIds: [], searchQuery: '' }),
-    );
-    showNoteListIfHidden();
-  };
+  const handleAllNotes = makeFilterHandler(null);
+  const handleFavorites = makeFilterHandler({ isPinned: true, isDeleted: false, folderId: null, tagIds: [] });
+  const handleTrash = makeFilterHandler({ isDeleted: true, isPinned: null, folderId: null, tagIds: [] });
 
   const handleToggleCollapse = () => {
     dispatch(toggleSidebarCollapsed());

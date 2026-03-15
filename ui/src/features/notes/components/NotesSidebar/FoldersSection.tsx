@@ -30,14 +30,14 @@ import {
   setExpandedFolders,
   createFolder,
 } from '../../store/foldersSlice';
-import type { Note } from '../../types';
+import type { NoteListItem } from '../../types';
 import { DroppableFolder } from './DroppableFolder';
 import { SortableNote } from './SortableNote';
 import { UnfiledDropZone } from './UnfiledDropZone';
 import styles from './index.module.css';
 
 interface FoldersSectionProps {
-  unfiledNotes: Note[];
+  unfiledNotes: NoteListItem[];
   unfiledNoteIds: string[];
   skipAnimationRef: React.RefObject<boolean>;
 }

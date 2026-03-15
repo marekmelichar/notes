@@ -4,11 +4,13 @@ import {
   createSelector,
   type PayloadAction,
 } from "@reduxjs/toolkit";
-import { notesApi } from "../services/notesApi";
+import { notesApi, type GetListParams } from "../services/notesApi";
 import { showSuccess, showError } from "@/store/notificationsSlice";
 import { getApiErrorMessage } from "@/lib";
 import i18n from "@/i18n";
-import { updateItemById, removeItemById } from "@/store/reducerUtils";
+import { removeItemById } from "@/store/reducerUtils";
+import { toListItem } from "../types";
+import type { Dispatch, UnknownAction } from "@reduxjs/toolkit";
 import type {
   Note,
   NotesState,
@@ -18,141 +20,128 @@ import type {
   NotesViewMode,
 } from "../types";
 
+interface ThunkApi {
+  dispatch: Dispatch<UnknownAction>;
+}
+
+// Thunk error handling wrapper — eliminates try/catch duplication
+function withApiError<TArg, TResult>(
+  errorKey: string,
+  fn: (arg: TArg, thunkApi: ThunkApi) => Promise<TResult>,
+): (arg: TArg, thunkApi: ThunkApi) => Promise<TResult> {
+  return async (arg, thunkApi) => {
+    try {
+      return await fn(arg, thunkApi);
+    } catch (error) {
+      thunkApi.dispatch(showError(getApiErrorMessage(error, i18n.t(errorKey))));
+      throw error;
+    }
+  };
+}
+
 const initialFilter: NotesFilter = {
   folderId: null,
   tagIds: [],
   isPinned: null,
   isDeleted: false,
-  searchQuery: "",
 };
 
 const initialState: NotesState = {
   notes: [],
+  noteDetails: {},
   filter: initialFilter,
   sortBy: "updatedAt",
   sortOrder: "desc",
   viewMode: "grid",
   isLoading: false,
   isCreating: false,
+  isSearchActive: false,
   error: null,
 };
 
-// Async thunks
-export const loadNotes = createAsyncThunk("notes/loadNotes", async () => {
-  return await notesApi.getAll();
+const buildListParams = (state: NotesState): GetListParams => ({
+  filter: state.filter,
+  sortBy: state.sortBy,
+  sortOrder: state.sortOrder,
 });
+
+// Async thunks
+export const loadNotes = createAsyncThunk(
+  "notes/loadNotes",
+  async (_, { getState }) => {
+    const { notes: notesState } = getState() as { notes: NotesState };
+    return await notesApi.getList(buildListParams(notesState));
+  }
+);
+
+export const loadNoteDetail = createAsyncThunk(
+  "notes/loadNoteDetail",
+  async (id: string) => await notesApi.getById(id),
+);
 
 export const createNote = createAsyncThunk(
   "notes/createNote",
-  async (data: { title?: string; folderId?: string | null }, { dispatch, getState }) => {
-    try {
-      // Compute max order from Redux state instead of fetching from API
-      const state = getState() as { notes: NotesState };
-      const folderId = data.folderId ?? null;
-      const maxOrder = state.notes.notes
-        .filter((n) => n.folderId === folderId && !n.isDeleted)
-        .reduce((max, n) => Math.max(max, n.order ?? 0), 0);
-
-      const now = Date.now();
-      const noteData = {
-        title: data.title || "Untitled",
-        content: "",
-        folderId,
-        tags: [] as string[],
-        isPinned: false,
-        isDeleted: false,
-        deletedAt: null,
-        sharedWith: [],
-        order: maxOrder + 1,
-        createdAt: now,
-        updatedAt: now,
-        syncedAt: null,
-      };
-      // Use the server-generated ID
-      const id = await notesApi.create(noteData);
-      return { ...noteData, id } as Note;
-    } catch (error) {
-      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.CreateError"))));
-      throw error;
-    }
-  }
+  withApiError<{ title?: string; folderId?: string | null }, Note>(
+    "Notes.CreateError",
+    async (data) => notesApi.create({
+      title: data.title || i18n.t("Common.Untitled"),
+      content: "",
+      folderId: data.folderId ?? null,
+      tags: [],
+      isPinned: false,
+    }),
+  ),
 );
 
 export const updateNote = createAsyncThunk(
   "notes/updateNote",
-  async ({ id, updates }: { id: string; updates: Partial<Note> }, { dispatch }) => {
-    try {
-      // API PUT returns the updated entity — no need for a separate GET
-      const updatedNote = await notesApi.update(id, updates);
-      return updatedNote;
-    } catch (error) {
-      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.SaveError"))));
-      throw error;
-    }
-  }
+  withApiError<{ id: string; updates: Partial<Note> }, Note>(
+    "Notes.SaveError",
+    async ({ id, updates }) => notesApi.update(id, updates),
+  ),
 );
 
 export const deleteNote = createAsyncThunk(
   "notes/deleteNote",
-  async (id: string, { dispatch }) => {
-    try {
-      await notesApi.delete(id);
-      dispatch(showSuccess("Note moved to trash"));
-      return id;
-    } catch (error) {
-      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.DeleteError"))));
-      throw error;
-    }
-  }
+  withApiError<string, string>("Notes.DeleteError", async (id, thunkApi) => {
+    await notesApi.delete(id);
+    thunkApi.dispatch(showSuccess(i18n.t("Notes.MovedToTrash")));
+    return id;
+  }),
 );
 
 export const restoreNote = createAsyncThunk(
   "notes/restoreNote",
-  async (id: string, { dispatch }) => {
-    try {
-      await notesApi.restore(id);
-      const note = await notesApi.getById(id);
-      dispatch(showSuccess("Note restored"));
-      return note;
-    } catch (error) {
-      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.RestoreError"))));
-      throw error;
-    }
-  }
+  withApiError<string, Note>("Notes.RestoreError", async (id, thunkApi) => {
+    const note = await notesApi.restore(id);
+    thunkApi.dispatch(showSuccess(i18n.t("Notes.NoteRestored")));
+    return note;
+  }),
 );
 
 export const permanentDeleteNote = createAsyncThunk(
   "notes/permanentDeleteNote",
-  async (id: string, { dispatch }) => {
-    try {
-      await notesApi.permanentDelete(id);
-      dispatch(showSuccess("Note permanently deleted"));
-      return id;
-    } catch (error) {
-      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.DeleteError"))));
-      throw error;
-    }
-  }
+  withApiError<string, string>("Notes.DeleteError", async (id, thunkApi) => {
+    await notesApi.permanentDelete(id);
+    thunkApi.dispatch(showSuccess(i18n.t("Notes.PermanentlyDeleted")));
+    return id;
+  }),
 );
 
 export const searchNotes = createAsyncThunk(
   "notes/searchNotes",
-  async (query: string) => {
-    return await notesApi.search(query);
-  }
+  async (query: string) => await notesApi.searchList(query),
 );
 
 export const reorderNotes = createAsyncThunk(
   "notes/reorderNotes",
-  async (data: { noteOrders: { id: string; order: number }[] }, { dispatch }) => {
-    try {
+  withApiError<{ noteOrders: { id: string; order: number }[] }, { id: string; order: number }[]>(
+    "Notes.SaveError",
+    async (data) => {
       await notesApi.reorderNotes(data.noteOrders);
       return data.noteOrders;
-    } catch (error) {
-      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.SaveError"))));
-      throw error;
-    }
-  }
+    },
+  ),
 );
 
 export const notesSlice = createSlice({
@@ -161,9 +150,11 @@ export const notesSlice = createSlice({
   reducers: {
     setFilter: (state, action: PayloadAction<Partial<NotesFilter>>) => {
       state.filter = { ...state.filter, ...action.payload };
+      state.isSearchActive = false;
     },
     resetFilter: (state) => {
       state.filter = initialFilter;
+      state.isSearchActive = false;
     },
     setSortBy: (state, action: PayloadAction<NotesSortBy>) => {
       state.sortBy = action.payload;
@@ -171,8 +162,15 @@ export const notesSlice = createSlice({
     setSortOrder: (state, action: PayloadAction<NotesSortOrder>) => {
       state.sortOrder = action.payload;
     },
+    setSort: (state, action: PayloadAction<{ sortBy: NotesSortBy; sortOrder: NotesSortOrder }>) => {
+      state.sortBy = action.payload.sortBy;
+      state.sortOrder = action.payload.sortOrder;
+    },
     setViewMode: (state, action: PayloadAction<NotesViewMode>) => {
       state.viewMode = action.payload;
+    },
+    clearSearch: (state) => {
+      state.isSearchActive = false;
     },
     clearError: (state) => {
       state.error = null;
@@ -180,60 +178,71 @@ export const notesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Load notes
       .addCase(loadNotes.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
       .addCase(loadNotes.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.notes = action.payload;
+        state.notes = action.payload.items;
+        state.isSearchActive = false;
       })
       .addCase(loadNotes.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message || "Failed to load notes";
       })
-      // Create note
+      .addCase(loadNoteDetail.fulfilled, (state, action) => {
+        state.noteDetails[action.payload.id] = action.payload;
+      })
       .addCase(createNote.pending, (state) => {
         state.isCreating = true;
       })
       .addCase(createNote.fulfilled, (state, action) => {
         state.isCreating = false;
-        state.notes.push(action.payload);
+        state.notes.push(toListItem(action.payload));
+        state.noteDetails[action.payload.id] = action.payload;
       })
       .addCase(createNote.rejected, (state) => {
         state.isCreating = false;
       })
-      // Update note
       .addCase(updateNote.fulfilled, (state, action) => {
-        updateItemById(state.notes, action.payload);
+        const updated = action.payload;
+        const index = state.notes.findIndex((n) => n.id === updated.id);
+        if (index !== -1) {
+          state.notes[index] = toListItem(updated);
+        }
+        state.noteDetails[updated.id] = updated;
       })
-      // Delete note
       .addCase(deleteNote.fulfilled, (state, action) => {
         const note = state.notes.find((n) => n.id === action.payload);
         if (note) {
           note.isDeleted = true;
         }
       })
-      // Restore note
       .addCase(restoreNote.fulfilled, (state, action) => {
-        updateItemById(state.notes, action.payload);
+        const updated = action.payload;
+        const index = state.notes.findIndex((n) => n.id === updated.id);
+        if (index !== -1) {
+          state.notes[index] = toListItem(updated);
+        }
+        state.noteDetails[updated.id] = updated;
       })
-      // Permanent delete
       .addCase(permanentDeleteNote.fulfilled, (state, action) => {
         state.notes = removeItemById(state.notes, action.payload);
+        delete state.noteDetails[action.payload];
       })
-      // Search notes
+      .addCase(searchNotes.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(searchNotes.fulfilled, (state, action) => {
-        // Search results are handled separately, this just updates the notes that match
-        state.notes = state.notes.map((note) => {
-          const searchResult = action.payload.find((n) => n.id === note.id);
-          return searchResult || note;
-        });
+        state.isLoading = false;
+        state.notes = action.payload;
+        state.isSearchActive = true;
       })
-      // Reorder notes
+      .addCase(searchNotes.rejected, (state) => {
+        state.isLoading = false;
+      })
       .addCase(reorderNotes.fulfilled, (state, action) => {
-        // Update order for each note in the payload
         for (const { id, order } of action.payload) {
           const note = state.notes.find((n) => n.id === id);
           if (note) {
@@ -250,7 +259,9 @@ export const {
   resetFilter,
   setSortBy,
   setSortOrder,
+  setSort,
   setViewMode,
+  clearSearch,
   clearError,
 } = notesSlice.actions;
 
@@ -261,76 +272,12 @@ export const selectAllNotes = (state: { notes: NotesState }) =>
 export const selectNoteById = (state: { notes: NotesState }, id: string) =>
   state.notes.notes.find((n) => n.id === id) ?? null;
 
-const selectNotesState = (state: { notes: NotesState }) => state.notes;
+export const selectNoteDetail = (state: { notes: NotesState }, id: string) =>
+  state.notes.noteDetails[id] ?? null;
 
-export const selectFilteredNotes = createSelector(
-  [selectNotesState],
-  ({ notes, filter, sortBy, sortOrder }) => {
-    const filtered = notes.filter((note) => {
-      // Filter by deleted status
-      if (note.isDeleted !== filter.isDeleted) return false;
+// Notes are already filtered/sorted by the server — alias for clarity
+export const selectFilteredNotes = selectAllNotes;
 
-      // Filter by folder
-      if (filter.folderId !== null && note.folderId !== filter.folderId)
-        return false;
-
-      // Filter by tags
-      if (
-        filter.tagIds.length > 0 &&
-        !filter.tagIds.some((tagId) => note.tags.includes(tagId))
-      ) {
-        return false;
-      }
-
-      // Filter by pinned
-      if (filter.isPinned !== null && note.isPinned !== filter.isPinned)
-        return false;
-
-      // Filter by search query (title only — content search is delegated to server via SearchDialog)
-      if (filter.searchQuery) {
-        const query = filter.searchQuery.toLowerCase();
-        if (!note.title.toLowerCase().includes(query)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-
-    // Single sort with priority: pinned first → folder order → user sort
-    filtered.sort((a, b) => {
-      // 1. Pinned notes always first
-      if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
-
-      // 2. Within same folder, use manual order
-      if (a.folderId === b.folderId) {
-        const orderA = a.order ?? a.createdAt;
-        const orderB = b.order ?? b.createdAt;
-        if (orderA !== orderB) return orderA - orderB;
-      }
-
-      // 3. User-selected sort
-      let comparison = 0;
-      switch (sortBy) {
-        case "title":
-          comparison = a.title.localeCompare(b.title);
-          break;
-        case "createdAt":
-          comparison = a.createdAt - b.createdAt;
-          break;
-        case "updatedAt":
-        default:
-          comparison = a.updatedAt - b.updatedAt;
-          break;
-      }
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
-
-    return filtered;
-  }
-);
-
-// Memoized note count selectors for sidebar
 export const selectActiveNotesCount = createSelector(
   [selectAllNotes],
   (notes) => notes.filter((n) => !n.isDeleted).length
@@ -360,3 +307,5 @@ export const selectNotesViewMode = (state: { notes: NotesState }) =>
   state.notes.viewMode;
 export const selectNotesCreating = (state: { notes: NotesState }) =>
   state.notes.isCreating;
+export const selectIsSearchActive = (state: { notes: NotesState }) =>
+  state.notes.isSearchActive;

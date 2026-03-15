@@ -6,6 +6,8 @@ namespace EpoznamkyApi.Services;
 
 public class FolderService(AppDbContext db, ILogger<FolderService> logger)
 {
+    private const int MaxFolderDepth = 5;
+
     public async Task<List<FolderResponse>> GetFoldersAsync(string userId)
     {
         var folders = await db.Folders
@@ -24,11 +26,20 @@ public class FolderService(AppDbContext db, ILogger<FolderService> logger)
 
     public async Task<FolderResponse> CreateFolderAsync(CreateFolderRequest request, string userId)
     {
+        var parentId = string.IsNullOrWhiteSpace(request.ParentId) ? null : request.ParentId;
+        await ValidateParentFolderAsync(userId, parentId);
+        await ValidateFolderDepthAsync(parentId, userId);
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var order = await GetNextOrderAsync(userId, parentId);
         var folder = new Folder
         {
             Name = request.Name,
-            ParentId = request.ParentId,
+            ParentId = parentId,
             Color = request.Color,
+            Order = order,
+            CreatedAt = now,
+            UpdatedAt = now,
             UserId = userId
         };
 
@@ -47,9 +58,30 @@ public class FolderService(AppDbContext db, ILogger<FolderService> logger)
             return null;
         }
 
+        var parentId = request.ParentId == null
+            ? null
+            : string.IsNullOrWhiteSpace(request.ParentId)
+                ? string.Empty
+                : request.ParentId;
+        await ValidateParentFolderAsync(userId, parentId);
+
+        var targetParentId = parentId == null
+            ? folder.ParentId
+            : parentId == string.Empty
+                ? null
+                : parentId;
+        var parentChanged = parentId != null && targetParentId != folder.ParentId;
+
+        if (parentChanged)
+            await ValidateFolderDepthAsync(targetParentId, userId);
+
         if (request.Name != null) folder.Name = request.Name;
-        if (request.ParentId != null) folder.ParentId = request.ParentId == "" ? null : request.ParentId;
+        if (parentId != null) folder.ParentId = targetParentId;
         if (request.Color != null) folder.Color = request.Color;
+        if (parentChanged && !request.Order.HasValue)
+        {
+            folder.Order = await GetNextOrderAsync(userId, targetParentId);
+        }
         if (request.Order.HasValue) folder.Order = request.Order.Value;
 
         folder.UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -67,7 +99,7 @@ public class FolderService(AppDbContext db, ILogger<FolderService> logger)
         }
 
         // Clear folderId from notes in this folder
-        var notesInFolder = await db.Notes.Where(n => n.FolderId == id).ToListAsync();
+        var notesInFolder = await db.Notes.Where(n => n.FolderId == id && n.UserId == userId).ToListAsync();
         foreach (var note in notesInFolder)
         {
             note.FolderId = null;
@@ -83,6 +115,7 @@ public class FolderService(AppDbContext db, ILogger<FolderService> logger)
     {
         if (parentId == folderId) return true;
 
+        var parentChain = await LoadParentChainAsync(userId);
         var visited = new HashSet<string> { folderId };
         var currentParentId = parentId;
 
@@ -91,9 +124,7 @@ public class FolderService(AppDbContext db, ILogger<FolderService> logger)
             if (!visited.Add(currentParentId))
                 return true;
 
-            var parent = await db.Folders.FirstOrDefaultAsync(f => f.Id == currentParentId && f.UserId == userId);
-            if (parent == null) break;
-            currentParentId = parent.ParentId;
+            currentParentId = parentChain.GetValueOrDefault(currentParentId);
         }
 
         return false;
@@ -114,6 +145,55 @@ public class FolderService(AppDbContext db, ILogger<FolderService> logger)
         }
 
         await db.SaveChangesAsync();
+    }
+
+    private async Task<int> GetNextOrderAsync(string userId, string? parentId)
+    {
+        var maxOrder = await db.Folders
+            .Where(f => f.UserId == userId && f.ParentId == parentId)
+            .MaxAsync(f => (int?)f.Order);
+
+        return (maxOrder ?? -1) + 1;
+    }
+
+    private async Task ValidateFolderDepthAsync(string? parentId, string userId)
+    {
+        if (parentId == null) return;
+
+        var parentChain = await LoadParentChainAsync(userId);
+        var depth = 1;
+        var currentId = parentId;
+
+        while (currentId != null && parentChain.TryGetValue(currentId, out var nextParentId))
+        {
+            if (nextParentId == null) break;
+            currentId = nextParentId;
+            depth++;
+        }
+
+        if (depth >= MaxFolderDepth)
+            throw new InvalidOperationException($"Maximum folder depth ({MaxFolderDepth}) exceeded.");
+    }
+
+    /// <summary>
+    /// Loads all user folders as a dictionary of id → parentId in a single query.
+    /// Used to walk the parent chain in memory instead of N+1 queries.
+    /// </summary>
+    private async Task<Dictionary<string, string?>> LoadParentChainAsync(string userId)
+    {
+        return await db.Folders
+            .Where(f => f.UserId == userId)
+            .ToDictionaryAsync(f => f.Id, f => f.ParentId);
+    }
+
+    private async Task ValidateParentFolderAsync(string userId, string? parentId)
+    {
+        if (string.IsNullOrEmpty(parentId))
+            return;
+
+        var parentExists = await db.Folders.AnyAsync(f => f.Id == parentId && f.UserId == userId);
+        if (!parentExists)
+            throw new InvalidOperationException("Selected parent folder does not exist.");
     }
 
     private static FolderResponse ToResponse(Folder folder) => new()

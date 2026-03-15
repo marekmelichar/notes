@@ -69,6 +69,8 @@
     "WillBeDeleted": "Will be permanently deleted after 30 days in trash",
     "Recent": "Recent",
     "Restore": "Restore",
+    "MovedToTrash": "Note moved to trash",
+    "PermanentlyDeleted": "Note permanently deleted",
     "NoteRestored": "Note restored",
     "CreateError": "Failed to create note",
     "SaveError": "Failed to save note",

@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Box } from '@mui/material';
-import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed, openTab, selectActiveTabId, selectIsMobile, selectMobileView, selectSidebarCollapsed, selectNoteListCollapsed, selectNoteListHidden } from '@/store';
-import { loadNotes, selectAllNotes } from '@/features/notes/store/notesSlice';
+import { useAppDispatch, useAppSelector, setMobileView, setSidebarCollapsed, selectIsMobile, selectMobileView, selectSidebarCollapsed, selectNoteListCollapsed, selectNoteListHidden } from '@/store';
+import { selectAllNotes } from '@/features/notes/store/notesSlice';
 import { loadFolders } from '@/features/notes/store/foldersSlice';
 import { loadTags } from '@/features/notes/store/tagsSlice';
 import { MOBILE_BREAKPOINT, MEDIUM_BREAKPOINT } from '@/config';
-import { useResizablePanel } from '@/hooks';
+import { useResizablePanel, useUrlTabSync } from '@/hooks';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { NotesSidebar } from '@/features/notes/components/NotesSidebar';
 import { NoteList } from '@/features/notes/components/NoteList';
@@ -20,15 +20,16 @@ const NOTELIST_COLLAPSED_WIDTH = 60;
 
 const NotesPage = () => {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const { noteId: urlNoteId } = useParams<{ noteId: string }>();
   const isMobile = useAppSelector(selectIsMobile);
   const mobileView = useAppSelector(selectMobileView);
   const sidebarCollapsed = useAppSelector(selectSidebarCollapsed);
   const noteListCollapsed = useAppSelector(selectNoteListCollapsed);
   const noteListHidden = useAppSelector(selectNoteListHidden);
-  const activeTabId = useAppSelector(selectActiveTabId);
   const notes = useAppSelector(selectAllNotes);
+
+  const activeTabId = useUrlTabSync(urlNoteId);
+
   const activeNote = useMemo(
     () => (activeTabId ? notes.find((n) => n.id === activeTabId) ?? null : null),
     [notes, activeTabId],
@@ -54,28 +55,6 @@ const NotesPage = () => {
     offsetLeft: effectiveSidebarWidth,
   });
 
-  // Bidirectional sync: URL ↔ Redux active tab
-  const prevUrlNoteId = useRef(urlNoteId);
-  const prevActiveTabId = useRef(activeTabId);
-
-  useEffect(() => {
-    const urlChanged = urlNoteId !== prevUrlNoteId.current;
-    const tabChanged = activeTabId !== prevActiveTabId.current;
-
-    if (urlChanged && urlNoteId && urlNoteId !== activeTabId) {
-      dispatch(openTab(urlNoteId));
-    } else if (tabChanged) {
-      if (activeTabId && activeTabId !== urlNoteId) {
-        navigate(`/notes/${activeTabId}`, { replace: true });
-      } else if (!activeTabId && urlNoteId) {
-        navigate('/', { replace: true });
-      }
-    }
-
-    prevUrlNoteId.current = urlNoteId;
-    prevActiveTabId.current = activeTabId;
-  }, [urlNoteId, activeTabId, dispatch, navigate]);
-
   // Auto-collapse sidebar at medium breakpoint
   useEffect(() => {
     const handleResize = () => {
@@ -93,9 +72,8 @@ const NotesPage = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [dispatch, sidebarCollapsed]);
 
-  // Load data on mount
+  // Load data on mount (notes are loaded by NoteList via filter/sort effect)
   useEffect(() => {
-    dispatch(loadNotes());
     dispatch(loadFolders());
     dispatch(loadTags());
   }, [dispatch]);

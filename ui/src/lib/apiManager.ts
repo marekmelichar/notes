@@ -1,37 +1,14 @@
-import React from 'react';
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getApiBaseUrl } from '@/config';
-import { enqueueSnackbar, closeSnackbar } from 'notistack';
-import i18n from '@/i18n';
-import { Button } from '@mui/material';
-import { logout, setAccessStatus, updateToken } from '@/store/authSlice';
+import { setAccessStatus, setSessionExpired, updateToken } from '@/store/authSlice';
 import { store } from '@/store';
 import { keycloak } from '@/features/auth/utils/keycloak';
 
-const AUTH_TOKEN_KEY = 'APP_AUTH_TOKEN';
-
 export const getAuthToken = (): string | null => {
-  try {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
-  } catch {
-    return null;
+  if (keycloak.token) {
+    return `Bearer ${keycloak.token}`;
   }
-};
-
-export const setAuthToken = (token: string) => {
-  try {
-    localStorage.setItem(AUTH_TOKEN_KEY, `Bearer ${token}`);
-  } catch {
-    // Storage unavailable - token will only persist in memory via Keycloak
-  }
-};
-
-export const clearAuthToken = () => {
-  try {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-  } catch {
-    // Storage unavailable - nothing to clear
-  }
+  return null;
 };
 
 const apiBaseUrl = getApiBaseUrl();
@@ -71,25 +48,6 @@ const processQueue = (error: unknown, token: string | null = null) => {
     }
   });
   failedQueue = [];
-};
-
-const showSessionExpiredMessage = () => {
-  enqueueSnackbar(i18n.t('Common.SessionExpired'), {
-    variant: 'warning',
-    persist: true,
-    action: (snackbarId) => (
-      <Button
-        color="inherit"
-        size="small"
-        onClick={() => {
-          closeSnackbar(snackbarId);
-          store.dispatch(logout());
-        }}
-      >
-        {i18n.t('Common.Login')}
-      </Button>
-    ),
-  });
 };
 
 // Response interceptor for authentication errors with silent token refresh
@@ -133,7 +91,6 @@ apiManager.interceptors.response.use(
 
         if (refreshed && keycloak.token) {
           console.debug('Token refresh successful, retrying request');
-          setAuthToken(keycloak.token);
           store.dispatch(updateToken(keycloak.token));
 
           processQueue(null, keycloak.token);
@@ -143,17 +100,16 @@ apiManager.interceptors.response.use(
           return await apiManager(originalRequest);
         } else {
           // Token refresh returned false (token still valid but 401 occurred)
-          // This shouldn't happen, but handle it gracefully
           console.warn('Token refresh returned false despite 401 - session may be invalid');
           processQueue(error, null);
-          showSessionExpiredMessage();
+          store.dispatch(setSessionExpired(true));
           return await Promise.reject(error);
         }
       } catch (refreshError) {
         // Token refresh failed - user needs to re-authenticate
         console.error('Token refresh failed:', refreshError);
         processQueue(refreshError, null);
-        showSessionExpiredMessage();
+        store.dispatch(setSessionExpired(true));
         return await Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

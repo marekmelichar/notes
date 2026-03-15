@@ -9,8 +9,6 @@ vi.mock('@/lib', async () => {
     getApiErrorMessage,
     apiManager: {},
     getAuthToken: vi.fn(),
-    setAuthToken: vi.fn(),
-    clearAuthToken: vi.fn(),
   };
 });
 
@@ -147,7 +145,11 @@ describe('tagsSlice error handling with ProblemDetails', () => {
 
   it('should not show error on successful tag creation', async () => {
     const store = createTestStore();
-    mockedApi.create.mockResolvedValue('new-tag-id');
+    mockedApi.create.mockResolvedValue({
+      id: 'new-tag-id',
+      name: 'Success',
+      color: '#6366f1',
+    });
 
     await store.dispatch(createTag({ name: 'Success' }));
 

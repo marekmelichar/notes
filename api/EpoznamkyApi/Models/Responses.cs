@@ -1,19 +1,22 @@
 namespace EpoznamkyApi.Models;
 
-public class NoteResponse
+public class NoteListResponse
 {
     public string Id { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
     public string? FolderId { get; set; }
     public List<string> Tags { get; set; } = [];
     public bool IsPinned { get; set; }
     public bool IsDeleted { get; set; }
     public long? DeletedAt { get; set; }
-    public List<SharedUser> SharedWith { get; set; } = [];
     public int Order { get; set; }
     public long CreatedAt { get; set; }
     public long UpdatedAt { get; set; }
+}
+
+public class NoteResponse : NoteListResponse
+{
+    public string Content { get; set; } = string.Empty;
     public long? SyncedAt { get; set; }
 }
 

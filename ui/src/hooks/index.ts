@@ -6,3 +6,4 @@ export * from './useAuth';
 export * from './useAutoSave';
 export * from './useScrollDirection';
 export * from './useResizablePanel';
+export * from './useUrlTabSync';

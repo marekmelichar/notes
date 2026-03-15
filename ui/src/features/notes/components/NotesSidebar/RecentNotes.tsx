@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import type { Note } from '../../types';
+import type { NoteListItem } from '../../types';
 import styles from './index.module.css';
 
 const RECENT_STORAGE_KEY = 'notes-recent-height';
@@ -13,7 +13,7 @@ const RECENT_MAX_HEIGHT = 500;
 const RECENT_DEFAULT_HEIGHT = 180;
 
 interface RecentNotesProps {
-  notes: Note[];
+  notes: NoteListItem[];
   selectedNoteId: string | null;
   onSelectNote: (id: string) => void;
 }
