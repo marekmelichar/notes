@@ -93,7 +93,6 @@ services:
       KEYCLOAK_URL: "https://notes.nettio.eu"
       KEYCLOAK_REALM: "notes"
       KEYCLOAK_CLIENT_ID: "notes-frontend"
-      MOCK_MODE: "false"
     depends_on:
       - api
       - keycloak

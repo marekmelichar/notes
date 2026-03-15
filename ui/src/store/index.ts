@@ -11,7 +11,8 @@ import { tabsSlice } from './tabsSlice';
 import { notesSlice } from '@/features/notes/store/notesSlice';
 import { foldersSlice } from '@/features/notes/store/foldersSlice';
 import { tagsSlice } from '@/features/notes/store/tagsSlice';
-import { syncSlice } from '@/features/notes/store/syncSlice';
+import { uiPersistMiddleware } from './uiPersistMiddleware';
+import { tabsPersistMiddleware } from './tabsPersistMiddleware';
 
 // Export slices
 export * from './authSlice';
@@ -31,15 +32,19 @@ export const store = configureStore({
     notes: notesSlice.reducer,
     folders: foldersSlice.reducer,
     tags: tagsSlice.reducer,
-    sync: syncSlice.reducer,
   },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().prepend(
+      uiPersistMiddleware.middleware,
+      tabsPersistMiddleware.middleware,
+    ),
 });
 
 /**
  * Data types
  */
-type RootState = ReturnType<typeof store.getState>;
-type AppDispatch = typeof store.dispatch;
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
 
 // Correctly typed React hooks
 // Use these instead of the original ones from react-redux library!

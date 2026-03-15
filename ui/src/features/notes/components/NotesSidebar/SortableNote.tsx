@@ -6,15 +6,15 @@ import { CSS } from "@dnd-kit/utilities";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useAppDispatch, useAppSelector, openTab, selectActiveTabId, selectIsMobile, selectNoteListHidden } from "@/store";
-import type { Note } from "../../types";
+import type { NoteListItem } from "../../types";
 import styles from "./index.module.css";
 
 interface SortableNoteProps {
-  note: Note;
+  note: NoteListItem;
   level: number;
 }
 
-export const SortableNote = ({ note, level }: SortableNoteProps) => {
+export const SortableNote = React.memo(({ note, level }: SortableNoteProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const selectedNoteId = useAppSelector(selectActiveTabId);
@@ -81,4 +81,6 @@ export const SortableNote = ({ note, level }: SortableNoteProps) => {
       </Typography>
     </Box>
   );
-};
+});
+
+SortableNote.displayName = 'SortableNote';

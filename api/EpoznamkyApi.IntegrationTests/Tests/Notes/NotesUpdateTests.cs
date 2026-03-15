@@ -85,4 +85,30 @@ public class NotesUpdateTests(DatabaseFixture db) : IntegrationTestBase(db)
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    [Fact]
+    public async Task Update_should_return_400_for_unknown_folder()
+    {
+        var createResponse = await Client.CreateNote(TestDataFactory.CreateNoteRequest());
+        var created = await createResponse.ReadAs<NoteResponse>();
+
+        var response = await Client.UpdateNote(
+            created.Id,
+            TestDataFactory.UpdateNoteRequest(folderId: Guid.NewGuid().ToString()));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Update_should_return_400_for_unknown_tags()
+    {
+        var createResponse = await Client.CreateNote(TestDataFactory.CreateNoteRequest());
+        var created = await createResponse.ReadAs<NoteResponse>();
+
+        var response = await Client.UpdateNote(
+            created.Id,
+            TestDataFactory.UpdateNoteRequest(tags: [Guid.NewGuid().ToString()]));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

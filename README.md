@@ -1,112 +1,69 @@
 # notes.nettio.eu
 
-A note-taking application with React frontend, .NET API, PostgreSQL database, and Keycloak authentication.
+A notes application with a React frontend, a .NET API, PostgreSQL persistence, and Keycloak authentication.
 
-## Project Structure
+## Current Architecture
 
-```
+- `ui/`: React 19, TypeScript, Vite, MUI, Redux Toolkit, TipTap, Axios
+- `api/`: .NET 10, ASP.NET Core, Entity Framework Core, PostgreSQL
+- `auth`: Keycloak with JWT bearer validation
+- `infra`: Docker Compose for local development, Nginx and GitHub Actions for deployment
+
+The app is currently a server-backed, single-owner notes product. It does not ship an offline-first sync layer, generated API client, or collaboration workflow.
+
+## Repository Layout
+
+```text
 notes.nettio.eu/
-├── api/                    # .NET 10 API
-│   └── EpoznamkyApi/
-├── ui/                     # React/Vite/MUI frontend
+├── api/                    # .NET API and integration tests
+├── ui/                     # React frontend
 ├── deploy/                 # Deployment scripts and configs
-│   ├── nginx.conf          # Production nginx reverse proxy
-│   ├── setup-vps.sh        # Initial VPS setup script
-│   └── setup-ssl.sh        # SSL certificate setup
-├── docker-compose.yml      # Local development
-├── docker-compose.prod.yml # Production deployment
-├── init-db.sql             # Database initialization
-├── notes-dev-realm.json   # Keycloak dev realm configuration
-└── notes-prod-realm.json  # Keycloak prod realm configuration
+├── docs/                   # Product and operational docs
+├── docker-compose.yml      # Local development stack
+└── docker-compose.prod.yml # Production deployment stack
 ```
 
 ## Local Development
 
 ### Prerequisites
-- Docker and Docker Compose
-- Node.js 22+ (for UI development without Docker)
-- .NET 10 SDK (for API development without Docker)
 
-### Quick Start (Docker)
+- Docker and Docker Compose
+- Node.js 22+
+- .NET 10 SDK
+
+### Start the stack
 
 ```bash
-# Start all services (API, DB, Keycloak)
 docker compose up -d
-
-# Access the application
-# Frontend: http://localhost:3000 (via Docker)
-# API: http://localhost:5001
-# Keycloak Admin: http://localhost:8080 (admin/admin)
 ```
 
-### Frontend Development (Recommended)
+Services:
+
+- Frontend via Docker: `http://localhost:3000`
+- Frontend via Vite: `http://localhost:5173`
+- API: `http://localhost:5001`
+- Keycloak Admin: `http://localhost:8080`
+- PostgreSQL: `localhost:5432`
+
+### Frontend development
 
 ```bash
 cd ui
 npm install
-npm run dev    # http://localhost:5173
+npm run dev
 ```
 
-This runs Vite dev server with hot reload. API calls are proxied to localhost:5001.
-
-### Development URLs
-
-| Service | Docker | Vite Dev | Credentials |
-|---------|--------|----------|-------------|
-| Frontend | http://localhost:3000 | http://localhost:5173 | - |
-| API | http://localhost:5001 | http://localhost:5001 | - |
-| Keycloak Admin | http://localhost:8080 | http://localhost:8080 | admin / admin |
-| PostgreSQL | localhost:5432 | localhost:5432 | postgres / postgres |
-
-### Code Quality
-
-Pre-commit hooks automatically run lint and build checks:
+### Quality checks
 
 ```bash
-# Manual lint check
-cd ui && npm run lint
-
-# Manual build check
-cd ui && npm run build
+cd ui
+npm run lint
+npm run build
 ```
 
-## Production Deployment
+## Deployment
 
-See [deploy/DEPLOYMENT.md](deploy/DEPLOYMENT.md) for detailed deployment instructions.
-
-### Quick Overview
-
-1. Push to `main` branch triggers GitHub Actions
-2. Docker images are built and pushed to GitHub Container Registry
-3. Images are pulled and deployed on VPS via SSH
-4. Nginx handles SSL termination and reverse proxy
-
-## Tech Stack
-
-### Frontend (ui/)
-- React 19 with TypeScript
-- Vite 7 for build tooling
-- Material-UI (MUI) v6 for components
-- Redux Toolkit for state management
-- React Query for API calls
-- BlockNote for rich text editing
-- Keycloak JS for authentication
-- i18next for internationalization
-- ESLint + Prettier for code quality
-- Husky pre-commit hooks (lint + build)
-
-### Backend (api/)
-- .NET 10
-- Entity Framework Core
-- PostgreSQL database
-- JWT authentication via Keycloak
-
-### Infrastructure
-- Docker & Docker Compose
-- Nginx reverse proxy
-- Let's Encrypt SSL
-- GitHub Actions CI/CD
-- GitHub Container Registry
+See `deploy/` and the GitHub Actions workflow for deployment details. Production uses container images, Nginx reverse proxying, and TLS termination at the edge.
 
 ## License
 

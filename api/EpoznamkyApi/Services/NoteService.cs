@@ -9,12 +9,10 @@ namespace EpoznamkyApi.Services;
 
 public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
 {
-    public async Task<PaginatedResponse<NoteResponse>> GetNotesAsync(string userId, string userEmail, int limit = 100, int offset = 0)
+    public async Task<PaginatedResponse<NoteResponse>> GetNotesAsync(string userId, int limit = 100, int offset = 0)
     {
         var query = db.Notes
-            .Where(n => n.UserId == userId ||
-                        db.NoteShares.Any(s => s.NoteId == n.Id &&
-                            (s.SharedWithUserId == userId || s.SharedWithEmail == userEmail)))
+            .Where(n => n.UserId == userId)
             .OrderBy(n => n.Order);
 
         var totalCount = await query.CountAsync();
@@ -33,13 +31,75 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
         };
     }
 
-    public async Task<NoteResponse?> GetNoteAsync(string id, string userId, string userEmail)
+    public async Task<PaginatedResponse<NoteListResponse>> GetNoteListAsync(
+        string userId,
+        int limit = 100,
+        int offset = 0,
+        string? folderId = null,
+        List<string>? tagIds = null,
+        bool? isPinned = null,
+        bool? isDeleted = null,
+        string sortBy = "updatedAt",
+        string sortOrder = "desc")
+    {
+        var query = db.Notes.Where(n => n.UserId == userId);
+
+        // Apply filters
+        if (isDeleted.HasValue)
+            query = query.Where(n => n.IsDeleted == isDeleted.Value);
+
+        if (folderId != null)
+            query = query.Where(n => n.FolderId == folderId);
+
+        if (isPinned.HasValue)
+            query = query.Where(n => n.IsPinned == isPinned.Value);
+
+        if (tagIds is { Count: > 0 })
+        {
+            var noteIdsWithTags = db.NoteTags
+                .Where(nt => tagIds.Contains(nt.TagId))
+                .Select(nt => nt.NoteId)
+                .Distinct();
+            query = query.Where(n => noteIdsWithTags.Contains(n.Id));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        // Apply sorting: pinned first, then user-selected sort
+        IOrderedQueryable<Note> ordered = sortBy.ToLowerInvariant() switch
+        {
+            "createdat" => sortOrder == "asc"
+                ? query.OrderByDescending(n => n.IsPinned).ThenBy(n => n.CreatedAt)
+                : query.OrderByDescending(n => n.IsPinned).ThenByDescending(n => n.CreatedAt),
+            "title" => sortOrder == "asc"
+                ? query.OrderByDescending(n => n.IsPinned).ThenBy(n => n.Title)
+                : query.OrderByDescending(n => n.IsPinned).ThenByDescending(n => n.Title),
+            _ => sortOrder == "asc"
+                ? query.OrderByDescending(n => n.IsPinned).ThenBy(n => n.UpdatedAt)
+                : query.OrderByDescending(n => n.IsPinned).ThenByDescending(n => n.UpdatedAt),
+        };
+
+        var paginated = limit > 0 ? ordered.Skip(offset).Take(limit) : ordered.Skip(offset);
+        var notes = await paginated.ToListAsync();
+
+        await PopulateNoteRelationsAsync(notes);
+
+        return new PaginatedResponse<NoteListResponse>
+        {
+            Items = notes.Select(ToListResponse).ToList(),
+            TotalCount = totalCount,
+            Limit = limit,
+            Offset = offset
+        };
+    }
+
+    public async Task<List<NoteListResponse>> SearchNotesListAsync(string userId, string query)
+        => (await SearchNotesInternalAsync(userId, query)).Select(ToListResponse).ToList();
+
+    public async Task<NoteResponse?> GetNoteAsync(string id, string userId)
     {
         var note = await db.Notes
-            .FirstOrDefaultAsync(n => n.Id == id &&
-                (n.UserId == userId ||
-                 db.NoteShares.Any(s => s.NoteId == n.Id &&
-                     (s.SharedWithUserId == userId || s.SharedWithEmail == userEmail))));
+            .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
 
         if (note == null) return null;
 
@@ -47,46 +107,32 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
         return ToResponse(note);
     }
 
-    public async Task<List<NoteResponse>> SearchNotesAsync(string userId, string userEmail, string query)
-    {
-        if (string.IsNullOrWhiteSpace(query))
-            return [];
-
-        var normalized = RemoveDiacritics(query);
-        var sanitized = SearchSanitizeRegex().Replace(normalized, "");
-        if (string.IsNullOrWhiteSpace(sanitized))
-            return [];
-
-        var terms = sanitized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var prefixQuery = string.Join(" & ", terms.Select(t => t + ":*"));
-
-        var notes = await db.Notes
-            .Where(n => (n.UserId == userId ||
-                         db.NoteShares.Any(s => s.NoteId == n.Id &&
-                             (s.SharedWithUserId == userId || s.SharedWithEmail == userEmail))) &&
-                       !n.IsDeleted &&
-                       n.SearchVector!.Matches(EF.Functions.ToTsQuery("simple", prefixQuery)))
-            .OrderByDescending(n => n.SearchVector!.Rank(EF.Functions.ToTsQuery("simple", prefixQuery)))
-            .ToListAsync();
-
-        await PopulateNoteRelationsAsync(notes);
-        return notes.Select(ToResponse).ToList();
-    }
+    public async Task<List<NoteResponse>> SearchNotesAsync(string userId, string query)
+        => (await SearchNotesInternalAsync(userId, query)).Select(ToResponse).ToList();
 
     public async Task<NoteResponse> CreateNoteAsync(CreateNoteRequest request, string userId)
     {
+        var folderId = string.IsNullOrWhiteSpace(request.FolderId) ? null : request.FolderId;
+        var tagIds = request.Tags.Distinct().ToList();
+        await ValidateNoteRelationsAsync(userId, folderId, tagIds);
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var order = await GetNextOrderAsync(userId, folderId);
         var note = new Note
         {
             Title = request.Title,
             Content = request.Content,
-            FolderId = request.FolderId,
+            FolderId = folderId,
             IsPinned = request.IsPinned,
+            Order = order,
+            CreatedAt = now,
+            UpdatedAt = now,
             UserId = userId
         };
 
         db.Notes.Add(note);
 
-        foreach (var tagId in request.Tags)
+        foreach (var tagId in tagIds)
         {
             db.NoteTags.Add(new NoteTag { NoteId = note.Id, TagId = tagId });
         }
@@ -94,7 +140,7 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
         await db.SaveChangesAsync();
         logger.LogInformation("Note {NoteId} created for user {UserId}", note.Id, userId);
 
-        note.Tags = request.Tags;
+        note.Tags = tagIds;
         return ToResponse(note);
     }
 
@@ -107,23 +153,42 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
             return null;
         }
 
+        var folderId = request.FolderId == null
+            ? null
+            : string.IsNullOrWhiteSpace(request.FolderId)
+                ? string.Empty
+                : request.FolderId;
+        var tagIds = request.Tags?.Distinct().ToList();
+        await ValidateNoteRelationsAsync(userId, folderId, tagIds);
+
+        var targetFolderId = folderId == null
+            ? note.FolderId
+            : folderId == string.Empty
+                ? null
+                : folderId;
+        var folderChanged = folderId != null && targetFolderId != note.FolderId;
+
         if (request.Title != null) note.Title = request.Title;
         if (request.Content != null) note.Content = request.Content;
-        if (request.FolderId != null)
+        if (folderId != null)
         {
-            note.FolderId = request.FolderId == "" ? null : request.FolderId;
+            note.FolderId = targetFolderId;
         }
         if (request.IsPinned.HasValue) note.IsPinned = request.IsPinned.Value;
+        if (folderChanged && !request.Order.HasValue)
+        {
+            note.Order = await GetNextOrderAsync(userId, targetFolderId);
+        }
         if (request.Order.HasValue) note.Order = request.Order.Value;
 
         note.UpdatedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        if (request.Tags != null)
+        if (tagIds != null)
         {
             var existingTags = await db.NoteTags.Where(nt => nt.NoteId == id).ToListAsync();
             db.NoteTags.RemoveRange(existingTags);
 
-            foreach (var tagId in request.Tags)
+            foreach (var tagId in tagIds)
             {
                 db.NoteTags.Add(new NoteTag { NoteId = id, TagId = tagId });
             }
@@ -194,63 +259,6 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
         await db.SaveChangesAsync();
     }
 
-    public async Task<NoteResponse?> ShareNoteAsync(string noteId, string userId, string email, string permission)
-    {
-        var note = await db.Notes.FirstOrDefaultAsync(n => n.Id == noteId && n.UserId == userId);
-        if (note == null)
-        {
-            logger.LogDebug("Note {NoteId} not found for user {UserId} during share", noteId, userId);
-            return null;
-        }
-
-        var targetUser = await db.Users.FirstOrDefaultAsync(u => EF.Functions.ILike(u.Email, email));
-        var sharedWithUserId = targetUser?.Id ?? email;
-
-        var existingShare = await db.NoteShares.FirstOrDefaultAsync(s => s.NoteId == noteId && s.SharedWithEmail == email);
-        if (existingShare != null)
-        {
-            existingShare.Permission = permission;
-            existingShare.SharedWithUserId = sharedWithUserId;
-        }
-        else
-        {
-            db.NoteShares.Add(new NoteShare
-            {
-                NoteId = noteId,
-                SharedWithUserId = sharedWithUserId,
-                SharedWithEmail = email,
-                Permission = permission
-            });
-        }
-
-        await db.SaveChangesAsync();
-        logger.LogInformation("Note {NoteId} shared (permission: {Permission}) by user {UserId}", noteId, permission, userId);
-        await PopulateNoteRelationsAsync([note]);
-        return ToResponse(note);
-    }
-
-    public async Task<NoteResponse?> RemoveShareAsync(string noteId, string userId, string sharedUserId)
-    {
-        var note = await db.Notes.FirstOrDefaultAsync(n => n.Id == noteId && n.UserId == userId);
-        if (note == null)
-        {
-            logger.LogDebug("Note {NoteId} not found for user {UserId} during share removal", noteId, userId);
-            return null;
-        }
-
-        var share = await db.NoteShares.FirstOrDefaultAsync(s =>
-            s.NoteId == noteId && (s.SharedWithUserId == sharedUserId || s.SharedWithEmail == sharedUserId));
-        if (share != null)
-        {
-            db.NoteShares.Remove(share);
-            await db.SaveChangesAsync();
-            logger.LogInformation("Share removed from note {NoteId} by user {UserId}", noteId, userId);
-        }
-
-        await PopulateNoteRelationsAsync([note]);
-        return ToResponse(note);
-    }
-
     public async Task<List<string>> GetStoredFilesForExpiredTrashAsync(int retentionDays = 30)
     {
         var cutoffTime = DateTimeOffset.UtcNow.AddDays(-retentionDays).ToUnixTimeMilliseconds();
@@ -303,23 +311,61 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
             .Where(nt => noteIds.Contains(nt.NoteId))
             .ToListAsync();
 
-        var noteShares = await db.NoteShares
-            .Where(ns => noteIds.Contains(ns.NoteId))
-            .ToListAsync();
-
         foreach (var note in notes)
         {
             note.Tags = noteTags.Where(nt => nt.NoteId == note.Id).Select(nt => nt.TagId).ToList();
-            note.SharedWith = noteShares
-                .Where(ns => ns.NoteId == note.Id)
-                .Select(ns => new SharedUser
-                {
-                    UserId = ns.SharedWithUserId,
-                    Email = ns.SharedWithEmail,
-                    Permission = ns.Permission
-                })
-                .ToList();
         }
+    }
+
+    private async Task<int> GetNextOrderAsync(string userId, string? folderId)
+    {
+        var maxOrder = await db.Notes
+            .Where(n => n.UserId == userId && n.FolderId == folderId && !n.IsDeleted)
+            .MaxAsync(n => (int?)n.Order);
+
+        return (maxOrder ?? -1) + 1;
+    }
+
+    private async Task ValidateNoteRelationsAsync(string userId, string? folderId, List<string>? tagIds)
+    {
+        if (!string.IsNullOrEmpty(folderId))
+        {
+            var folderExists = await db.Folders.AnyAsync(f => f.Id == folderId && f.UserId == userId);
+            if (!folderExists)
+                throw new InvalidOperationException("Selected folder does not exist.");
+        }
+
+        if (tagIds is { Count: > 0 })
+        {
+            var uniqueTagIds = tagIds.Distinct().ToList();
+            var ownedTagCount = await db.Tags.CountAsync(t => t.UserId == userId && uniqueTagIds.Contains(t.Id));
+            if (ownedTagCount != uniqueTagIds.Count)
+                throw new InvalidOperationException("One or more selected tags do not exist.");
+        }
+    }
+
+    private async Task<List<Note>> SearchNotesInternalAsync(string userId, string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return [];
+
+        var normalized = RemoveDiacritics(query);
+        var sanitized = SearchSanitizeRegex().Replace(normalized, "");
+        if (string.IsNullOrWhiteSpace(sanitized))
+            return [];
+
+        var terms = sanitized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var prefixQuery = string.Join(" & ", terms.Select(t => t + ":*"));
+
+        var notes = await db.Notes
+            .Where(n => n.UserId == userId &&
+                       !n.IsDeleted &&
+                       n.SearchVector!.Matches(EF.Functions.ToTsQuery("simple", prefixQuery)))
+            .OrderByDescending(n => n.SearchVector!.Rank(EF.Functions.ToTsQuery("simple", prefixQuery)))
+            .ToListAsync();
+
+        await PopulateNoteRelationsAsync(notes);
+        return notes;
     }
 
     private static string RemoveDiacritics(string text)
@@ -347,10 +393,23 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
         IsPinned = note.IsPinned,
         IsDeleted = note.IsDeleted,
         DeletedAt = note.DeletedAt,
-        SharedWith = note.SharedWith,
         Order = note.Order,
         CreatedAt = note.CreatedAt,
         UpdatedAt = note.UpdatedAt,
         SyncedAt = note.SyncedAt
+    };
+
+    private static NoteListResponse ToListResponse(Note note) => new()
+    {
+        Id = note.Id,
+        Title = note.Title,
+        FolderId = note.FolderId,
+        Tags = note.Tags,
+        IsPinned = note.IsPinned,
+        IsDeleted = note.IsDeleted,
+        DeletedAt = note.DeletedAt,
+        Order = note.Order,
+        CreatedAt = note.CreatedAt,
+        UpdatedAt = note.UpdatedAt,
     };
 }

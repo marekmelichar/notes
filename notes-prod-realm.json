@@ -103,40 +103,7 @@
       ]
     }
   ],
-  "users": [
-    {
-      "username": "demo",
-      "enabled": true,
-      "emailVerified": true,
-      "firstName": "Demo",
-      "lastName": "User",
-      "email": "demo@example.com",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "demo123",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["user"]
-    },
-    {
-      "username": "admin",
-      "enabled": true,
-      "emailVerified": true,
-      "firstName": "Admin",
-      "lastName": "User",
-      "email": "admin@example.com",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "admin123",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["user", "admin"]
-    }
-  ],
+  "users": [],
   "scopeMappings": [],
   "clientScopeMappings": {}
 }

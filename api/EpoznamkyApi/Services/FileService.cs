@@ -15,7 +15,6 @@ public class FileStorageSettings
         "image/png",
         "image/gif",
         "image/webp",
-        "image/svg+xml",
         "image/heic",
         "image/heif",
         "application/pdf",
@@ -32,7 +31,7 @@ public class FileStorageSettings
     public string[] AllowedExtensions { get; set; } =
     [
         // Images
-        ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".heic", ".heif",
+        ".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif",
         // Documents
         ".pdf", ".docx", ".xlsx", ".xls", ".pptx",
         // Archives & text

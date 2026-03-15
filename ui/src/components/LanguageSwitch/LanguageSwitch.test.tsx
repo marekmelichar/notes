@@ -14,6 +14,18 @@ vi.mock('@/i18n', () => ({
   },
 }));
 
+// Mock react-i18next so t() returns translated strings
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'Common.SwitchLanguage': 'Switch language',
+      };
+      return translations[key] ?? key;
+    },
+  }),
+}));
+
 const renderWithTheme = (component: React.ReactElement, mode: 'light' | 'dark' = 'light') => {
   const theme = createTheme({
     palette: {

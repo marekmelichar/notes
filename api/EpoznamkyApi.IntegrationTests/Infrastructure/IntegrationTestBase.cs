@@ -48,7 +48,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
         await dbContext.Database.ExecuteSqlRawAsync(
             """
-            TRUNCATE TABLE "NoteShares", "NoteTags", "FileUploads", "Notes", "Folders", "Tags", "Users" CASCADE
+            TRUNCATE TABLE "NoteTags", "FileUploads", "Notes", "Folders", "Tags", "Users" CASCADE
             """);
     }
 

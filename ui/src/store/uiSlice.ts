@@ -3,6 +3,7 @@
 // ========================================================
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { MOBILE_BREAKPOINT } from '@/config';
 
 export type MobileView = 'sidebar' | 'list' | 'editor';
 
@@ -21,7 +22,7 @@ const NOTELIST_HIDDEN_KEY = 'notelist-hidden';
 
 const initialState: UiState = {
   mobileView: 'list',
-  isMobile: window.innerWidth <= 768,
+  isMobile: window.innerWidth <= MOBILE_BREAKPOINT,
   sidebarCollapsed: localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true',
   noteListCollapsed: localStorage.getItem(NOTELIST_COLLAPSED_KEY) === 'true',
   noteListHidden: localStorage.getItem(NOTELIST_HIDDEN_KEY) === 'true',
@@ -40,27 +41,21 @@ export const uiSlice = createSlice({
     },
     setSidebarCollapsed: (state, action: PayloadAction<boolean>) => {
       state.sidebarCollapsed = action.payload;
-      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, action.payload.toString());
     },
     toggleSidebarCollapsed: (state) => {
       state.sidebarCollapsed = !state.sidebarCollapsed;
-      localStorage.setItem(SIDEBAR_COLLAPSED_KEY, state.sidebarCollapsed.toString());
     },
     setNoteListCollapsed: (state, action: PayloadAction<boolean>) => {
       state.noteListCollapsed = action.payload;
-      localStorage.setItem(NOTELIST_COLLAPSED_KEY, action.payload.toString());
     },
     toggleNoteListCollapsed: (state) => {
       state.noteListCollapsed = !state.noteListCollapsed;
-      localStorage.setItem(NOTELIST_COLLAPSED_KEY, state.noteListCollapsed.toString());
     },
     setNoteListHidden: (state, action: PayloadAction<boolean>) => {
       state.noteListHidden = action.payload;
-      localStorage.setItem(NOTELIST_HIDDEN_KEY, action.payload.toString());
     },
     toggleNoteListHidden: (state) => {
       state.noteListHidden = !state.noteListHidden;
-      localStorage.setItem(NOTELIST_HIDDEN_KEY, state.noteListHidden.toString());
     },
     setScrollHidden: (state, action: PayloadAction<boolean>) => {
       state.scrollHidden = action.payload;

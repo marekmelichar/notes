@@ -24,7 +24,9 @@ import { useTranslation } from 'react-i18next';
 import { ROUTE_HOME } from '@/config';
 import { LanguageSwitch } from '../LanguageSwitch';
 import { SearchInput } from '../SearchInput';
-import { SearchDialog } from '../SearchDialog';
+const SearchDialog = React.lazy(() =>
+  import('../SearchDialog').then((m) => ({ default: m.SearchDialog })),
+);
 import { useColorMode } from '@/theme/ThemeProvider';
 import { useAppDispatch, useAppSelector, selectNoteListHidden, selectIsMobile, selectAuthUser, selectScrollHidden } from '@/store';
 import { logout } from '@/store/authSlice';

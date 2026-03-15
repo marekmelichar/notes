@@ -25,8 +25,6 @@ public class Note
     // Navigation - not mapped to DB, populated via queries
     [NotMapped]
     public List<string> Tags { get; set; } = [];
-    [NotMapped]
-    public List<SharedUser> SharedWith { get; set; } = [];
 }
 
 // Junction table for Note <-> Tag many-to-many
@@ -34,23 +32,6 @@ public class NoteTag
 {
     public string NoteId { get; set; } = string.Empty;
     public string TagId { get; set; } = string.Empty;
-}
-
-// Table for note sharing
-public class NoteShare
-{
-    public string NoteId { get; set; } = string.Empty;
-    public string SharedWithUserId { get; set; } = string.Empty;
-    public string SharedWithEmail { get; set; } = string.Empty;
-    public string Permission { get; set; } = "view"; // "view" or "edit"
-}
-
-// DTO for API responses
-public class SharedUser
-{
-    public string UserId { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Permission { get; set; } = "view";
 }
 
 // Request DTOs
@@ -89,18 +70,6 @@ public class UpdateNoteRequest
 
     [Range(0, int.MaxValue)]
     public int? Order { get; set; }
-}
-
-public class ShareNoteRequest
-{
-    [Required]
-    [EmailAddress]
-    [StringLength(320)]
-    public string Email { get; set; } = string.Empty;
-
-    [Required]
-    [RegularExpression("^(view|edit)$")]
-    public string Permission { get; set; } = "view";
 }
 
 public class ReorderNotesRequest

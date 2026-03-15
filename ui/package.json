@@ -7,11 +7,8 @@
     "start": "node scripts/setup-dev.cjs && vite --open",
     "dev": "node scripts/setup-dev.cjs && vite",
     "dev:ci": "node scripts/setup-dev.cjs && vite --host",
-    "dev:mock": "node scripts/setup-mock.cjs && vite",
     "build": "node -e \"require('fs').writeFileSync('public/version.txt', require('./package.json').version)\" && tsc && vite build",
-    "build:mock": "node scripts/setup-mock.cjs && npm run build",
     "preview": "vite preview",
-    "preview:mock": "node scripts/setup-mock.cjs && vite preview",
     "format": "prettier --write \"src/**/*.[jt]s{,x}\"",
     "lint": "tsc --noEmit && eslint \"src/**/*.[jt]s{,x}\"",
     "test": "vitest",
@@ -25,7 +22,6 @@
     "pw:codegen": "playwright codegen",
     "pw:report": "playwright show-report",
     "knip": "knip",
-    "msw:init": "npx msw init public --save",
     "prepare": "cd .. && husky"
   },
   "dependencies": {
@@ -49,7 +45,6 @@
     "@types/turndown": "^5.0.6",
     "axios": "^1.7.7",
     "dayjs": "^1.11.9",
-    "dexie": "^4.2.1",
     "i18next": "^25.0.1",
     "i18next-browser-languagedetector": "^8.0.5",
     "i18next-http-backend": "^3.0.2",
@@ -87,16 +82,10 @@
     "husky": "^9.1.7",
     "jsdom": "^27.1.0",
     "knip": "^5.65.0",
-    "msw": "^2.11.6",
     "prettier": "^3.2.5",
     "rollup-plugin-visualizer": "^6.0.5",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",
     "vitest": "^4.0.6"
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
   }
 }

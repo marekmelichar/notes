@@ -24,20 +24,15 @@ public class NotesGetTests(DatabaseFixture db) : IntegrationTestBase(db)
     }
 
     [Fact]
-    public async Task Get_should_return_shared_note()
+    public async Task Get_should_return_404_for_other_users_note()
     {
-        // User 1 creates and shares a note
-        var createResponse = await Client.CreateNote(TestDataFactory.CreateNoteRequest(title: "Shared"));
+        var createResponse = await Client.CreateNote(TestDataFactory.CreateNoteRequest(title: "Private"));
         var created = await createResponse.ReadAs<NoteResponse>();
-        await Client.ShareNote(created.Id, TestDataFactory.ShareNoteRequest(email: OtherUserEmail));
 
-        // User 2 should be able to access it
         Client.AsUser(OtherUserId, OtherUserEmail, OtherUserName);
         var response = await Client.GetNote(created.Id);
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var note = await response.ReadAs<NoteResponse>();
-        note.Title.Should().Be("Shared");
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -49,14 +44,16 @@ public class NotesGetTests(DatabaseFixture db) : IntegrationTestBase(db)
     }
 
     [Fact]
-    public async Task Get_should_return_404_for_other_users_unshared_note()
+    public async Task Get_should_return_deleted_note_to_owner()
     {
         var createResponse = await Client.CreateNote(TestDataFactory.CreateNoteRequest(title: "Private"));
         var created = await createResponse.ReadAs<NoteResponse>();
 
-        Client.AsUser(OtherUserId, OtherUserEmail, OtherUserName);
+        await Client.DeleteNote(created.Id);
         var response = await Client.GetNote(created.Id);
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var note = await response.ReadAs<NoteResponse>();
+        note.IsDeleted.Should().BeTrue();
     }
 }

@@ -59,14 +59,13 @@ public class NotesDeleteTests(DatabaseFixture db) : IntegrationTestBase(db)
     }
 
     [Fact]
-    public async Task PermanentDelete_should_cascade_to_tags_and_shares()
+    public async Task PermanentDelete_should_remove_note_with_related_tags()
     {
         var tagResponse = await Client.CreateTag(TestDataFactory.CreateTagRequest());
         var tag = await tagResponse.ReadAs<TagResponse>();
 
         var createResponse = await Client.CreateNote(TestDataFactory.CreateNoteRequest(tags: [tag.Id]));
         var created = await createResponse.ReadAs<NoteResponse>();
-        await Client.ShareNote(created.Id, TestDataFactory.ShareNoteRequest(email: OtherUserEmail));
 
         // Permanently delete
         var deleteResponse = await Client.DeleteNotePermanent(created.Id);

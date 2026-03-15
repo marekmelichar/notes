@@ -1,18 +1,22 @@
-export interface Note {
+export interface NoteListItem {
   id: string;
   title: string;
-  content: string; // Editor JSON stringified (TipTap format, with legacy BlockNote migration)
   folderId: string | null;
-  tags: string[]; // Tag IDs
+  tags: string[];
   isPinned: boolean;
   isDeleted: boolean;
-  deletedAt: number | null; // Timestamp when moved to trash
-  sharedWith: SharedUser[];
-  order: number; // Position order within folder
+  deletedAt: number | null;
+  order: number;
   createdAt: number;
   updatedAt: number;
+}
+
+export interface Note extends NoteListItem {
+  content: string;
   syncedAt: number | null;
 }
+
+export const toListItem = ({ content: _, syncedAt: __, ...item }: Note): NoteListItem => item;
 
 export interface Folder {
   id: string;
@@ -30,22 +34,6 @@ export interface Tag {
   color: string;
 }
 
-export interface SharedUser {
-  userId: string;
-  email: string;
-  permission: "view" | "edit";
-}
-
-export interface SyncQueueItem {
-  id: string;
-  type: "note" | "folder" | "tag";
-  action: "create" | "update" | "delete";
-  entityId: string;
-  data: unknown;
-  createdAt: number;
-  retries: number;
-}
-
 export type NotesSortBy = "createdAt" | "updatedAt" | "title";
 export type NotesSortOrder = "asc" | "desc";
 export type NotesViewMode = "grid" | "list";
@@ -55,17 +43,18 @@ export interface NotesFilter {
   tagIds: string[];
   isPinned: boolean | null;
   isDeleted: boolean;
-  searchQuery: string;
 }
 
 export interface NotesState {
-  notes: Note[];
+  notes: NoteListItem[];
+  noteDetails: Record<string, Note>;
   filter: NotesFilter;
   sortBy: NotesSortBy;
   sortOrder: NotesSortOrder;
   viewMode: NotesViewMode;
   isLoading: boolean;
   isCreating: boolean;
+  isSearchActive: boolean;
   error: string | null;
 }
 
@@ -79,13 +68,5 @@ export interface FoldersState {
 export interface TagsState {
   tags: Tag[];
   isLoading: boolean;
-  error: string | null;
-}
-
-export interface SyncState {
-  isSyncing: boolean;
-  lastSyncedAt: number | null;
-  pendingChanges: number;
-  isOnline: boolean;
   error: string | null;
 }

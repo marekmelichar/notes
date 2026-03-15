@@ -30,34 +30,14 @@ declare module '@mui/material/styles' {
 }
 
 
-/**
- * Initialize and render the application
- * In mock mode, MSW is started first to intercept API calls
- */
-async function initApp() {
-  // Start MSW in mock mode (only in development builds)
-  if (!import.meta.env.PROD && window.MOCK_MODE) {
-    const { worker, workerOptions } = await import('./mocks/browser');
-    await worker.start({
-      ...workerOptions,
-      serviceWorker: {
-        url: '/mockServiceWorker.js',
-      },
-    });
-    console.log('MSW started - intercepting API requests');
-  }
-
-  ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-      <ReduxDataProvider store={store}>
-        <StyledEngineProvider injectFirst>
-          <ThemeProvider>
-            <App />
-          </ThemeProvider>
-        </StyledEngineProvider>
-      </ReduxDataProvider>
-    </React.StrictMode>,
-  );
-}
-
-initApp();
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <ReduxDataProvider store={store}>
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </ReduxDataProvider>
+  </React.StrictMode>,
+);

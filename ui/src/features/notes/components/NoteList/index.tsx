@@ -24,18 +24,20 @@ import {
   selectNotesSortOrder,
   selectNotesLoading,
   selectNotesCreating,
-  setSortBy,
+  selectIsSearchActive,
   setSortOrder,
+  setSort,
   createNote,
+  loadNotes,
 } from '../../store/notesSlice';
 import { selectAllTags } from '../../store/tagsSlice';
 import { selectAllFolders } from '../../store/foldersSlice';
 import { selectNotesFilter } from '../../store/notesSlice';
-import type { NotesSortBy, Note } from '../../types';
-
-const EMPTY_TAGS: never[] = [];
+import type { NotesSortBy, NoteListItem as NoteListItemType, Tag } from '../../types';
 import { NoteListItem } from './NoteListItem';
 import styles from './index.module.css';
+
+const EMPTY_TAGS: Tag[] = [];
 
 interface NoteListProps {
   collapsed?: boolean;
@@ -54,6 +56,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
   const isLoading = useAppSelector(selectNotesLoading);
   const isCreating = useAppSelector(selectNotesCreating);
   const isMobile = useAppSelector(selectIsMobile);
+  const isSearchActive = useAppSelector(selectIsSearchActive);
 
   const [sortAnchorEl, setSortAnchorEl] = React.useState<null | HTMLElement>(null);
   const virtuosoRef = React.useRef<VirtuosoHandle>(null);
@@ -71,6 +74,13 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
       }
     }
   }, [selectedNoteId, notes]);
+
+  // Reload notes when filter or sort changes
+  React.useEffect(() => {
+    if (!isSearchActive) {
+      dispatch(loadNotes());
+    }
+  }, [dispatch, filter, sortBy, sortOrder, isSearchActive]);
 
   const handleCreateNote = () => {
     if (isCreating) return;
@@ -101,16 +111,15 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
     if (sortBy === newSortBy) {
       dispatch(setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc'));
     } else {
-      dispatch(setSortBy(newSortBy));
-      dispatch(setSortOrder('desc'));
+      dispatch(setSort({ sortBy: newSortBy, sortOrder: 'desc' }));
     }
     handleSortClose();
   };
 
   const getTitle = () => {
+    if (isSearchActive) return t("Common.Search");
     if (filter.isDeleted) return t("Notes.Trash");
     if (filter.isPinned) return t("Notes.Favorites");
-    if (filter.searchQuery) return `${t("Common.Search")} "${filter.searchQuery}"`;
     if (filter.folderId) {
       const folder = allFolders.find((f) => f.id === filter.folderId);
       return folder?.name || t("Notes.AllNotes");
@@ -234,7 +243,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
           <Virtuoso
             ref={virtuosoRef}
             data={notes}
-            itemContent={(_index: number, note: Note) => (
+            itemContent={(_index: number, note: NoteListItemType) => (
               <NoteListItem
                 note={note}
                 tags={tagsByNoteId.get(note.id) || EMPTY_TAGS}

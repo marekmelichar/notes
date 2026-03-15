@@ -29,17 +29,17 @@ public static class ApiClientHelpers
     public static Task<HttpResponseMessage> RestoreNote(this HttpClient client, string id)
         => client.PostAsync($"{ApiBase}/notes/{id}/restore", null);
 
+    public static Task<HttpResponseMessage> GetNoteList(this HttpClient client, string queryString = "")
+        => client.GetAsync($"{ApiBase}/notes/list{(string.IsNullOrEmpty(queryString) ? "" : "?" + queryString)}");
+
+    public static Task<HttpResponseMessage> SearchNoteList(this HttpClient client, string query)
+        => client.GetAsync($"{ApiBase}/notes/list/search?q={Uri.EscapeDataString(query)}");
+
     public static Task<HttpResponseMessage> SearchNotes(this HttpClient client, string query)
         => client.GetAsync($"{ApiBase}/notes/search?q={Uri.EscapeDataString(query)}");
 
     public static Task<HttpResponseMessage> ReorderNotes(this HttpClient client, ReorderNotesRequest request)
         => client.PostAsJsonAsync($"{ApiBase}/notes/reorder", request);
-
-    public static Task<HttpResponseMessage> ShareNote(this HttpClient client, string id, ShareNoteRequest request)
-        => client.PostAsJsonAsync($"{ApiBase}/notes/{id}/share", request);
-
-    public static Task<HttpResponseMessage> RemoveShare(this HttpClient client, string noteId, string userId)
-        => client.DeleteAsync($"{ApiBase}/notes/{noteId}/share/{userId}");
 
     // Folders
     public static Task<HttpResponseMessage> GetFolders(this HttpClient client)
@@ -99,12 +99,6 @@ public static class ApiClientHelpers
     // Users
     public static Task<HttpResponseMessage> GetCurrentUser(this HttpClient client)
         => client.GetAsync($"{ApiBase}/users/me");
-
-    public static Task<HttpResponseMessage> GetUser(this HttpClient client, string id)
-        => client.GetAsync($"{ApiBase}/users/{id}");
-
-    public static Task<HttpResponseMessage> SearchUsers(this HttpClient client, string email)
-        => client.GetAsync($"{ApiBase}/users/search?email={Uri.EscapeDataString(email)}");
 
     // Generic helpers
     public static async Task<T> ReadAs<T>(this HttpResponseMessage response)

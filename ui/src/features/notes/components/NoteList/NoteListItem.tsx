@@ -5,7 +5,7 @@ import PushPinIcon from '@mui/icons-material/PushPin';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import type { Note, Tag } from '../../types';
+import type { NoteListItem as NoteListItemType, Tag } from '../../types';
 import styles from './index.module.css';
 
 dayjs.extend(relativeTime);
@@ -21,39 +21,24 @@ const getDaysUntilPermanentDelete = (deletedAt: number | null): number | null =>
 };
 
 interface NoteListItemProps {
-  note: Note;
+  note: NoteListItemType;
   tags: Tag[];
   isSelected: boolean;
   onSelect: (noteId: string) => void;
 }
 
-const stripHtmlTags = (html: string): string => {
-  try {
-    const parsed = JSON.parse(html);
-    const extractText = (node: unknown): string => {
-      if (!node || typeof node !== 'object') return '';
-      const n = node as { type?: string; text?: string; content?: unknown[] };
-      if (n.type === 'text' && n.text) return n.text;
-      if (n.content && Array.isArray(n.content)) {
-        return n.content.map(extractText).join(' ');
-      }
-      return '';
-    };
-    return extractText(parsed);
-  } catch {
-    return html.replace(/<[^>]*>/g, '');
-  }
-};
-
 export const NoteListItem = React.memo(({ note, tags, isSelected, onSelect }: NoteListItemProps) => {
   const { t } = useTranslation();
-  const contentPreview = stripHtmlTags(note.content).slice(0, 80);
   const daysRemaining = note.isDeleted ? getDaysUntilPermanentDelete(note.deletedAt) : null;
 
   return (
     <Box
+      role="button"
+      tabIndex={0}
+      aria-selected={isSelected}
       className={`${styles.noteListItem} ${isSelected ? styles.noteListItemSelected : ''}`}
       onClick={() => onSelect(note.id)}
+      onKeyDown={(e) => e.key === 'Enter' && onSelect(note.id)}
     >
       {note.isPinned && <PushPinIcon fontSize="small" color="primary" className={styles.pinnedIcon} />}
 
@@ -61,11 +46,6 @@ export const NoteListItem = React.memo(({ note, tags, isSelected, onSelect }: No
         <Typography className={styles.noteListItemTitle}>
           {note.title || t("Common.Untitled")}
         </Typography>
-        {contentPreview && (
-          <Typography className={styles.noteListItemPreview}>
-            {contentPreview}
-          </Typography>
-        )}
       </Box>
 
       <Box className={styles.noteListItemMeta}>

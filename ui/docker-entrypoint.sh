@@ -8,7 +8,6 @@ window.API_URL = '${API_URL-}';
 window.KEYCLOAK_URL = '${KEYCLOAK_URL:-http://localhost:8080}';
 window.KEYCLOAK_REALM = '${KEYCLOAK_REALM:-notes}';
 window.KEYCLOAK_CLIENT_ID = '${KEYCLOAK_CLIENT_ID:-notes-frontend}';
-window.MOCK_MODE = ${MOCK_MODE:-false};
 EOF
 
 echo "Generated env.js with:"

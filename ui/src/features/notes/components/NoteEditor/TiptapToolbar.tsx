@@ -26,7 +26,8 @@ interface TiptapToolbarProps {
 export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
   const { t } = useTranslation();
 
-  // Debounced re-render on editor state changes (selection/formatting only)
+  // Re-render on editor selection changes (not content updates — selection
+  // changes already fire on content updates when the cursor moves).
   const [, setTick] = useState(0);
   const rafRef = useRef<number>(0);
   useEffect(() => {
@@ -37,11 +38,9 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
       });
     };
     editor.on('selectionUpdate', update);
-    editor.on('update', update);
     return () => {
       cancelAnimationFrame(rafRef.current);
       editor.off('selectionUpdate', update);
-      editor.off('update', update);
     };
   }, [editor]);
 

@@ -4,7 +4,6 @@ import {
   clearScheduledRefresh,
   setTokenRefreshCallback,
 } from '@/features/auth/utils/keycloak';
-import { clearAuthToken, setAuthToken } from '@/lib';
 import { createAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 export type AccessStatus = 'unknown' | 'authorized' | 'unauthorized';
@@ -24,6 +23,7 @@ interface IAuthState {
   } | null;
   error: string | null;
   accessStatus: AccessStatus;
+  sessionExpired: boolean;
 }
 
 const initialState: IAuthState = {
@@ -33,17 +33,7 @@ const initialState: IAuthState = {
   user: null,
   error: null,
   accessStatus: 'unknown',
-};
-
-// Mock user for development mode
-const mockUser = {
-  id: 'mock-user-id',
-  username: 'Mock User',
-  email: 'mock@example.com',
-  firstName: 'Mock',
-  lastName: 'User',
-  roles: ['admin'],
-  realmRoles: ['admin'],
+  sessionExpired: false,
 };
 
 // Action dispatched internally when token is refreshed
@@ -56,17 +46,8 @@ export const initializeAuth = createAsyncThunk(
     try {
       const authenticated = await initKeycloak();
       if (authenticated) {
-        if (window.MOCK_MODE) {
-          return {
-            authenticated: true,
-            token: 'mock-token',
-            user: mockUser,
-          };
-        }
-
-        // Register callback to sync future token refreshes to Redux + localStorage
+        // Register callback to sync future token refreshes to Redux
         setTokenRefreshCallback((token) => {
-          setAuthToken(token);
           dispatch(updateToken(token));
         });
 
@@ -98,7 +79,6 @@ export const login = createAsyncThunk('auth/login', async () => {
 // Async thunk for logout
 export const logout = createAsyncThunk('auth/logout', async () => {
   clearScheduledRefresh();
-  clearAuthToken();
   keycloak.logout({
     redirectUri: window.location.origin,
   });
@@ -110,6 +90,9 @@ export const authSlice = createSlice({
   reducers: {
     setAccessStatus: (state, action: { payload: AccessStatus }) => {
       state.accessStatus = action.payload;
+    },
+    setSessionExpired: (state, action: { payload: boolean }) => {
+      state.sessionExpired = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -123,7 +106,6 @@ export const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = action.payload.authenticated;
         state.token = action.payload.token;
-        setAuthToken(action.payload.token || '');
         state.user = action.payload.user;
       })
       .addCase(initializeAuth.rejected, (state, action) => {
@@ -149,12 +131,13 @@ export const authSlice = createSlice({
         state.user = null;
         state.isLoading = false;
         state.accessStatus = 'unknown';
-        setAuthToken('');
+        state.sessionExpired = false;
       });
   },
 });
 
-export const { setAccessStatus } = authSlice.actions;
+export const { setAccessStatus, setSessionExpired } = authSlice.actions;
 
 // Selectors
 export const selectAuthUser = (state: { auth: IAuthState }) => state.auth.user;
+export const selectSessionExpired = (state: { auth: IAuthState }) => state.auth.sessionExpired;

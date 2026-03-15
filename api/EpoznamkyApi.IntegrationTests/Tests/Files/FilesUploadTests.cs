@@ -71,4 +71,14 @@ public class FilesUploadTests(DatabaseFixture db) : IntegrationTestBase(db)
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task Upload_should_reject_svg_files()
+    {
+        var content = CreateFakeImage();
+
+        var response = await Client.UploadFile("unsafe.svg", content, "image/svg+xml");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

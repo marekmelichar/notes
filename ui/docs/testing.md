@@ -297,64 +297,13 @@ describe('Header', () => {
 });
 ```
 
-### Testing with MSW
+### Testing API-dependent UI
 
-`src/components/UserList/UserList.test.tsx`:
+For this codebase, prefer one of these strategies:
 
-```typescript
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
-import { setupServer } from 'msw/node';
-import { http, HttpResponse } from 'msw';
-import { renderWithProviders } from '@/test/utils';
-import { UserList } from './index';
-
-const server = setupServer(
-  http.get('/api/users', () => {
-    return HttpResponse.json([
-      { id: '1', name: 'John Doe' },
-      { id: '2', name: 'Jane Smith' },
-    ]);
-  })
-);
-
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
-describe('UserList', () => {
-  it('displays loading state initially', () => {
-    renderWithProviders(<UserList />);
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
-  });
-
-  it('displays users after loading', async () => {
-    renderWithProviders(<UserList />);
-
-    await waitFor(() => {
-      expect(screen.getByText('John Doe')).toBeInTheDocument();
-      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-    });
-  });
-
-  it('handles error state', async () => {
-    server.use(
-      http.get('/api/users', () => {
-        return HttpResponse.json(
-          { message: 'Server error' },
-          { status: 500 }
-        );
-      })
-    );
-
-    renderWithProviders(<UserList />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/error/i)).toBeInTheDocument();
-    });
-  });
-});
-```
+- mock `notesApi.ts` or `filesApi.ts` with `vi.mock()`
+- unit-test Redux thunks and reducers directly
+- verify integrated behavior with Playwright against the running app
 
 ## Testing Redux
 
@@ -473,7 +422,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev:mock',
+    command: 'npm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
   },
@@ -517,8 +466,7 @@ test.describe('Authentication', () => {
 
     await page.goto('/');
 
-    // In real app, would redirect to Keycloak
-    // With MSW, we simulate authenticated state
+    // In the real app this would redirect to Keycloak.
   });
 
   test('shows user menu when authenticated', async ({ page }) => {

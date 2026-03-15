@@ -34,15 +34,6 @@ function loadTabsFromStorage(): { tabIds: string[]; activeTabId: string | null }
   }
 }
 
-function saveTabsToStorage(tabs: TabInfo[], activeTabId: string | null) {
-  localStorage.setItem(TABS_STORAGE_KEY, JSON.stringify(tabs.map((t) => t.id)));
-  if (activeTabId) {
-    localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, activeTabId);
-  } else {
-    localStorage.removeItem(ACTIVE_TAB_STORAGE_KEY);
-  }
-}
-
 const stored = loadTabsFromStorage();
 const initialState: TabsState = {
   openTabs: stored.tabIds.map((id) => ({ id, hasUnsavedChanges: false })),
@@ -58,7 +49,6 @@ export const tabsSlice = createSlice({
       const existing = state.openTabs.find((t) => t.id === noteId);
       if (!existing) {
         if (state.openTabs.length >= MAX_TABS) {
-          // Remove the oldest tab that isn't active and has no unsaved changes
           const removableIndex = state.openTabs.findIndex(
             (t) => t.id !== state.activeTabId && !t.hasUnsavedChanges
           );
@@ -69,7 +59,6 @@ export const tabsSlice = createSlice({
         state.openTabs.push({ id: noteId, hasUnsavedChanges: false });
       }
       state.activeTabId = noteId;
-      saveTabsToStorage(state.openTabs, state.activeTabId);
     },
     closeTab: (state, action: PayloadAction<string>) => {
       const noteId = action.payload;
@@ -78,23 +67,19 @@ export const tabsSlice = createSlice({
 
       state.openTabs.splice(index, 1);
 
-      // If closing the active tab, activate the nearest remaining tab
       if (state.activeTabId === noteId) {
         if (state.openTabs.length === 0) {
           state.activeTabId = null;
         } else {
-          // Prefer the tab to the right, then to the left
           const newIndex = Math.min(index, state.openTabs.length - 1);
           state.activeTabId = state.openTabs[newIndex].id;
         }
       }
-      saveTabsToStorage(state.openTabs, state.activeTabId);
     },
     setActiveTab: (state, action: PayloadAction<string>) => {
       const noteId = action.payload;
       if (state.openTabs.some((t) => t.id === noteId)) {
         state.activeTabId = noteId;
-        saveTabsToStorage(state.openTabs, state.activeTabId);
       }
     },
     reorderTabs: (
@@ -112,7 +97,6 @@ export const tabsSlice = createSlice({
       }
       const [moved] = state.openTabs.splice(fromIndex, 1);
       state.openTabs.splice(toIndex, 0, moved);
-      saveTabsToStorage(state.openTabs, state.activeTabId);
     },
     setTabUnsaved: (
       state,
@@ -127,17 +111,14 @@ export const tabsSlice = createSlice({
       const keepId = action.payload;
       state.openTabs = state.openTabs.filter((t) => t.id === keepId);
       state.activeTabId = keepId;
-      saveTabsToStorage(state.openTabs, state.activeTabId);
     },
     closeAllTabs: (state) => {
       state.openTabs = [];
       state.activeTabId = null;
-      saveTabsToStorage(state.openTabs, state.activeTabId);
     },
   },
   extraReducers: (builder) => {
     builder
-      // Auto-open new notes in a tab
       .addCase(createNote.fulfilled, (state, action) => {
         const noteId = action.payload.id;
         const existing = state.openTabs.find((t) => t.id === noteId);
@@ -145,9 +126,7 @@ export const tabsSlice = createSlice({
           state.openTabs.push({ id: noteId, hasUnsavedChanges: false });
         }
         state.activeTabId = noteId;
-        saveTabsToStorage(state.openTabs, state.activeTabId);
       })
-      // Auto-close deleted notes
       .addCase(deleteNote.fulfilled, (state, action) => {
         const noteId = action.payload;
         const index = state.openTabs.findIndex((t) => t.id === noteId);
@@ -161,10 +140,8 @@ export const tabsSlice = createSlice({
               state.activeTabId = state.openTabs[newIndex].id;
             }
           }
-          saveTabsToStorage(state.openTabs, state.activeTabId);
         }
       })
-      // Auto-close permanently deleted notes
       .addCase(permanentDeleteNote.fulfilled, (state, action) => {
         const noteId = action.payload;
         const index = state.openTabs.findIndex((t) => t.id === noteId);
@@ -178,7 +155,6 @@ export const tabsSlice = createSlice({
               state.activeTabId = state.openTabs[newIndex].id;
             }
           }
-          saveTabsToStorage(state.openTabs, state.activeTabId);
         }
       });
   },

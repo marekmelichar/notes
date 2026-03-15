@@ -52,7 +52,7 @@
   background-color: var(--mui-palette-background-default);
 }
 
-@media (max-width: 768px), (max-height: 500px) and (orientation: landscape) {
+@media (max-width: 48rem), (max-height: 31.25rem) and (orientation: landscape) {
   .container {
     display: block;
     position: relative;

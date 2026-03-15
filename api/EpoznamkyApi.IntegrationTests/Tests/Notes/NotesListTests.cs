@@ -52,19 +52,17 @@ public class NotesListTests(DatabaseFixture db) : IntegrationTestBase(db)
     }
 
     [Fact]
-    public async Task GetAll_should_include_shared_notes()
+    public async Task GetAll_should_only_return_current_users_notes()
     {
-        // User 2 creates a note and shares it with User 1
-        Client.AsUser(OtherUserId, OtherUserEmail, OtherUserName);
-        var noteResponse = await Client.CreateNote(TestDataFactory.CreateNoteRequest(title: "Shared Note"));
-        var note = await noteResponse.ReadAs<NoteResponse>();
-        await Client.ShareNote(note.Id, TestDataFactory.ShareNoteRequest(email: TestUserEmail));
+        await Client.CreateNote(TestDataFactory.CreateNoteRequest(title: "Mine"));
 
-        // User 1 should see it in their list
+        Client.AsUser(OtherUserId, OtherUserEmail, OtherUserName);
+        await Client.CreateNote(TestDataFactory.CreateNoteRequest(title: "Theirs"));
+
         Client.AsUser(TestUserId, TestUserEmail, TestUserName);
         var response = await Client.GetNotes();
         var result = await response.ReadAs<PaginatedResponse<NoteResponse>>();
 
-        result.Items.Should().ContainSingle(n => n.Title == "Shared Note");
+        result.Items.Should().ContainSingle(n => n.Title == "Mine");
     }
 }

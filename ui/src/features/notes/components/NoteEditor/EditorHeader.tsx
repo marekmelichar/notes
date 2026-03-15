@@ -26,13 +26,13 @@ import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
-import type { Note, Folder } from '../../types';
+import type { Note, NoteListItem, Folder } from '../../types';
 import type { ExportFormat } from './TiptapEditor';
 import { TagPicker } from '../TagPicker';
 import styles from './index.module.css';
 
 interface EditorHeaderProps {
-  note: Note;
+  note: Note | NoteListItem;
   title: string;
   onTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isMobile: boolean;

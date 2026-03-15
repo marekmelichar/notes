@@ -80,4 +80,36 @@ public class NotesCreateTests(DatabaseFixture db) : IntegrationTestBase(db)
         note.CreatedAt.Should().BeInRange(beforeCreate, afterCreate);
         note.UpdatedAt.Should().BeInRange(beforeCreate, afterCreate);
     }
+
+    [Fact]
+    public async Task Create_should_set_order_within_folder()
+    {
+        var folderResponse = await Client.CreateFolder(TestDataFactory.CreateFolderRequest(name: "Work"));
+        var folder = await folderResponse.ReadAs<FolderResponse>();
+
+        var firstResponse = await Client.CreateNote(TestDataFactory.CreateNoteRequest(title: "First", folderId: folder.Id));
+        var first = await firstResponse.ReadAs<NoteResponse>();
+
+        var secondResponse = await Client.CreateNote(TestDataFactory.CreateNoteRequest(title: "Second", folderId: folder.Id));
+        var second = await secondResponse.ReadAs<NoteResponse>();
+
+        first.Order.Should().Be(0);
+        second.Order.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Create_should_return_400_for_unknown_folder()
+    {
+        var response = await Client.CreateNote(TestDataFactory.CreateNoteRequest(folderId: Guid.NewGuid().ToString()));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Create_should_return_400_for_unknown_tag()
+    {
+        var response = await Client.CreateNote(TestDataFactory.CreateNoteRequest(tags: [Guid.NewGuid().ToString()]));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

@@ -1,0 +1,14 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.icon {
+  font-size: 3rem;
+  color: var(--mui-palette-error-main);
+}
