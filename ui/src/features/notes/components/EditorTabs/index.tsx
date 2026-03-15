@@ -42,7 +42,7 @@ interface SortableTabProps {
   closeLabel: string;
 }
 
-const SortableTab = ({
+const SortableTab = React.memo(({
   tabId,
   title,
   subtitle,
@@ -89,7 +89,9 @@ const SortableTab = ({
       </button>
     </Box>
   );
-};
+});
+
+SortableTab.displayName = 'SortableTab';
 
 export const EditorTabs = () => {
   const { t } = useTranslation();

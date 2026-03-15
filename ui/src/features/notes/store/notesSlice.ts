@@ -144,10 +144,14 @@ export const searchNotes = createAsyncThunk(
 
 export const reorderNotes = createAsyncThunk(
   "notes/reorderNotes",
-  async (data: { noteOrders: { id: string; order: number }[] }) => {
-    await notesApi.reorderNotes(data.noteOrders);
-    // Return the updated orders so we can update state
-    return data.noteOrders;
+  async (data: { noteOrders: { id: string; order: number }[] }, { dispatch }) => {
+    try {
+      await notesApi.reorderNotes(data.noteOrders);
+      return data.noteOrders;
+    } catch (error) {
+      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.SaveError"))));
+      throw error;
+    }
   }
 );
 

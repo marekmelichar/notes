@@ -33,7 +33,7 @@ export interface DroppableFolderProps {
   skipAnimationRef: React.RefObject<boolean>;
 }
 
-export const DroppableFolder = ({
+export const DroppableFolder = React.memo(({
   folder,
   level = 0,
   showNotes = false,
@@ -191,4 +191,6 @@ export const DroppableFolder = ({
       </Collapse>
     </>
   );
-};
+});
+
+DroppableFolder.displayName = 'DroppableFolder';

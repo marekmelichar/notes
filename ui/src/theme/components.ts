@@ -1,7 +1,9 @@
 import { alpha } from '@mui/system';
+import type lightPalette from './lightPalette';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getComponents = (palette: any) => ({
+type ThemePalette = typeof lightPalette & { mode: string };
+
+const getComponents = (palette: ThemePalette) => ({
   MuiCssBaseline: {
     styleOverrides: {
       body: {},

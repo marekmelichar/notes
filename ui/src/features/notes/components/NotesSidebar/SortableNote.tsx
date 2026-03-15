@@ -14,7 +14,7 @@ interface SortableNoteProps {
   level: number;
 }
 
-export const SortableNote = ({ note, level }: SortableNoteProps) => {
+export const SortableNote = React.memo(({ note, level }: SortableNoteProps) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const selectedNoteId = useAppSelector(selectActiveTabId);
@@ -81,4 +81,6 @@ export const SortableNote = ({ note, level }: SortableNoteProps) => {
       </Typography>
     </Box>
   );
-};
+});
+
+SortableNote.displayName = 'SortableNote';

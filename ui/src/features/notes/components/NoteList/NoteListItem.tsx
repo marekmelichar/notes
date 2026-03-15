@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Typography, Chip, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import PushPinIcon from '@mui/icons-material/PushPin';
@@ -47,13 +47,17 @@ const stripHtmlTags = (html: string): string => {
 
 export const NoteListItem = React.memo(({ note, tags, isSelected, onSelect }: NoteListItemProps) => {
   const { t } = useTranslation();
-  const contentPreview = stripHtmlTags(note.content).slice(0, 80);
+  const contentPreview = useMemo(() => stripHtmlTags(note.content).slice(0, 80), [note.content]);
   const daysRemaining = note.isDeleted ? getDaysUntilPermanentDelete(note.deletedAt) : null;
 
   return (
     <Box
+      role="button"
+      tabIndex={0}
+      aria-selected={isSelected}
       className={`${styles.noteListItem} ${isSelected ? styles.noteListItemSelected : ''}`}
       onClick={() => onSelect(note.id)}
+      onKeyDown={(e) => e.key === 'Enter' && onSelect(note.id)}
     >
       {note.isPinned && <PushPinIcon fontSize="small" color="primary" className={styles.pinnedIcon} />}
 
