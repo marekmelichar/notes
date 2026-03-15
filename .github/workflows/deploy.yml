@@ -2,7 +2,7 @@ name: Build and Deploy
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main]
   workflow_dispatch:
     inputs:
       force_build_all:
@@ -13,8 +13,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository }}
-  # "latest" for main, "staging" for staging branch
-  IMAGE_TAG: ${{ github.ref_name == 'main' && 'latest' || 'staging' }}
 
 jobs:
   changes:
@@ -35,7 +33,6 @@ jobs:
               - 'ui/**'
             deploy:
               - 'docker-compose.prod.yml'
-              - 'docker-compose.staging.yml'
               - 'deploy/**'
               - 'init-db.sql'
               - 'notes-prod-realm.json'
@@ -67,10 +64,10 @@ jobs:
           context: ./api/EpoznamkyApi
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:${{ github.sha }}
-          cache-from: type=gha,scope=api-${{ env.IMAGE_TAG }}
-          cache-to: type=gha,mode=max,scope=api-${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
 
   build-ui:
     needs: changes
@@ -99,10 +96,10 @@ jobs:
           context: ./ui
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/frontend:${{ github.sha }}
-          cache-from: type=gha,scope=ui-${{ env.IMAGE_TAG }}
-          cache-to: type=gha,mode=max,scope=ui-${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=ui
+          cache-to: type=gha,mode=max,scope=ui
 
   deploy:
     needs: [changes, build-api, build-ui]
@@ -122,11 +119,10 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "docker-compose.prod.yml,docker-compose.staging.yml,init-db.sql,notes-prod-realm.json,deploy/"
+          source: "docker-compose.prod.yml,init-db.sql,notes-prod-realm.json,deploy/"
           target: "/opt/nettio"
 
-      - name: Deploy production
-        if: github.ref_name == 'main'
+      - name: Deploy to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -138,19 +134,4 @@ jobs:
             export GITHUB_REPOSITORY=${{ github.repository }}
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
-            docker image prune -f
-
-      - name: Deploy staging
-        if: github.ref_name == 'staging'
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd /opt/nettio
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            export GITHUB_REPOSITORY=${{ github.repository }}
-            docker compose -f docker-compose.staging.yml pull
-            docker compose -f docker-compose.staging.yml up -d
             docker image prune -f
