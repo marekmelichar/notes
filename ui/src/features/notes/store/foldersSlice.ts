@@ -23,22 +23,13 @@ export const createFolder = createAsyncThunk(
   'folders/createFolder',
   async (data: { name: string; parentId?: string | null; color?: string }, { dispatch }) => {
     try {
-      const folders = await foldersApi.getAll();
-      const maxOrder = folders.reduce((max, f) => Math.max(max, f.order), -1);
-
-      const now = Date.now();
-      const folderData = {
+      const folder = await foldersApi.create({
         name: data.name,
         parentId: data.parentId ?? null,
         color: data.color || DEFAULT_ITEM_COLOR,
-        order: maxOrder + 1,
-        createdAt: now,
-        updatedAt: now,
-      };
-      // Use the server-generated ID
-      const id = await foldersApi.create(folderData);
+      });
       dispatch(showSuccess('Folder created'));
-      return { ...folderData, id } as Folder;
+      return folder;
     } catch (error) {
       dispatch(showError(getApiErrorMessage(error, i18n.t('Folders.CreateError'))));
       throw error;
@@ -77,9 +68,8 @@ export const deleteFolder = createAsyncThunk(
 export const reorderFolders = createAsyncThunk(
   'folders/reorderFolders',
   async (folderIds: string[]) => {
-    const updates = folderIds.map((id, index) => foldersApi.update(id, { order: index }));
-    await Promise.all(updates);
-    return await foldersApi.getAll();
+    const folderOrders = folderIds.map((id, index) => ({ id, order: index }));
+    return await foldersApi.reorder(folderOrders);
   },
 );
 

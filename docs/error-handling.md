@@ -107,7 +107,6 @@ Model validation errors include an `errors` field:
 |---|---|---|---|
 | `NotesController` | Search query too long | 400 | "Search query must not exceed 200 characters." |
 | `FoldersController` | Circular parent reference | 400 | "Circular reference detected." |
-| `UsersController` | Email query too long | 400 | "Email search query must not exceed 320 characters." |
 | `FilesController` | Empty file | 400 | "File is empty." |
 | `FilesController` | File too large | 400 | "File exceeds maximum allowed size." |
 | `FilesController` | Bad extension | 400 | "File type not allowed." |
@@ -202,7 +201,7 @@ Here the fallback uses i18n (`t()`) because the component has access to the tran
 | `notesSlice.ts` | create, update, delete, restore, permanentDelete | Redux `showError()` |
 | `foldersSlice.ts` | create, update, delete | Redux `showError()` |
 | `tagsSlice.ts` | create, update, delete | Redux `showError()` |
-| `BlockNoteWrapper.tsx` | file upload | notistack `enqueueSnackbar()` |
+| `useFileUpload.ts` | file upload | notistack `enqueueSnackbar()` |
 | `SearchDialog/index.tsx` | search | Redux `showError()` |
 | `apiManager.tsx` interceptor | 401 (session expired) | Keycloak redirect |
 
@@ -223,25 +222,6 @@ Here the fallback uses i18n (`t()`) because the component has access to the tran
    ```
 
 3. The server's ProblemDetails `detail` message will be shown to the user if available; otherwise the fallback string is used.
-
-## MSW Mock Handlers
-
-Mock handlers (`ui/src/mocks/handlers.ts`) return ProblemDetails for errors to match the real API:
-
-```typescript
-function problemDetails(detail: string, status: number, title: string) {
-  return HttpResponse.json(
-    {
-      type: `https://tools.ietf.org/html/rfc7231#section-6.5.${status === 404 ? '4' : '1'}`,
-      title,
-      status,
-      detail,
-      traceId: `mock-${Date.now()}`,
-    },
-    { status },
-  );
-}
-```
 
 ## Tests
 
@@ -284,6 +264,5 @@ cd ui && npx vitest run src/lib/apiError.test.ts src/features/notes/store/*.test
 | `ui/src/lib/apiError.test.ts` | Unit tests for error extraction |
 | `ui/src/features/notes/store/*Slice.ts` | Redux thunks with error handling |
 | `ui/src/features/notes/store/*Slice.test.ts` | Integration tests |
-| `ui/src/features/notes/components/NoteEditor/BlockNoteWrapper.tsx` | File upload error handling |
+| `ui/src/features/notes/components/NoteEditor/useFileUpload.ts` | File upload error handling |
 | `ui/src/components/SearchDialog/index.tsx` | Search error handling |
-| `ui/src/mocks/handlers.ts` | MSW mock error responses |

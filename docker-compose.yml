@@ -84,7 +84,6 @@ services:
       KEYCLOAK_URL: "http://localhost:8080"
       KEYCLOAK_REALM: "notes"
       KEYCLOAK_CLIENT_ID: "notes-frontend"
-      MOCK_MODE: "false"
     ports:
       - "3000:80"
     depends_on:

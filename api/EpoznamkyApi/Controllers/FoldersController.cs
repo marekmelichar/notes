@@ -28,8 +28,15 @@ public class FoldersController(FolderService folderService) : BaseController
     [HttpPost]
     public async Task<ActionResult<FolderResponse>> Create([FromBody] CreateFolderRequest request)
     {
-        var created = await folderService.CreateFolderAsync(request, UserId);
-        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+        try
+        {
+            var created = await folderService.CreateFolderAsync(request, UserId);
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: 400);
+        }
     }
 
     [HttpPut("{id}")]
@@ -41,9 +48,16 @@ public class FoldersController(FolderService folderService) : BaseController
             return Problem(detail: "Circular reference detected.", statusCode: 400);
         }
 
-        var folder = await folderService.UpdateFolderAsync(id, UserId, request);
-        if (folder == null) return NotFound();
-        return folder;
+        try
+        {
+            var folder = await folderService.UpdateFolderAsync(id, UserId, request);
+            if (folder == null) return NotFound();
+            return folder;
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: 400);
+        }
     }
 
     [HttpDelete("{id}")]

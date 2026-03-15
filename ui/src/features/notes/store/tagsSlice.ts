@@ -22,14 +22,12 @@ export const createTag = createAsyncThunk(
   'tags/createTag',
   async (data: { name: string; color?: string }, { dispatch }) => {
     try {
-      const tagData = {
+      const tag = await tagsApi.create({
         name: data.name,
         color: data.color || DEFAULT_ITEM_COLOR,
-      };
-      // Use the server-generated ID
-      const id = await tagsApi.create(tagData);
+      });
       dispatch(showSuccess('Tag created'));
-      return { ...tagData, id } as Tag;
+      return tag;
     } catch (error) {
       dispatch(showError(getApiErrorMessage(error, i18n.t('Tags.CreateError'))));
       throw error;

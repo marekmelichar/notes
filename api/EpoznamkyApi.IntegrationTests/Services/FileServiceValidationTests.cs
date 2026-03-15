@@ -29,6 +29,7 @@ public class FileServiceValidationTests
     [InlineData("application/x-executable")]
     [InlineData("text/html")]
     [InlineData("application/javascript")]
+    [InlineData("image/svg+xml")]
     public void IsAllowedContentType_should_reject_invalid_types(string contentType)
     {
         _sut.IsAllowedContentType(contentType).Should().BeFalse();
@@ -50,6 +51,7 @@ public class FileServiceValidationTests
     [InlineData("virus.bat")]
     [InlineData("hack.sh")]
     [InlineData("page.html")]
+    [InlineData("vector.svg")]
     public void IsAllowedExtension_should_reject_invalid_extensions(string fileName)
     {
         _sut.IsAllowedExtension(fileName).Should().BeFalse();

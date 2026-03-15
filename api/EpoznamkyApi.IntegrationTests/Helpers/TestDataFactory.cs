@@ -34,14 +34,6 @@ public static class TestDataFactory
         Order = order
     };
 
-    public static ShareNoteRequest ShareNoteRequest(
-        string email = "shared@example.com",
-        string permission = "view") => new()
-    {
-        Email = email,
-        Permission = permission
-    };
-
     public static CreateFolderRequest CreateFolderRequest(
         string name = "Test Folder",
         string? parentId = null,

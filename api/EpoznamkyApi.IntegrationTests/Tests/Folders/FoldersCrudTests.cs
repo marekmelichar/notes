@@ -37,6 +37,19 @@ public class FoldersCrudTests(DatabaseFixture db) : IntegrationTestBase(db)
     }
 
     [Fact]
+    public async Task Create_should_set_order_within_parent()
+    {
+        var firstResponse = await Client.CreateFolder(TestDataFactory.CreateFolderRequest(name: "First"));
+        var first = await firstResponse.ReadAs<FolderResponse>();
+
+        var secondResponse = await Client.CreateFolder(TestDataFactory.CreateFolderRequest(name: "Second"));
+        var second = await secondResponse.ReadAs<FolderResponse>();
+
+        first.Order.Should().Be(0);
+        second.Order.Should().Be(1);
+    }
+
+    [Fact]
     public async Task Create_should_return_validation_error_for_empty_name()
     {
         var request = TestDataFactory.CreateFolderRequest(name: "");
@@ -57,6 +70,16 @@ public class FoldersCrudTests(DatabaseFixture db) : IntegrationTestBase(db)
     }
 
     [Fact]
+    public async Task Create_should_return_validation_error_for_unknown_parent()
+    {
+        var request = TestDataFactory.CreateFolderRequest(parentId: Guid.NewGuid().ToString());
+
+        var response = await Client.CreateFolder(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Update_should_modify_folder_properties()
     {
         var createResponse = await Client.CreateFolder(TestDataFactory.CreateFolderRequest(name: "Old"));
@@ -68,6 +91,19 @@ public class FoldersCrudTests(DatabaseFixture db) : IntegrationTestBase(db)
         var updated = await response.ReadAs<FolderResponse>();
         updated.Name.Should().Be("New");
         updated.Color.Should().Be("#00ff00");
+    }
+
+    [Fact]
+    public async Task Update_should_return_validation_error_for_unknown_parent()
+    {
+        var createResponse = await Client.CreateFolder(TestDataFactory.CreateFolderRequest(name: "Folder"));
+        var created = await createResponse.ReadAs<FolderResponse>();
+
+        var response = await Client.UpdateFolder(
+            created.Id,
+            TestDataFactory.UpdateFolderRequest(parentId: Guid.NewGuid().ToString()));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
