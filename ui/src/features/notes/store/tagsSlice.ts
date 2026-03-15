@@ -14,9 +14,18 @@ const initialState: TagsState = {
 };
 
 // Async thunks
-export const loadTags = createAsyncThunk('tags/loadTags', async () => {
-  return await tagsApi.getAll();
-});
+export const loadTags = createAsyncThunk(
+  'tags/loadTags',
+  async () => {
+    return await tagsApi.getAll();
+  },
+  {
+    condition: (_, { getState }) => {
+      const { tags } = getState() as { tags: TagsState };
+      return !tags.isLoading;
+    },
+  },
+);
 
 export const createTag = createAsyncThunk(
   'tags/createTag',
