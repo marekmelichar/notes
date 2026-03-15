@@ -12,6 +12,7 @@ import { notesSlice } from '@/features/notes/store/notesSlice';
 import { foldersSlice } from '@/features/notes/store/foldersSlice';
 import { tagsSlice } from '@/features/notes/store/tagsSlice';
 import { uiPersistMiddleware } from './uiPersistMiddleware';
+import { tabsPersistMiddleware } from './tabsPersistMiddleware';
 
 // Export slices
 export * from './authSlice';
@@ -33,7 +34,10 @@ export const store = configureStore({
     tags: tagsSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().prepend(uiPersistMiddleware.middleware),
+    getDefaultMiddleware().prepend(
+      uiPersistMiddleware.middleware,
+      tabsPersistMiddleware.middleware,
+    ),
 });
 
 /**

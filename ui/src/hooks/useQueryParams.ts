@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 
-export const useQueryParams = (defaultParams: Record<string, any> = {}) => {
+export const useQueryParams = (defaultParams: Record<string, string> = {}) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const params = Object.fromEntries(searchParams.entries());
@@ -10,7 +10,7 @@ export const useQueryParams = (defaultParams: Record<string, any> = {}) => {
     return param ?? defaultParams[key] ?? null;
   };
 
-  const setParams = (newValues: Record<string, any>) => {
+  const setParams = (newValues: Record<string, string>) => {
     const updated = {
       ...params,
       ...Object.entries(newValues).reduce(
@@ -24,7 +24,7 @@ export const useQueryParams = (defaultParams: Record<string, any> = {}) => {
     setSearchParams(updated);
   };
 
-  const updateParams = (newValues: Record<string, any>) => {
+  const updateParams = (newValues: Record<string, string | null | undefined>) => {
     const updated = new URLSearchParams(searchParams);
 
     Object.entries(newValues).forEach(([key, value]) => {

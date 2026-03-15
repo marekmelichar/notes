@@ -20,7 +20,6 @@ import { initializeAuth, useAppDispatch } from './store';
 import { ProtectedRoute } from './features/auth/components/ProtectedRoute';
 
 const MainLayout = lazy(() => import('./components/MainLayout'));
-const HomePage = lazy(() => import('./pages/HomePage'));
 const NotesPage = lazy(() => import('./pages/NotesPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
