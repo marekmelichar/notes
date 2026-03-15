@@ -9,7 +9,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<NoteTag> NoteTags => Set<NoteTag>();
-    public DbSet<NoteShare> NoteShares => Set<NoteShare>();
     public DbSet<User> Users => Set<User>();
     public DbSet<FileUpload> FileUploads => Set<FileUpload>();
 
@@ -76,17 +75,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasOne<Tag>()
                 .WithMany()
                 .HasForeignKey(e => e.TagId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // NoteShare
-        modelBuilder.Entity<NoteShare>(entity =>
-        {
-            entity.HasKey(e => new { e.NoteId, e.SharedWithUserId });
-
-            entity.HasOne<Note>()
-                .WithMany()
-                .HasForeignKey(e => e.NoteId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
