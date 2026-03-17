@@ -27,6 +27,9 @@
   flex: 1;
   font-size: 0.875rem;
   color: var(--mui-palette-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .shortcutHint {
