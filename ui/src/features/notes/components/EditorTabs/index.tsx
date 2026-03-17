@@ -18,7 +18,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useAppDispatch, useAppSelector } from '@/store';
+import { useAppDispatch, useAppSelector, selectIsMobile } from '@/store';
 import {
   selectOpenTabs,
   selectActiveTabId,
@@ -101,7 +101,9 @@ export const EditorTabs = () => {
   const notes = useAppSelector(selectAllNotes);
   const folders = useAppSelector(selectAllFolders);
 
-  const sensors = useSensors(
+  const isMobile = useAppSelector(selectIsMobile);
+
+  const desktopSensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
     }),
@@ -109,6 +111,12 @@ export const EditorTabs = () => {
       activationConstraint: { delay: 200, tolerance: 5 },
     }),
   );
+  const mobileSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
+  const sensors = isMobile ? mobileSensors : desktopSensors;
 
   const [activeId, setActiveId] = useState<string | null>(null);
 
