@@ -8,6 +8,11 @@
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "bruteForceProtected": true,
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 31536000,
+  "offlineSessionIdleTimeout": 7776000,
+  "offlineSessionMaxLifespan": 31536000,
+  "offlineSessionMaxLifespanEnabled": true,
   "clients": [
     {
       "clientId": "notes-frontend",
@@ -27,7 +32,15 @@
       "protocol": "openid-connect",
       "attributes": {
         "pkce.code.challenge.method": "S256"
-      }
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email",
+        "offline_access"
+      ]
     }
   ],
   "users": [

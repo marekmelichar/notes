@@ -10,9 +10,11 @@
   "bruteForceProtected": true,
   "accessTokenLifespan": 300,
   "accessTokenLifespanForImplicitFlow": 900,
-  "ssoSessionIdleTimeout": 1800,
-  "ssoSessionMaxLifespan": 36000,
-  "offlineSessionIdleTimeout": 2592000,
+  "ssoSessionIdleTimeout": 2592000,
+  "ssoSessionMaxLifespan": 31536000,
+  "offlineSessionIdleTimeout": 7776000,
+  "offlineSessionMaxLifespan": 31536000,
+  "offlineSessionMaxLifespanEnabled": true,
   "accessCodeLifespan": 60,
   "accessCodeLifespanUserAction": 300,
   "accessCodeLifespanLogin": 1800,
@@ -77,12 +79,12 @@
         "acr",
         "profile",
         "roles",
-        "email"
+        "email",
+        "offline_access"
       ],
       "optionalClientScopes": [
         "address",
         "phone",
-        "offline_access",
         "microprofile-jwt"
       ],
       "protocolMappers": [

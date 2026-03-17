@@ -60,6 +60,23 @@ keycloak.onTokenExpired = () => {
     });
 };
 
+// Refresh token when the tab becomes visible again (e.g. after device sleep or long background)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && keycloak.authenticated) {
+    keycloak
+      .updateToken(REFRESH_MARGIN_SECONDS)
+      .then((refreshed) => {
+        if (refreshed && keycloak.token) {
+          onTokenRefreshCallback?.(keycloak.token);
+        }
+        scheduleTokenRefresh();
+      })
+      .catch(() => {
+        keycloak.login();
+      });
+  }
+});
+
 const initKeycloak = (): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     keycloak
@@ -69,6 +86,7 @@ const initKeycloak = (): Promise<boolean> => {
         flow: 'standard',
         checkLoginIframe: false,
         enableLogging: false,
+        scope: 'openid offline_access',
       })
       .then((authenticated: boolean) => {
         if (!authenticated) {
