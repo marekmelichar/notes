@@ -42,6 +42,41 @@ interface SortableTabProps {
   closeLabel: string;
 }
 
+const PlainTab = React.memo(({
+  tabId,
+  title,
+  subtitle,
+  isActive,
+  hasUnsavedChanges,
+  onTabClick,
+  onTabClose,
+  onMiddleClick,
+  closeLabel,
+}: SortableTabProps) => (
+  <Box
+    data-testid={`editor-tab-${tabId}`}
+    className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
+    onClick={() => onTabClick(tabId)}
+    onMouseDown={(e) => onMiddleClick(e, tabId)}
+  >
+    {hasUnsavedChanges && <span className={styles.unsavedDot} />}
+    <span className={styles.tabTitle}>
+      {title}
+      {subtitle && <span className={styles.tabSubtitle}> — {subtitle}</span>}
+    </span>
+    <button
+      data-testid="editor-tab-close"
+      className={styles.closeButton}
+      onClick={(e) => onTabClose(e, tabId)}
+      aria-label={closeLabel}
+    >
+      ×
+    </button>
+  </Box>
+));
+
+PlainTab.displayName = 'PlainTab';
+
 const SortableTab = React.memo(({
   tabId,
   title,
@@ -103,7 +138,7 @@ export const EditorTabs = () => {
 
   const isMobile = useAppSelector(selectIsMobile);
 
-  const desktopSensors = useSensors(
+  const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 },
     }),
@@ -111,12 +146,6 @@ export const EditorTabs = () => {
       activationConstraint: { delay: 200, tolerance: 5 },
     }),
   );
-  const mobileSensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    }),
-  );
-  const sensors = isMobile ? mobileSensors : desktopSensors;
 
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -210,6 +239,35 @@ export const EditorTabs = () => {
 
   if (openTabs.length === 0) return null;
 
+  const TabComponent = isMobile ? PlainTab : SortableTab;
+
+  const tabList = (
+    <Box className={styles.tabBar}>
+      {openTabs.map((tab) => {
+        const note = notes.find((n) => n.id === tab.id);
+        const title = note?.title || t('Common.Untitled');
+        const isActive = tab.id === activeTabId;
+
+        return (
+          <TabComponent
+            key={tab.id}
+            tabId={tab.id}
+            title={title}
+            subtitle={tabSubtitles.get(tab.id)}
+            isActive={isActive}
+            hasUnsavedChanges={tab.hasUnsavedChanges}
+            onTabClick={handleTabClick}
+            onTabClose={handleTabClose}
+            onMiddleClick={handleMiddleClick}
+            closeLabel={t('Tabs.CloseTab')}
+          />
+        );
+      })}
+    </Box>
+  );
+
+  if (isMobile) return tabList;
+
   return (
     <DndContext
       sensors={sensors}
@@ -219,28 +277,7 @@ export const EditorTabs = () => {
       onDragCancel={handleDragCancel}
     >
       <SortableContext items={tabIds} strategy={horizontalListSortingStrategy}>
-        <Box className={styles.tabBar}>
-          {openTabs.map((tab) => {
-            const note = notes.find((n) => n.id === tab.id);
-            const title = note?.title || t('Common.Untitled');
-            const isActive = tab.id === activeTabId;
-
-            return (
-              <SortableTab
-                key={tab.id}
-                tabId={tab.id}
-                title={title}
-                subtitle={tabSubtitles.get(tab.id)}
-                isActive={isActive}
-                hasUnsavedChanges={tab.hasUnsavedChanges}
-                onTabClick={handleTabClick}
-                onTabClose={handleTabClose}
-                onMiddleClick={handleMiddleClick}
-                closeLabel={t('Tabs.CloseTab')}
-              />
-            );
-          })}
-        </Box>
+        {tabList}
       </SortableContext>
       <DragOverlay>
         {activeId ? (() => {
