@@ -3,6 +3,7 @@ import {
   keycloak,
   clearScheduledRefresh,
   setTokenRefreshCallback,
+  setRefreshFailureCallback,
 } from '@/features/auth/utils/keycloak';
 import { createAction, createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
@@ -49,6 +50,11 @@ export const initializeAuth = createAsyncThunk(
         // Register callback to sync future token refreshes to Redux
         setTokenRefreshCallback((token) => {
           dispatch(updateToken(token));
+        });
+
+        // On refresh failure, show session-expired banner instead of force-redirecting
+        setRefreshFailureCallback(() => {
+          dispatch(setSessionExpired(true));
         });
 
         return {
