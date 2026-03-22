@@ -42,7 +42,12 @@ export function useTiptapEditor({
     ],
     content: initialContent,
     editorProps: {
-      attributes: { class: className },
+      attributes: {
+        class: className,
+        autocomplete: 'off',
+        autocorrect: 'off',
+        autocapitalize: 'off',
+      },
       handlePaste,
       handleDrop,
     },
