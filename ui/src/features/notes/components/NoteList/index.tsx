@@ -12,7 +12,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import AddIcon from '@mui/icons-material/Add';
-import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import SortIcon from '@mui/icons-material/Sort';
 import NoteOutlinedIcon from '@mui/icons-material/NoteOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -36,7 +35,6 @@ import { selectAllFolders } from '../../store/foldersSlice';
 import { selectNotesFilter } from '../../store/notesSlice';
 import type { NotesSortBy, NoteListItem as NoteListItemType, Tag } from '../../types';
 import { NoteListItem } from './NoteListItem';
-import { isMarkdownFile, readFileAsText, markdownToTiptapJson, getFilenameWithoutExtension } from '../../utils/markdownImport';
 import styles from './index.module.css';
 
 const EMPTY_TAGS: Tag[] = [];
@@ -62,7 +60,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
 
   const [sortAnchorEl, setSortAnchorEl] = React.useState<null | HTMLElement>(null);
   const virtuosoRef = React.useRef<VirtuosoHandle>(null);
-  const mdFileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Scroll to selected note when selection changes
   React.useEffect(() => {
@@ -89,32 +86,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
     if (isCreating) return;
     dispatch(createNote({ folderId: filter.folderId }));
   };
-
-  const handleImportMarkdown = () => {
-    mdFileInputRef.current?.click();
-  };
-
-  const handleMdFileChange = React.useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !isMarkdownFile(file)) return;
-
-    try {
-      const text = await readFileAsText(file);
-      const json = markdownToTiptapJson(text);
-      const title = getFilenameWithoutExtension(file.name);
-      const result = await dispatch(
-        createNote({
-          title,
-          content: JSON.stringify(json),
-          folderId: filter.folderId,
-        }),
-      ).unwrap();
-      dispatch(openTab(result.id));
-    } catch {
-      // Error toast is handled by the thunk
-    }
-    e.target.value = '';
-  }, [dispatch, filter.folderId]);
 
   const handleSelectNote = React.useCallback((noteId: string) => {
     dispatch(openTab(noteId));
@@ -179,11 +150,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
               </IconButton>
             </span>
           </Tooltip>
-          <Tooltip title={t("Notes.ImportMarkdown")} placement="right">
-            <IconButton size="small" onClick={handleImportMarkdown} data-testid="collapsed-import-md-button">
-              <UploadFileOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
         </Box>
         <Box className={styles.collapsedList}>
           {notes.map((note) => (
@@ -209,11 +175,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
           {getTitle()} ({notes.length})
         </Typography>
         <Box className={styles.headerActions}>
-          <Tooltip title={t("Notes.ImportMarkdown")}>
-            <IconButton size="small" onClick={handleImportMarkdown} data-testid="import-md-button">
-              <UploadFileOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
           <Tooltip title={t("Sort.Sort")}>
             <IconButton size="small" onClick={handleSortClick}>
               <SortIcon fontSize="small" />
@@ -293,13 +254,6 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
           />
         )}
       </Box>
-      <input
-        ref={mdFileInputRef}
-        type="file"
-        accept=".md,text/markdown"
-        onChange={handleMdFileChange}
-        hidden
-      />
     </Box>
   );
 };

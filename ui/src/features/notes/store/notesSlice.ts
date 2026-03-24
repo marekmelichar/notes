@@ -93,11 +93,11 @@ export const loadNoteDetail = createAsyncThunk(
 
 export const createNote = createAsyncThunk(
   "notes/createNote",
-  withApiError<{ title?: string; content?: string; folderId?: string | null }, Note>(
+  withApiError<{ title?: string; folderId?: string | null }, Note>(
     "Notes.CreateError",
     async (data) => notesApi.create({
       title: data.title || i18n.t("Common.Untitled"),
-      content: data.content || "",
+      content: "",
       folderId: data.folderId ?? null,
       tags: [],
       isPinned: false,

@@ -1,13 +1,11 @@
 import { lazy, Suspense, memo, forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { enqueueSnackbar } from 'notistack';
 import { EditorContent } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
 import { useFileUpload, isImageFile, FILE_ACCEPT } from './useFileUpload';
 import { useEditorExport, type ExportFormat, type ExportResult } from './useEditorExport';
 import { useTiptapEditor } from './useTiptapEditor';
-import { isMarkdownFile, readFileAsText, markdownToHtml } from '../../utils/markdownImport';
 import { TiptapToolbar } from './TiptapToolbar';
 import styles from './index.module.css';
 
@@ -84,18 +82,6 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         const file = e.target.files?.[0];
         if (!file || !editor) return;
 
-        if (isMarkdownFile(file)) {
-          try {
-            const text = await readFileAsText(file);
-            const html = markdownToHtml(text);
-            editor.chain().focus().insertContent(html).run();
-          } catch {
-            enqueueSnackbar(t('Files.UploadError'), { variant: 'error' });
-          }
-          e.target.value = '';
-          return;
-        }
-
         const response = await uploadFile(file);
         if (response) {
           if (isImageFile(file)) {
@@ -125,7 +111,7 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
         e.target.value = '';
       },
-      [editor, uploadFile, t],
+      [editor, uploadFile],
     );
 
     if (!editor) return null;

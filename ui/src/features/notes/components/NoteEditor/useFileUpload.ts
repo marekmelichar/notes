@@ -2,10 +2,8 @@ import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { enqueueSnackbar } from 'notistack';
 import type { EditorView } from '@tiptap/pm/view';
-import { DOMParser as ProsemirrorDOMParser } from '@tiptap/pm/model';
 import { getApiErrorMessage } from '@/lib';
 import { filesApi, type FileUploadResponse } from '../../services/filesApi';
-import { isMarkdownFile, readFileAsText, markdownToHtml } from '../../utils/markdownImport';
 
 const MAX_FILE_SIZE = 104_857_600; // 100 MB
 
@@ -126,28 +124,6 @@ export function useFileUpload(noteId?: string) {
     [],
   );
 
-  const insertMarkdownContent = useCallback(
-    (view: EditorView, file: File, insertPos: number) => {
-      readFileAsText(file)
-        .then((text) => {
-          if (!view.dom.isConnected) return;
-          const html = markdownToHtml(text);
-          const container = document.createElement('div');
-          container.innerHTML = html;
-          const parser = ProsemirrorDOMParser.fromSchema(view.state.schema);
-          const slice = parser.parseSlice(container);
-          view.dispatch(view.state.tr.insert(insertPos, slice.content));
-        })
-        .catch(() => {
-          enqueueSnackbar(t('Files.UploadError'), { variant: 'error' });
-        });
-    },
-    [t],
-  );
-
-  const insertMarkdownContentRef = useRef(insertMarkdownContent);
-  insertMarkdownContentRef.current = insertMarkdownContent;
-
   const handleFileUpload = useCallback(
     (view: EditorView, file: File, insertPos: number) => {
       const placeholderText = isImageFile(file)
@@ -191,11 +167,7 @@ export function useFileUpload(noteId?: string) {
         const file = item.getAsFile();
         if (file && (item.type.startsWith('image/') || item.kind === 'file')) {
           if (!handled) event.preventDefault();
-          if (isMarkdownFile(file)) {
-            insertMarkdownContentRef.current(view, file, view.state.selection.from);
-          } else {
-            handleFileUploadRef.current(view, file, view.state.selection.from);
-          }
+          handleFileUploadRef.current(view, file, view.state.selection.from);
           handled = true;
         }
       }
@@ -217,14 +189,10 @@ export function useFileUpload(noteId?: string) {
       for (const file of Array.from(files)) {
         if (file.size > 0) {
           if (!handled) event.preventDefault();
-          if (isMarkdownFile(file)) {
-            insertMarkdownContentRef.current(view, file, coords.pos + offset);
-          } else {
-            const sizeBefore = view.state.doc.content.size;
-            handleFileUploadRef.current(view, file, coords.pos + offset);
-            // view.state updates synchronously after dispatch
-            offset += view.state.doc.content.size - sizeBefore;
-          }
+          const sizeBefore = view.state.doc.content.size;
+          handleFileUploadRef.current(view, file, coords.pos + offset);
+          // view.state updates synchronously after dispatch
+          offset += view.state.doc.content.size - sizeBefore;
           handled = true;
         }
       }
