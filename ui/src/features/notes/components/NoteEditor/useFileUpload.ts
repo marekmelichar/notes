@@ -37,6 +37,26 @@ export function isImageFile(file: File): boolean {
   return file.type.startsWith('image/');
 }
 
+/**
+ * Browsers often report generic MIME types (e.g. `application/octet-stream` or empty string)
+ * for extensions like `.md` or `.conf`. When the reported type doesn't match the expected type
+ * for the extension, return a corrected File object.
+ */
+function normalizeFileMime(file: File): File {
+  const dotIdx = file.name.lastIndexOf('.');
+  if (dotIdx === -1) return file;
+
+  const ext = file.name.slice(dotIdx).toLowerCase();
+  const expected = EXTENSION_TO_MIME[ext];
+  if (!expected || file.type === expected) return file;
+
+  // Only fix if the browser sent a generic / empty type
+  if (file.type === '' || file.type === 'application/octet-stream') {
+    return new File([file], file.name, { type: expected, lastModified: file.lastModified });
+  }
+  return file;
+}
+
 function findPlaceholder(
   view: EditorView,
   placeholderText: string,
@@ -125,7 +145,8 @@ export function useFileUpload(noteId?: string) {
   );
 
   const handleFileUpload = useCallback(
-    (view: EditorView, file: File, insertPos: number) => {
+    (view: EditorView, rawFile: File, insertPos: number) => {
+      const file = normalizeFileMime(rawFile);
       const placeholderText = isImageFile(file)
         ? t('Files.Uploading') || 'Uploading image...'
         : t('Files.UploadingFile', { name: file.name }) || `Uploading ${file.name}...`;

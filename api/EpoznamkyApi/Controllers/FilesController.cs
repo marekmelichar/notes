@@ -27,14 +27,23 @@ public class FilesController(FileService fileService, ILogger<FilesController> l
         if (!fileService.IsAllowedExtension(file.FileName))
             return Problem(detail: "File type not allowed.", statusCode: 400);
 
-        if (!fileService.IsAllowedContentType(file.ContentType))
+        // Browsers often report generic MIME types (e.g. application/octet-stream) for
+        // extensions like .md or .conf. Resolve the content type from the extension when
+        // the browser-supplied value is not on the allow-list.
+        var contentType = file.ContentType;
+        if (!fileService.IsAllowedContentType(contentType))
+        {
+            contentType = fileService.ResolveContentType(file.FileName);
+        }
+
+        if (!fileService.IsAllowedContentType(contentType))
             return Problem(detail: "File content type not allowed.", statusCode: 400);
 
         var fileUpload = new FileUpload
         {
             OriginalFilename = file.FileName,
             StoredFilename = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}",
-            ContentType = file.ContentType,
+            ContentType = contentType,
             Size = file.Length,
             UserId = UserId,
             NoteId = noteId
