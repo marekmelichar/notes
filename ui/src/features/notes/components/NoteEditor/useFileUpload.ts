@@ -197,23 +197,29 @@ export function useFileUpload(noteId?: string) {
     [],
   );
 
+  /**
+   * Raw DOM drop handler — runs before ProseMirror's internal drop processing,
+   * which can bail out early for external file drops and never call the
+   * editorProps.handleDrop callback.
+   */
   const handleDrop = useCallback(
-    (view: EditorView, event: DragEvent): boolean => {
-      const files = event.dataTransfer?.files;
+    (view: EditorView, event: Event): boolean => {
+      const dragEvent = event as DragEvent;
+      const files = dragEvent.dataTransfer?.files;
       if (!files || files.length === 0) return false;
 
       // Prevent the browser from navigating to the dropped file (e.g. .md, .txt)
       event.preventDefault();
+      event.stopPropagation();
 
-      const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
-      if (!coords) return true;
+      const coords = view.posAtCoords({ left: dragEvent.clientX, top: dragEvent.clientY });
+      const insertPos = coords?.pos ?? view.state.doc.content.size;
 
       let offset = 0;
       for (const file of Array.from(files)) {
         if (file.size > 0) {
           const sizeBefore = view.state.doc.content.size;
-          handleFileUploadRef.current(view, file, coords.pos + offset);
-          // view.state updates synchronously after dispatch
+          handleFileUploadRef.current(view, file, insertPos + offset);
           offset += view.state.doc.content.size - sizeBefore;
         }
       }
@@ -222,5 +228,21 @@ export function useFileUpload(noteId?: string) {
     [],
   );
 
-  return { uploadFile, handlePaste, handleDrop };
+  /**
+   * Allow the editor to be a drop target for external files by preventing
+   * the browser's default dragover behaviour (which would block the drop).
+   */
+  const handleDragOver = useCallback(
+    (_view: EditorView, event: Event): boolean => {
+      const dragEvent = event as DragEvent;
+      if (dragEvent.dataTransfer?.types?.includes('Files')) {
+        event.preventDefault();
+        return true;
+      }
+      return false;
+    },
+    [],
+  );
+
+  return { uploadFile, handlePaste, handleDrop, handleDragOver };
 }

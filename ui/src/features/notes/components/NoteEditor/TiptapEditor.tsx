@@ -34,7 +34,7 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { uploadFile, handlePaste, handleDrop } = useFileUpload(noteId);
+    const { uploadFile, handlePaste, handleDrop, handleDragOver } = useFileUpload(noteId);
 
     const editor = useTiptapEditor({
       initialContent,
@@ -42,6 +42,7 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       className: `tiptap-editor ${styles.prose}`,
       handlePaste,
       handleDrop,
+      handleDragOver,
       onUpdate: onChange,
     });
 
