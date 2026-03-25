@@ -1,4 +1,4 @@
-import { lazy, Suspense, memo, forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
+import { memo, forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 import { Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { EditorContent } from '@tiptap/react';
@@ -8,10 +8,6 @@ import { useEditorExport, type ExportFormat, type ExportResult } from './useEdit
 import { useTiptapEditor } from './useTiptapEditor';
 import { TiptapToolbar } from './TiptapToolbar';
 import styles from './index.module.css';
-
-const MarkdownPreview = lazy(() =>
-  import('./MarkdownPreview').then((m) => ({ default: m.MarkdownPreview })),
-);
 
 export type { ExportFormat, ExportResult } from './useEditorExport';
 
@@ -30,12 +26,11 @@ interface TiptapEditorProps {
   initialContent: JSONContent | undefined;
   noteId?: string;
   onChange: () => void;
-  viewMode: 'editor' | 'markdown';
   scrollRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
-  ({ initialContent, noteId, onChange, viewMode, scrollRef }, ref) => {
+  ({ initialContent, noteId, onChange, scrollRef }, ref) => {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +45,7 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onUpdate: onChange,
     });
 
-    const { exportTo, getMarkdownContent } = useEditorExport(editor);
+    const { exportTo } = useEditorExport(editor);
 
     useImperativeHandle(
       ref,
@@ -70,8 +65,6 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }),
       [editor, exportTo],
     );
-
-    const markdownContent = viewMode === 'markdown' ? getMarkdownContent() : '';
 
     const handleOpenFilePicker = useCallback(() => {
       fileInputRef.current?.click();
@@ -118,29 +111,19 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     return (
       <>
-        {viewMode === 'editor' && (
-          <TiptapToolbar
-            editor={editor}
-            onFilePicker={handleOpenFilePicker}
-          />
-        )}
+        <TiptapToolbar
+          editor={editor}
+          onFilePicker={handleOpenFilePicker}
+        />
         <Box ref={scrollRef} className={styles.editorContent}>
-          {viewMode === 'editor' ? (
-            <>
-              <EditorContent editor={editor} className={styles.tiptapContainer} />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept={FILE_ACCEPT}
-                onChange={handleFileInputChange}
-                hidden
-              />
-            </>
-          ) : (
-            <Suspense>
-              <MarkdownPreview content={markdownContent} />
-            </Suspense>
-          )}
+          <EditorContent editor={editor} className={styles.tiptapContainer} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={FILE_ACCEPT}
+            onChange={handleFileInputChange}
+            hidden
+          />
         </Box>
       </>
     );

@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 /**
- * Tests for the link URL validation logic used in TiptapToolbar.handleLinkSubmit
- * and the markdown preview DANGEROUS_PROTOCOL check.
+ * Tests for the link URL validation logic used in TiptapToolbar.handleLinkSubmit.
  *
  * The logic is inline in the components, so we test the same regex patterns directly
  * to ensure the security invariants hold.

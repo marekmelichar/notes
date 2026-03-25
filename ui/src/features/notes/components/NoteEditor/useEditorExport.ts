@@ -49,10 +49,5 @@ export function useEditorExport(editor: Editor | null) {
     [editor],
   );
 
-  const getMarkdownContent = useCallback((): string => {
-    if (!editor) return '';
-    return turndown.turndown(editor.getHTML());
-  }, [editor]);
-
-  return { exportTo, getMarkdownContent };
+  return { exportTo };
 }
