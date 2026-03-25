@@ -12,7 +12,8 @@ interface UseTiptapEditorOptions {
   placeholder: string;
   className: string;
   handlePaste: (view: EditorView, event: ClipboardEvent) => boolean;
-  handleDrop: (view: EditorView, event: DragEvent) => boolean;
+  handleDrop: (view: EditorView, event: Event) => boolean;
+  handleDragOver: (view: EditorView, event: Event) => boolean;
   onUpdate: () => void;
 }
 
@@ -22,6 +23,7 @@ export function useTiptapEditor({
   className,
   handlePaste,
   handleDrop,
+  handleDragOver,
   onUpdate,
 }: UseTiptapEditorOptions) {
   return useEditor({
@@ -48,8 +50,11 @@ export function useTiptapEditor({
         autocorrect: 'off',
         autocapitalize: 'off',
       },
+      handleDOMEvents: {
+        drop: handleDrop,
+        dragover: handleDragOver,
+      },
       handlePaste,
-      handleDrop,
     },
     onUpdate: () => {
       onUpdate();
