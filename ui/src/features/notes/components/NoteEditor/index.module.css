@@ -212,42 +212,6 @@
   gap: 0.75rem;
 }
 
-.viewToggle {
-  margin-right: 0.5rem;
-  flex-shrink: 0;
-}
-
-.viewToggle button {
-  padding: 0.25rem 0.5rem;
-}
-
-.markdownPreview {
-  composes: prose;
-  width: 100%;
-  min-height: 100%;
-  padding: 2rem 2.5rem;
-  color: var(--mui-palette-text-primary);
-  font-size: 1rem;
-  line-height: 1.7;
-}
-
-.markdownPreview table {
-  border-collapse: collapse;
-  margin: 0.75rem 0;
-  width: 100%;
-}
-
-.markdownPreview th,
-.markdownPreview td {
-  border: 1px solid var(--mui-palette-divider);
-  padding: 0.5rem 0.75rem;
-  text-align: left;
-}
-
-.markdownPreview th {
-  font-weight: 600;
-  background-color: var(--mui-palette-action-hover);
-}
 
 .editorHidden {
   display: none;
@@ -387,7 +351,4 @@
     padding: 1rem 1.5rem;
   }
 
-  .markdownPreview {
-    padding: 1rem 1.5rem;
-  }
 }

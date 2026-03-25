@@ -43,8 +43,6 @@ const defaultProps = {
   title: 'Test Note',
   onTitleChange: vi.fn(),
   isMobile: false,
-  viewMode: 'editor' as const,
-  onViewModeChange: vi.fn(),
   folders,
   hasUnsavedChanges: false,
   isSaving: false,
@@ -216,22 +214,6 @@ describe('EditorHeader', () => {
 
       await user.click(screen.getByTestId('editor-export-html'));
       expect(onExport).toHaveBeenCalledWith('html');
-    });
-  });
-
-  describe('view mode toggle', () => {
-    it('should render view mode toggle', () => {
-      renderWithTheme();
-      expect(screen.getByTestId('editor-view-toggle')).toBeInTheDocument();
-    });
-
-    it('should call onViewModeChange when toggling', async () => {
-      const user = userEvent.setup();
-      const onViewModeChange = vi.fn();
-      renderWithTheme({ onViewModeChange });
-
-      await user.click(screen.getByTestId('editor-view-markdown'));
-      expect(onViewModeChange).toHaveBeenCalledWith('markdown');
     });
   });
 

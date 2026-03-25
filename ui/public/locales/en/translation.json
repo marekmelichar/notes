@@ -122,9 +122,7 @@
   "View": {
     "ListView": "List view",
     "GridView": "Grid view",
-    "Editor": "Editor",
-    "Markdown": "Markdown",
-    "Preview": "Markdown preview (read-only)"
+    "Markdown": "Markdown"
   },
   "Colors": {
     "Blue": "Blue",

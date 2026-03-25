@@ -42,7 +42,6 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
-  const [viewMode, setViewMode] = useState<'editor' | 'markdown'>('editor');
   const [stats, setStats] = useState<EditorStats>({ wordCount: 0, charCount: 0 });
 
   // Editor ref for content access and export
@@ -276,8 +275,6 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
         title={title}
         onTitleChange={handleTitleChange}
         isMobile={isMobile}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         folders={folders}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}
@@ -299,7 +296,6 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
           initialContent={initialContent}
           noteId={note.id}
           onChange={handleEditorChange}
-          viewMode={viewMode}
           scrollRef={editorScrollRef}
         />
       </ErrorBoundary>

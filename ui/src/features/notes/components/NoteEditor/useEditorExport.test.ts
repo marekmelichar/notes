@@ -106,30 +106,4 @@ describe('useEditorExport', () => {
     });
   });
 
-  describe('getMarkdownContent', () => {
-    it('should return markdown from editor HTML', () => {
-      const editor = createMockEditor('<h1>Title</h1><p>Paragraph</p>');
-      const { result } = renderHook(() => useEditorExport(editor));
-
-      const md = result.current.getMarkdownContent();
-
-      expect(md).toContain('Title');
-      expect(md).toContain('Paragraph');
-    });
-
-    it('should return empty string when editor is null', () => {
-      const { result } = renderHook(() => useEditorExport(null));
-
-      expect(result.current.getMarkdownContent()).toBe('');
-    });
-
-    it('should convert links to markdown', () => {
-      const editor = createMockEditor('<p><a href="https://example.com">link</a></p>');
-      const { result } = renderHook(() => useEditorExport(editor));
-
-      const md = result.current.getMarkdownContent();
-
-      expect(md).toContain('[link](https://example.com)');
-    });
-  });
 });

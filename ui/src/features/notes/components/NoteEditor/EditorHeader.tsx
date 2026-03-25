@@ -9,8 +9,6 @@ import {
   ListItemText,
   Button,
   CircularProgress,
-  ToggleButton,
-  ToggleButtonGroup,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import PushPinIcon from '@mui/icons-material/PushPin';
@@ -24,7 +22,6 @@ import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
 import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import type { Note, NoteListItem, Folder } from '../../types';
 import type { ExportFormat } from './TiptapEditor';
@@ -36,8 +33,6 @@ interface EditorHeaderProps {
   title: string;
   onTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isMobile: boolean;
-  viewMode: 'editor' | 'markdown';
-  onViewModeChange: (mode: 'editor' | 'markdown') => void;
   folders: Folder[];
   hasUnsavedChanges: boolean;
   isSaving: boolean;
@@ -55,8 +50,6 @@ export const EditorHeader = ({
   title,
   onTitleChange,
   isMobile,
-  viewMode,
-  onViewModeChange,
   folders,
   hasUnsavedChanges,
   isSaving,
@@ -139,25 +132,6 @@ export const EditorHeader = ({
       <Box
         className={`${styles.headerActions} ${isMobile ? (showMobileControls ? styles.controlsOpen : styles.controlsCollapsed) : ''}`}
       >
-        <ToggleButtonGroup
-          value={viewMode}
-          exclusive
-          onChange={(_, newMode) => newMode && onViewModeChange(newMode)}
-          size="small"
-          className={styles.viewToggle}
-          data-testid="editor-view-toggle"
-        >
-          <ToggleButton value="editor" data-testid="editor-view-editor" aria-label={t('View.Editor')}>
-            <Tooltip title={t('View.Editor')}>
-              <EditOutlinedIcon fontSize="small" />
-            </Tooltip>
-          </ToggleButton>
-          <ToggleButton value="markdown" data-testid="editor-view-markdown" aria-label={t('View.Preview')}>
-            <Tooltip title={t('View.Preview')}>
-              <CodeOutlinedIcon fontSize="small" />
-            </Tooltip>
-          </ToggleButton>
-        </ToggleButtonGroup>
         <Tooltip title={t('Notes.MoveToFolder')}>
           <Button
             size="small"
