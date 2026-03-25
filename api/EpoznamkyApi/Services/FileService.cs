@@ -132,6 +132,36 @@ public class FileService(AppDbContext db, IOptions<FileStorageSettings> options,
         return _settings.AllowedContentTypes.Contains(contentType, StringComparer.OrdinalIgnoreCase);
     }
 
+    private static readonly Dictionary<string, string> ExtensionToContentType = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [".jpg"] = "image/jpeg",
+        [".jpeg"] = "image/jpeg",
+        [".png"] = "image/png",
+        [".gif"] = "image/gif",
+        [".webp"] = "image/webp",
+        [".heic"] = "image/heic",
+        [".heif"] = "image/heif",
+        [".pdf"] = "application/pdf",
+        [".docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        [".xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        [".xls"] = "application/vnd.ms-excel",
+        [".pptx"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        [".zip"] = "application/zip",
+        [".md"] = "text/markdown",
+        [".txt"] = "text/plain",
+        [".conf"] = "text/plain",
+    };
+
+    /// <summary>
+    /// Resolve a content type from the file extension. Returns <c>application/octet-stream</c>
+    /// when the extension is not recognized.
+    /// </summary>
+    public string ResolveContentType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName);
+        return ExtensionToContentType.TryGetValue(extension, out var ct) ? ct : "application/octet-stream";
+    }
+
     public bool IsAllowedExtension(string fileName)
     {
         var extension = Path.GetExtension(fileName);
