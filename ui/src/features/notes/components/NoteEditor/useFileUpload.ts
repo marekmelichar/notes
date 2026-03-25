@@ -202,22 +202,22 @@ export function useFileUpload(noteId?: string) {
       const files = event.dataTransfer?.files;
       if (!files || files.length === 0) return false;
 
-      const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
-      if (!coords) return false;
+      // Prevent the browser from navigating to the dropped file (e.g. .md, .txt)
+      event.preventDefault();
 
-      let handled = false;
+      const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
+      if (!coords) return true;
+
       let offset = 0;
       for (const file of Array.from(files)) {
         if (file.size > 0) {
-          if (!handled) event.preventDefault();
           const sizeBefore = view.state.doc.content.size;
           handleFileUploadRef.current(view, file, coords.pos + offset);
           // view.state updates synchronously after dispatch
           offset += view.state.doc.content.size - sizeBefore;
-          handled = true;
         }
       }
-      return handled;
+      return true;
     },
     [],
   );
