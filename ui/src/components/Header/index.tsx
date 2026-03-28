@@ -20,8 +20,9 @@ import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ViewListOutlinedIcon from '@mui/icons-material/ViewListOutlined';
 import AddIcon from '@mui/icons-material/Add';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import { useTranslation } from 'react-i18next';
-import { ROUTE_HOME } from '@/config';
+import { ROUTE_HOME, ROUTE_CALENDAR } from '@/config';
 import { LanguageSwitch } from '../LanguageSwitch';
 import { SearchInput } from '../SearchInput';
 const SearchDialog = React.lazy(() =>
@@ -112,6 +113,15 @@ export const Header = () => {
         <Button variant="contained" size="small" startIcon={isCreating ? <CircularProgress size={16} color="inherit" /> : <AddIcon />} onClick={handleCreateNote} disabled={isCreating} data-testid="header-new-note-button" className={styles.newNoteButton}>
           {t('Notes.NewNote')}
         </Button>
+        <IconButton
+          onClick={() => navigate(`/${ROUTE_CALENDAR}`)}
+          size="small"
+          title={t('Common.Nav.Calendar')}
+          data-testid="header-calendar-button"
+          className={styles.calendarButton}
+        >
+          <CalendarMonthOutlinedIcon />
+        </IconButton>
         <LanguageSwitch />
         <IconButton
           onClick={handleAvatarClick}

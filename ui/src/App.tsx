@@ -23,6 +23,7 @@ import { ProtectedRoute } from './features/auth/components/ProtectedRoute';
 const MainLayout = lazy(() => import('./components/MainLayout'));
 const NotesPage = lazy(() => import('./pages/NotesPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const NoAccessPage = lazy(() => import('./pages/NoAccessPage'));
 
@@ -74,6 +75,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <NotesPage /> },
           { path: 'notes/:noteId', element: <NotesPage /> },
+          { path: 'calendar', element: <CalendarPage /> },
           { path: 'settings', element: <SettingsPage /> },
         ],
       },
