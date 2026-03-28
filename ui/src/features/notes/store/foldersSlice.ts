@@ -148,6 +148,11 @@ export const { toggleFolderExpanded, expandFolder, setExpandedFolders, clearErro
 // Selectors
 export const selectAllFolders = (state: { folders: FoldersState }) => state.folders.folders;
 
+export const selectFoldersSortedByName = createSelector(
+  [selectAllFolders],
+  (folders) => [...folders].sort((a, b) => a.name.localeCompare(b.name))
+);
+
 export const selectRootFolders = createSelector(
   [selectAllFolders],
   (folders) => folders.filter((f) => f.parentId === null).sort((a, b) => a.order - b.order)

@@ -12,7 +12,7 @@ import {
   deleteNote,
   restoreNote,
 } from '../../store/notesSlice';
-import { selectAllFolders } from '../../store/foldersSlice';
+import { selectFoldersSortedByName } from '../../store/foldersSlice';
 import {
   TiptapEditor,
   type TiptapEditorHandle,
@@ -36,7 +36,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const note = useAppSelector((state) => selectNoteDetail(state, noteId));
-  const folders = useAppSelector(selectAllFolders);
+  const folders = useAppSelector(selectFoldersSortedByName);
   const isMobile = useMediaQuery('(max-width: 48rem)');
   const [title, setTitle] = useState(note?.title || '');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);

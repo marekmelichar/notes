@@ -230,6 +230,10 @@ export const notesSlice = createSlice({
         if (note) {
           note.isDeleted = true;
         }
+        const detail = state.noteDetails[action.payload];
+        if (detail) {
+          detail.isDeleted = true;
+        }
       })
       .addCase(restoreNote.fulfilled, (state, action) => {
         const updated = action.payload;

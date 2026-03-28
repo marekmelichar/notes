@@ -28,7 +28,10 @@ export function useTiptapEditor({
 }: UseTiptapEditorOptions) {
   return useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        link: false,
+        underline: false,
+      }),
       Link.configure({
         autolink: false,
         linkOnPaste: false,
