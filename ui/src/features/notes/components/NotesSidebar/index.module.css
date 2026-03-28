@@ -193,6 +193,18 @@
   text-overflow: ellipsis;
 }
 
+.folderRenameInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.folderRenameInputInner {
+  font-size: 0.875rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--mui-palette-primary-main);
+}
+
 .tagItemWrapper {
   position: relative;
   display: inline-flex;
