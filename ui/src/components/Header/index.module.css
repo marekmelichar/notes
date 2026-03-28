@@ -49,6 +49,10 @@
   margin-right: 1rem;
 }
 
+.calendarButton {
+  margin-right: 0.5rem;
+}
+
 .avatarButton {
   margin-left: 0.5rem;
 }

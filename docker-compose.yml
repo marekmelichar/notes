@@ -28,8 +28,9 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: postgres
       KC_DB_PASSWORD: postgres
-      KC_HOSTNAME_URL: "http://host.docker.internal:8080"
-      KC_HOSTNAME_ADMIN_URL: "http://host.docker.internal:8080"
+      KC_HOSTNAME: "http://localhost:5173"
+      KC_HOSTNAME_ADMIN: "http://localhost:8080"
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     command: start-dev --import-realm
     volumes:
       - ./notes-dev-realm.json:/opt/keycloak/data/import/notes-realm.json:ro

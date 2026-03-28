@@ -31,7 +31,7 @@ function getEnvironmentConfig(): EnvironmentConfig {
     }
   }
 
-  if (!keycloakUrl) {
+  if (keycloakUrl === undefined || keycloakUrl === null) {
     throw new Error(
       'KEYCLOAK_URL is not defined. Please check your public/env.js file.',
     );
