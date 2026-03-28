@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { Box, Typography, IconButton, Collapse, Tooltip } from "@mui/material";
+import React, { useMemo, useState, useRef, useCallback } from "react";
+import { Box, Typography, IconButton, Collapse, Tooltip, InputBase } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -9,6 +9,7 @@ import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AddIcon from "@mui/icons-material/Add";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import { useAppDispatch, useAppSelector, selectIsMobile } from "@/store";
 import {
@@ -19,6 +20,7 @@ import {
   selectExpandedFolderIds,
   toggleFolderExpanded,
   expandFolder,
+  updateFolder,
 } from "../../store/foldersSlice";
 import { selectAllNotes } from "../../store/notesSlice";
 import type { Folder } from "../../types";
@@ -102,6 +104,30 @@ export const DroppableFolder = React.memo(({
     onAddSubfolder(folder.id);
   };
 
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameName, setRenameName] = useState(folder.name);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRenameStart = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRenameName(folder.name);
+    setIsRenaming(true);
+    setTimeout(() => renameInputRef.current?.select(), 0);
+  }, [folder.name]);
+
+  const handleRenameSubmit = useCallback(() => {
+    const trimmed = renameName.trim();
+    if (trimmed && trimmed !== folder.name) {
+      dispatch(updateFolder({ id: folder.id, updates: { name: trimmed } }));
+    }
+    setIsRenaming(false);
+  }, [dispatch, folder.id, folder.name, renameName]);
+
+  const handleRenameCancel = useCallback(() => {
+    setIsRenaming(false);
+    setRenameName(folder.name);
+  }, [folder.name]);
+
   // Combine refs for both droppable and sortable
   const setNodeRef = (node: HTMLElement | null) => {
     setDroppableRef(node);
@@ -147,12 +173,39 @@ export const DroppableFolder = React.memo(({
         ) : (
           <FolderOutlinedIcon fontSize="small" sx={{ color: folder.color }} />
         )}
-        <Typography className={styles.folderItemLabel}>
-          {folder.name}
-        </Typography>
+        {isRenaming ? (
+          <InputBase
+            inputRef={renameInputRef}
+            autoFocus
+            value={renameName}
+            onChange={(e) => setRenameName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleRenameSubmit();
+              if (e.key === 'Escape') handleRenameCancel();
+              e.stopPropagation();
+            }}
+            onBlur={handleRenameSubmit}
+            onClick={(e) => e.stopPropagation()}
+            className={styles.folderRenameInput}
+            inputProps={{ className: styles.folderRenameInputInner }}
+          />
+        ) : (
+          <Typography className={styles.folderItemLabel}>
+            {folder.name}
+          </Typography>
+        )}
         {folderNotes.length > 0 && (
           <span className={styles.navItemCount}>{folderNotes.length}</span>
         )}
+        <Tooltip title={t("Folders.EditFolder")}>
+          <IconButton
+            size="small"
+            className={styles.addSubfolderButton}
+            onClick={handleRenameStart}
+          >
+            <EditOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
         <Tooltip title={t("Folders.AddSubfolder")}>
           <IconButton
             size="small"
