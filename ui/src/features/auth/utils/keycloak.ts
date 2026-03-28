@@ -96,8 +96,13 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+// Guard against double init (React StrictMode double-mounts the App)
+let initPromise: Promise<boolean> | null = null;
+
 const initKeycloak = (): Promise<boolean> => {
-  return new Promise((resolve, reject) => {
+  if (initPromise) return initPromise;
+
+  initPromise = new Promise((resolve, reject) => {
     keycloak
       .init({
         onLoad: 'check-sso',
@@ -117,9 +122,12 @@ const initKeycloak = (): Promise<boolean> => {
         resolve(authenticated);
       })
       .catch((error) => {
+        initPromise = null;
         reject(error);
       });
   });
+
+  return initPromise;
 };
 
 export { keycloak, initKeycloak, clearScheduledRefresh };

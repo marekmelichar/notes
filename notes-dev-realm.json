@@ -56,6 +56,9 @@
           "value": "testuser",
           "temporary": false
         }
+      ],
+      "realmRoles": [
+        "offline_access"
       ]
     }
   ]
