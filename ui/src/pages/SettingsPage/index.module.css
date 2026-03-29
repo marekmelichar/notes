@@ -33,27 +33,7 @@
 }
 
 .colorPresets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
   margin-top: 0.5rem;
-}
-
-.colorButton {
-  width: 2.5rem;
-  height: 2.5rem;
-  min-width: 2.5rem;
-  min-height: 2.5rem;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  border: 0.125rem solid transparent;
-  cursor: pointer;
-  padding: 0;
-  flex-shrink: 0;
-}
-
-.colorButtonSelected {
-  border-color: var(--mui-palette-text-primary);
 }
 
 .customColorRow {

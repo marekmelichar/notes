@@ -6,3 +6,4 @@ export * from './LanguageSwitch';
 export * from './ErrorBoundary';
 export * from './LoadingFallback';
 export * from './NotificationListener';
+export * from './ColorSwatchPicker';
