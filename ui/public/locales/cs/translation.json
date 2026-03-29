@@ -94,6 +94,13 @@
     "ExpandAll": "Rozbalit",
     "ShowFoldersOnly": "Jen složky",
     "ShowTreeWithNotes": "S poznámkami",
+    "Rename": "Přejmenovat",
+    "ChangeColor": "Změnit barvu",
+    "MoveTo": "Přesunout do...",
+    "Move": "Přesunout",
+    "MoveUp": "Posunout nahoru",
+    "MoveDown": "Posunout dolů",
+    "Root": "Kořen (bez nadřazené)",
     "CreateError": "Nepodařilo se vytvořit složku",
     "UpdateError": "Nepodařilo se aktualizovat složku",
     "DeleteError": "Nepodařilo se smazat složku"

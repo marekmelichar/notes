@@ -94,6 +94,13 @@
     "ExpandAll": "Expand all",
     "ShowFoldersOnly": "Show folders only",
     "ShowTreeWithNotes": "Show tree with notes",
+    "Rename": "Rename",
+    "ChangeColor": "Change color",
+    "MoveTo": "Move to...",
+    "Move": "Move",
+    "MoveUp": "Move up",
+    "MoveDown": "Move down",
+    "Root": "Root (no parent)",
     "CreateError": "Failed to create folder",
     "UpdateError": "Failed to update folder",
     "DeleteError": "Failed to delete folder"
