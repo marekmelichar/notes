@@ -176,7 +176,7 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
         </Typography>
         <Box className={styles.headerActions}>
           <Tooltip title={t("Sort.Sort")}>
-            <IconButton size="small" onClick={handleSortClick}>
+            <IconButton size="small" onClick={handleSortClick} data-testid="notelist-sort-button">
               <SortIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -188,25 +188,28 @@ export const NoteList = ({ collapsed = false }: NoteListProps) => {
             <MenuItem
               onClick={() => handleSortChange('updatedAt')}
               selected={sortBy === 'updatedAt'}
+              data-testid="notelist-sort-modified"
             >
               {t("Sort.Modified")} {sortBy === 'updatedAt' && (sortOrder === 'asc' ? '↑' : '↓')}
             </MenuItem>
             <MenuItem
               onClick={() => handleSortChange('createdAt')}
               selected={sortBy === 'createdAt'}
+              data-testid="notelist-sort-created"
             >
               {t("Sort.Created")} {sortBy === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
             </MenuItem>
             <MenuItem
               onClick={() => handleSortChange('title')}
               selected={sortBy === 'title'}
+              data-testid="notelist-sort-title"
             >
               {t("Sort.Title")} {sortBy === 'title' && (sortOrder === 'asc' ? '↑' : '↓')}
             </MenuItem>
           </Menu>
           {!isMobile && (
             <Tooltip title={t("Common.CollapseNoteList")}>
-              <IconButton size="small" onClick={handleToggleCollapse}>
+              <IconButton size="small" onClick={handleToggleCollapse} data-testid="notelist-collapse-button">
                 <MenuOpenIcon fontSize="small" />
               </IconButton>
             </Tooltip>

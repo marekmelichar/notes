@@ -87,20 +87,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ notes }) => {
   };
 
   return (
-    <Box className={styles.container}>
+    <Box className={styles.container} data-testid="calendar-view">
       <Box className={styles.header}>
         <Box className={styles.navigation}>
-          <IconButton onClick={handlePrevMonth} size="small">
+          <IconButton onClick={handlePrevMonth} size="small" data-testid="calendar-prev">
             <ChevronLeftIcon />
           </IconButton>
           <Typography variant="h6" className={styles.monthTitle}>
             {currentMonth.format('MMMM YYYY')}
           </Typography>
-          <IconButton onClick={handleNextMonth} size="small">
+          <IconButton onClick={handleNextMonth} size="small" data-testid="calendar-next">
             <ChevronRightIcon />
           </IconButton>
         </Box>
-        <IconButton onClick={handleToday} size="small" title="Today">
+        <IconButton onClick={handleToday} size="small" title="Today" data-testid="calendar-today">
           <TodayIcon />
         </IconButton>
       </Box>

@@ -69,7 +69,7 @@ export const FolderMoveDialog = ({ folder, onClose }: FolderMoveDialogProps) => 
   if (!folder) return null;
 
   return (
-    <Dialog open onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open onClose={onClose} maxWidth="xs" fullWidth data-testid="folder-move-dialog">
       <DialogTitle>
         {t('Folders.MoveTo')} — {folder.name}
       </DialogTitle>
@@ -78,6 +78,7 @@ export const FolderMoveDialog = ({ folder, onClose }: FolderMoveDialogProps) => 
           <ListItemButton
             selected={selectedParentId === null}
             onClick={() => setSelectedParentId(null)}
+            data-testid="folder-move-root"
           >
             <ListItemIcon>
               <Radio
@@ -95,6 +96,7 @@ export const FolderMoveDialog = ({ folder, onClose }: FolderMoveDialogProps) => 
               key={f.id}
               selected={selectedParentId === f.id}
               onClick={() => setSelectedParentId(f.id)}
+              data-testid={`folder-move-${f.id}`}
             >
               <ListItemIcon>
                 <Radio
@@ -111,11 +113,12 @@ export const FolderMoveDialog = ({ folder, onClose }: FolderMoveDialogProps) => 
         </List>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>{t('Common.Cancel')}</Button>
+        <Button onClick={onClose} data-testid="folder-move-cancel">{t('Common.Cancel')}</Button>
         <Button
           onClick={handleMove}
           variant="contained"
           disabled={selectedParentId === folder.parentId}
+          data-testid="folder-move-submit"
         >
           {t('Folders.Move')}
         </Button>

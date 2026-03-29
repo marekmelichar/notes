@@ -218,6 +218,7 @@ export const DroppableFolder = React.memo(({
         className={`${styles.folderItem} ${isOver ? styles.dropTarget : ""}`}
         style={style}
         onClick={handleClick}
+        data-testid={`folder-item-${folder.id}`}
       >
         <Box className={styles.folderItemIcon}>
           {hasChildren ? (
@@ -225,6 +226,7 @@ export const DroppableFolder = React.memo(({
               size="small"
               onClick={handleToggleExpand}
               className={styles.expandButton}
+              data-testid={`folder-expand-${folder.id}`}
             >
               {isExpanded ? (
                 <ExpandMoreIcon fontSize="small" />
@@ -254,6 +256,7 @@ export const DroppableFolder = React.memo(({
             onClick={(e) => e.stopPropagation()}
             className={styles.folderRenameInput}
             inputProps={{ className: styles.folderRenameInputInner }}
+            data-testid="folder-rename-input"
           />
         ) : (
           <Typography className={styles.folderItemLabel}>
@@ -267,6 +270,7 @@ export const DroppableFolder = React.memo(({
           size="small"
           className={styles.addSubfolderButton}
           onClick={handleMenuOpen}
+          data-testid={`folder-menu-button-${folder.id}`}
         >
           <MoreHorizIcon fontSize="small" />
         </IconButton>
@@ -279,33 +283,33 @@ export const DroppableFolder = React.memo(({
         onClose={handleMenuClose}
         onClick={(e) => e.stopPropagation()}
       >
-        <MenuItem onClick={handleRenameStart}>
+        <MenuItem onClick={handleRenameStart} data-testid="folder-menu-rename">
           <ListItemIcon><EditOutlinedIcon fontSize="small" /></ListItemIcon>
           <ListItemText>{t("Folders.Rename")}</ListItemText>
         </MenuItem>
-        <MenuItem onClick={handleColorStart}>
+        <MenuItem onClick={handleColorStart} data-testid="folder-menu-color">
           <ListItemIcon><PaletteOutlinedIcon fontSize="small" /></ListItemIcon>
           <ListItemText>{t("Folders.ChangeColor")}</ListItemText>
         </MenuItem>
-        <MenuItem onClick={handleAddSubfolder}>
+        <MenuItem onClick={handleAddSubfolder} data-testid="folder-menu-add-subfolder">
           <ListItemIcon><CreateNewFolderOutlinedIcon fontSize="small" /></ListItemIcon>
           <ListItemText>{t("Folders.AddSubfolder")}</ListItemText>
         </MenuItem>
         <Divider />
-        <MenuItem onClick={handleMoveTo}>
+        <MenuItem onClick={handleMoveTo} data-testid="folder-menu-move">
           <ListItemIcon><DriveFileMoveOutlinedIcon fontSize="small" /></ListItemIcon>
           <ListItemText>{t("Folders.MoveTo")}</ListItemText>
         </MenuItem>
-        <MenuItem onClick={handleMoveUp} disabled={!canMoveUp}>
+        <MenuItem onClick={handleMoveUp} disabled={!canMoveUp} data-testid="folder-menu-move-up">
           <ListItemIcon><ArrowUpwardIcon fontSize="small" /></ListItemIcon>
           <ListItemText>{t("Folders.MoveUp")}</ListItemText>
         </MenuItem>
-        <MenuItem onClick={handleMoveDown} disabled={!canMoveDown}>
+        <MenuItem onClick={handleMoveDown} disabled={!canMoveDown} data-testid="folder-menu-move-down">
           <ListItemIcon><ArrowDownwardIcon fontSize="small" /></ListItemIcon>
           <ListItemText>{t("Folders.MoveDown")}</ListItemText>
         </MenuItem>
         <Divider />
-        <MenuItem onClick={handleDelete}>
+        <MenuItem onClick={handleDelete} data-testid="folder-menu-delete">
           <ListItemIcon><DeleteOutlineIcon fontSize="small" color="error" /></ListItemIcon>
           <ListItemText sx={{ color: 'error.main' }}>{t("Common.Delete")}</ListItemText>
         </MenuItem>
@@ -320,6 +324,7 @@ export const DroppableFolder = React.memo(({
         onClick={(e) => e.stopPropagation()}
         disableAutoFocus
         disableRestoreFocus
+        data-testid="folder-color-popover"
       >
         <ColorSwatchPicker
           selected={folder.color}

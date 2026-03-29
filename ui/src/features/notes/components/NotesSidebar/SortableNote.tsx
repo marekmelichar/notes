@@ -68,6 +68,7 @@ export const SortableNote = React.memo(({ note, level }: SortableNoteProps) => {
       className={`${styles.noteTreeItem} ${isSelected ? styles.noteTreeItemActive : ""} ${isDragging ? styles.dragging : ""}`}
       style={style}
       onClick={handleClick}
+      data-testid={`sidebar-note-${note.id}`}
     >
       <Box {...listeners} {...attributes} className={styles.dragHandle}>
         <DragIndicatorIcon fontSize="small" />

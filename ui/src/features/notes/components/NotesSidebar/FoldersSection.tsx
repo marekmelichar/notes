@@ -114,6 +114,7 @@ export const FoldersSection = ({
                 size="small"
                 onClick={handleToggleExpandAll}
                 disabled={allFolders.length === 0}
+                data-testid="folders-expand-all"
               >
                 {areAllFoldersExpanded ? (
                   <UnfoldLessIcon fontSize="small" />
@@ -126,12 +127,12 @@ export const FoldersSection = ({
           <Tooltip
             title={showTreeView ? t('Folders.ShowFoldersOnly') : t('Folders.ShowTreeWithNotes')}
           >
-            <IconButton size="small" onClick={() => setShowTreeView(!showTreeView)}>
+            <IconButton size="small" onClick={() => setShowTreeView(!showTreeView)} data-testid="folders-tree-toggle">
               {showTreeView ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
             </IconButton>
           </Tooltip>
           <Tooltip title={t('Folders.NewFolder')}>
-            <IconButton size="small" onClick={() => setIsFolderDialogOpen(true)}>
+            <IconButton size="small" onClick={() => setIsFolderDialogOpen(true)} data-testid="folders-new-button">
               <AddIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -200,11 +201,12 @@ export const FoldersSection = ({
             onChange={(e) => setNewFolderName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
             className={styles.dialogTextField}
+            data-testid="folders-create-name"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseFolderDialog}>{t('Common.Cancel')}</Button>
-          <Button onClick={handleCreateFolder} variant="contained">
+          <Button onClick={handleCloseFolderDialog} data-testid="folders-create-cancel">{t('Common.Cancel')}</Button>
+          <Button onClick={handleCreateFolder} variant="contained" data-testid="folders-create-submit">
             {t('Common.Create')}
           </Button>
         </DialogActions>
