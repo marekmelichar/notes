@@ -25,18 +25,21 @@ export const MobileNavigation = () => {
         onChange={handleChange}
         showLabels
         className={styles.navigation}
+        data-testid="mobile-navigation"
       >
         <BottomNavigationAction
           label={t('Common.Nav.Folders')}
           value="sidebar"
           icon={<FolderOutlinedIcon />}
           className={styles.action}
+          data-testid="mobile-nav-sidebar"
         />
         <BottomNavigationAction
           label={t('Common.Nav.Notes')}
           value="list"
           icon={<ListAltOutlinedIcon />}
           className={styles.action}
+          data-testid="mobile-nav-list"
         />
         <BottomNavigationAction
           label={t('Common.Nav.Editor')}
@@ -44,6 +47,7 @@ export const MobileNavigation = () => {
           icon={<EditNoteOutlinedIcon />}
           disabled={!selectedNote}
           className={styles.action}
+          data-testid="mobile-nav-editor"
         />
       </BottomNavigation>
     </Box>

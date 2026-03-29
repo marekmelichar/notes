@@ -111,6 +111,7 @@ export const EditorHeader = ({
           onChange={onTitleChange}
           placeholder={t('Common.Untitled')}
           autoComplete="off"
+          data-testid="editor-title-input"
         />
         {isMobile && (
           <Tooltip title={t('Notes.Controls')}>

@@ -32,7 +32,7 @@ const SettingsPage = () => {
     <Box className={styles.container}>
       <Box className={styles.header}>
         <Typography variant="h4">{t('Common.Nav.Settings')}</Typography>
-        <IconButton onClick={handleClose} aria-label={t('Common.Close')}>
+        <IconButton onClick={handleClose} aria-label={t('Common.Close')} data-testid="settings-close">
           <CloseIcon />
         </IconButton>
       </Box>
@@ -45,7 +45,7 @@ const SettingsPage = () => {
 
           <Box className={styles.settingRow}>
             <Typography>{t('Common.DarkMode')}</Typography>
-            <Switch checked={mode === 'dark'} onChange={toggleColorMode} />
+            <Switch checked={mode === 'dark'} onChange={toggleColorMode} data-testid="settings-dark-mode" />
           </Box>
 
           <Box>
@@ -74,6 +74,7 @@ const SettingsPage = () => {
                 size="small"
                 onClick={resetPrimaryColor}
                 className={styles.resetButton}
+                data-testid="settings-reset-color"
               >
                 {t('SettingsPage.ResetToDefault')}
               </Button>

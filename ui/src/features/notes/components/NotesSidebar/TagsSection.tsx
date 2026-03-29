@@ -68,7 +68,7 @@ export const TagsSection = () => {
       <Box className={styles.sectionHeader}>
         <Typography className={styles.sectionTitle}>{t('Tags.Tags')}</Typography>
         <Tooltip title={t('Tags.NewTag')}>
-          <IconButton size="small" onClick={() => setIsTagDialogOpen(true)}>
+          <IconButton size="small" onClick={() => setIsTagDialogOpen(true)} data-testid="tags-new-button">
             <AddIcon fontSize="small" />
           </IconButton>
         </Tooltip>
@@ -82,7 +82,7 @@ export const TagsSection = () => {
         ) : (
           <>
             {tags.map((tag) => (
-              <Box key={tag.id} className={styles.tagItemWrapper}>
+              <Box key={tag.id} className={styles.tagItemWrapper} data-testid={`tag-item-${tag.id}`}>
                 <Box
                   className={styles.tagItem}
                   role="button"
@@ -104,6 +104,7 @@ export const TagsSection = () => {
                       size="small"
                       onClick={(e) => handleOpenEditTag(tag.id, e)}
                       className={styles.tagActionButton}
+                      data-testid={`tag-edit-${tag.id}`}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
@@ -113,6 +114,7 @@ export const TagsSection = () => {
                       size="small"
                       onClick={(e) => handleDeleteTag(tag.id, e)}
                       className={styles.tagActionButton}
+                      data-testid={`tag-delete-${tag.id}`}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>

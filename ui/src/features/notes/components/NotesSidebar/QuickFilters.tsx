@@ -26,19 +26,19 @@ export const QuickFilters = ({
 
   return (
     <Box className={styles.section}>
-      <Box className={styles.navItem} onClick={onAllNotes}>
+      <Box className={styles.navItem} onClick={onAllNotes} data-testid="quick-filter-all-notes">
         <NoteOutlinedIcon fontSize="small" className={styles.navItemIcon} />
         <Typography className={styles.navItemLabel}>{t('Notes.AllNotes')}</Typography>
         <span className={styles.navItemCount}>{allNotesCount}</span>
       </Box>
 
-      <Box className={styles.navItem} onClick={onFavorites}>
+      <Box className={styles.navItem} onClick={onFavorites} data-testid="quick-filter-favorites">
         <StarOutlineIcon fontSize="small" className={styles.navItemIcon} />
         <Typography className={styles.navItemLabel}>{t('Notes.Favorites')}</Typography>
         <span className={styles.navItemCount}>{favoritesCount}</span>
       </Box>
 
-      <Box className={styles.navItem} onClick={onTrash}>
+      <Box className={styles.navItem} onClick={onTrash} data-testid="quick-filter-trash">
         <DeleteOutlineIcon fontSize="small" className={styles.navItemIcon} />
         <Typography className={styles.navItemLabel}>{t('Notes.Trash')}</Typography>
         <span className={styles.navItemCount}>{trashCount}</span>
