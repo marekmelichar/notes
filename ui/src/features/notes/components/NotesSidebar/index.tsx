@@ -44,9 +44,8 @@ import {
 import {
   selectAllFolders,
   expandFolder,
-  updateFolder,
 } from '../../store/foldersSlice';
-import type { Folder, Note, NotesFilter } from '../../types';
+import type { Note, NotesFilter } from '../../types';
 import { QuickFilters } from './QuickFilters';
 import { RecentNotes } from './RecentNotes';
 import { FoldersSection } from './FoldersSection';
@@ -74,7 +73,6 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
   const skipAnimationRef = useRef(false);
 
   const [activeNote, setActiveNote] = useState<Note | null>(null);
-  const [activeFolder, setActiveFolder] = useState<Folder | null>(null);
 
   const recentNotes = useMemo(() => {
     return [...notes]
@@ -115,57 +113,20 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
     }
   }, [selectedNoteId, notes, allFolders, dispatch]);
 
-  // Helper to check if targetId is a descendant of folderId
-  const isDescendantOf = (folderId: string, targetId: string): boolean => {
-    const children = allFolders.filter((f) => f.parentId === folderId);
-    for (const child of children) {
-      if (child.id === targetId) return true;
-      if (isDescendantOf(child.id, targetId)) return true;
-    }
-    return false;
-  };
-
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     if (active.data.current?.type === 'note') {
       setActiveNote(active.data.current.note);
-      setActiveFolder(null);
-    } else if (active.data.current?.type === 'draggable-folder') {
-      setActiveFolder(active.data.current.folder);
-      setActiveNote(null);
     }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveNote(null);
-    setActiveFolder(null);
     if (!over) return;
 
     const activeData = active.data.current;
     const overData = over.data.current;
-
-    // Folder drag
-    if (activeData?.type === 'draggable-folder') {
-      const draggedFolder = activeData.folder as Folder;
-
-      if (overData?.type === 'folder') {
-        const targetFolderId = overData.folderId as string;
-        if (draggedFolder.id === targetFolderId) return;
-        if (isDescendantOf(draggedFolder.id, targetFolderId)) return;
-        if (draggedFolder.parentId === targetFolderId) return;
-        dispatch(updateFolder({ id: draggedFolder.id, updates: { parentId: targetFolderId } }));
-        dispatch(expandFolder(targetFolderId));
-        return;
-      }
-
-      if (overData?.type === 'unfiled') {
-        if (draggedFolder.parentId !== null) {
-          dispatch(updateFolder({ id: draggedFolder.id, updates: { parentId: null } }));
-        }
-        return;
-      }
-    }
 
     // Note drag
     if (activeData?.type === 'note') {
@@ -333,12 +294,6 @@ export const NotesSidebar = ({ collapsed = false }: NotesSidebarProps) => {
           <Box className={styles.dragOverlay}>
             <DescriptionOutlinedIcon fontSize="small" />
             <Typography noWrap>{activeNote.title || t('Common.Untitled')}</Typography>
-          </Box>
-        )}
-        {activeFolder && (
-          <Box className={styles.folderDragOverlay}>
-            <FolderOutlinedIcon fontSize="small" sx={{ color: activeFolder.color }} />
-            <Typography noWrap>{activeFolder.name}</Typography>
           </Box>
         )}
       </DragOverlay>

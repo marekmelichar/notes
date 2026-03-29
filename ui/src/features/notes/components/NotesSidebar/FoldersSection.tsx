@@ -30,10 +30,11 @@ import {
   setExpandedFolders,
   createFolder,
 } from '../../store/foldersSlice';
-import type { NoteListItem } from '../../types';
+import type { Folder, NoteListItem } from '../../types';
 import { DroppableFolder } from './DroppableFolder';
 import { SortableNote } from './SortableNote';
 import { UnfiledDropZone } from './UnfiledDropZone';
+import { FolderMoveDialog } from './FolderMoveDialog';
 import styles from './index.module.css';
 
 interface FoldersSectionProps {
@@ -58,6 +59,7 @@ export const FoldersSection = ({
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [parentFolderIdForCreate, setParentFolderIdForCreate] = useState<string | null>(null);
+  const [movingFolder, setMovingFolder] = useState<Folder | null>(null);
 
   const parentFolderForCreate = parentFolderIdForCreate
     ? allFolders.find((f) => f.id === parentFolderIdForCreate)
@@ -96,6 +98,10 @@ export const FoldersSection = ({
     setParentFolderIdForCreate(null);
     setIsFolderDialogOpen(false);
   };
+
+  const handleMoveFolder = useCallback((folder: Folder) => {
+    setMovingFolder(folder);
+  }, []);
 
   return (
     <Box className={styles.section}>
@@ -143,6 +149,7 @@ export const FoldersSection = ({
             folder={folder}
             showNotes={showTreeView}
             onAddSubfolder={handleOpenSubfolderDialog}
+            onMoveFolder={handleMoveFolder}
             skipAnimationRef={skipAnimationRef}
           />
         ))
@@ -177,6 +184,7 @@ export const FoldersSection = ({
         </Box>
       )}
 
+      {/* Create folder dialog */}
       <Dialog open={isFolderDialogOpen} onClose={handleCloseFolderDialog}>
         <DialogTitle>
           {parentFolderForCreate
@@ -201,6 +209,14 @@ export const FoldersSection = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Move folder dialog */}
+      {movingFolder && (
+        <FolderMoveDialog
+          folder={movingFolder}
+          onClose={() => setMovingFolder(null)}
+        />
+      )}
     </Box>
   );
 };

@@ -164,10 +164,6 @@
 
 /* Shared drag handle — used by both folder and note items */
 
-.folderDragging {
-  opacity: 0.5;
-}
-
 .folderItemActive {
   background-color: var(--mui-palette-action-selected);
   font-weight: 500;
@@ -191,18 +187,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.folderColorIcon {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  border-radius: 0.25rem;
-  padding: 0.125rem;
-}
-
-.folderColorIcon:hover {
-  background-color: var(--mui-palette-action-hover);
 }
 
 .folderRenameInput {
@@ -412,19 +396,6 @@
   white-space: nowrap;
 }
 
-.folderDragOverlay {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background-color: var(--mui-palette-background-paper);
-  border-radius: 0.375rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--mui-palette-primary-main);
-  font-size: 0.875rem;
-  white-space: nowrap;
-}
-
 .unfiledSection {
   margin-top: 0.5rem;
   padding: 0.5rem;
@@ -512,10 +483,6 @@
 
   .folderItem:active {
     background-color: var(--mui-palette-action-hover);
-  }
-
-  .folderDragHandle {
-    display: none;
   }
 
   .dragHandle {
