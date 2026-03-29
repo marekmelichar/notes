@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useCallback } from "react";
-import { Box, Typography, IconButton, Collapse, Tooltip, InputBase } from "@mui/material";
+import { Box, Typography, IconButton, Collapse, Tooltip, InputBase, Popover } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -26,6 +26,8 @@ import { selectAllNotes } from "../../store/notesSlice";
 import type { Folder } from "../../types";
 import { SortableNote } from "./SortableNote";
 import styles from "./index.module.css";
+
+import { ColorSwatchPicker } from '@/components/ColorSwatchPicker';
 
 export interface DroppableFolderProps {
   folder: Folder;
@@ -128,6 +130,19 @@ export const DroppableFolder = React.memo(({
     setRenameName(folder.name);
   }, [folder.name]);
 
+  const [colorAnchor, setColorAnchor] = useState<HTMLElement | null>(null);
+
+  const handleColorClick = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    setColorAnchor(e.currentTarget);
+  }, []);
+
+  const handleColorSelect = useCallback((color: string) => {
+    (document.activeElement as HTMLElement)?.blur();
+    setColorAnchor(null);
+    dispatch(updateFolder({ id: folder.id, updates: { color } }));
+  }, [dispatch, folder.id]);
+
   // Combine refs for both droppable and sortable
   const setNodeRef = (node: HTMLElement | null) => {
     setDroppableRef(node);
@@ -168,11 +183,16 @@ export const DroppableFolder = React.memo(({
             </IconButton>
           ) : null}
         </Box>
-        {isExpanded ? (
-          <FolderOpenIcon fontSize="small" sx={{ color: folder.color }} />
-        ) : (
-          <FolderOutlinedIcon fontSize="small" sx={{ color: folder.color }} />
-        )}
+        <Box
+          className={styles.folderColorIcon}
+          onClick={handleColorClick}
+        >
+          {isExpanded ? (
+            <FolderOpenIcon fontSize="small" sx={{ color: folder.color }} />
+          ) : (
+            <FolderOutlinedIcon fontSize="small" sx={{ color: folder.color }} />
+          )}
+        </Box>
         {isRenaming ? (
           <InputBase
             inputRef={renameInputRef}
@@ -216,6 +236,22 @@ export const DroppableFolder = React.memo(({
           </IconButton>
         </Tooltip>
       </Box>
+
+      <Popover
+        open={Boolean(colorAnchor)}
+        anchorEl={colorAnchor}
+        onClose={() => setColorAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        onClick={(e) => e.stopPropagation()}
+        disableAutoFocus
+        disableRestoreFocus
+      >
+        <ColorSwatchPicker
+          selected={folder.color}
+          size="small"
+          onSelect={handleColorSelect}
+        />
+      </Popover>
 
       <Collapse in={isExpanded} timeout={skipAnimationRef.current ? 0 : "auto"}>
         {/* Notes appear first, directly under parent folder */}

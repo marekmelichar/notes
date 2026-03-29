@@ -193,6 +193,18 @@
   text-overflow: ellipsis;
 }
 
+.folderColorIcon {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 0.25rem;
+  padding: 0.125rem;
+}
+
+.folderColorIcon:hover {
+  background-color: var(--mui-palette-action-hover);
+}
+
 .folderRenameInput {
   flex: 1;
   min-width: 0;

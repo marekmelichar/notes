@@ -7,16 +7,8 @@ import { useColorMode } from '@/theme/ThemeProvider';
 import { DEFAULT_PRIMARY_COLOR } from '@/theme/colorUtils';
 import { useAppDispatch, useAppSelector, selectNoteListHidden, selectIsMobile } from '@/store';
 import { toggleNoteListHidden } from '@/store/uiSlice';
+import { ColorSwatchPicker, PRESET_COLORS } from '@/components/ColorSwatchPicker';
 import styles from './index.module.css';
-
-const COLOR_PRESETS = [
-  { key: 'Blue', value: '#007ACC' },
-  { key: 'Purple', value: '#7C3AED' },
-  { key: 'Green', value: '#059669' },
-  { key: 'Orange', value: '#EA580C' },
-  { key: 'Pink', value: '#DB2777' },
-  { key: 'Teal', value: '#0D9488' },
-];
 
 const SettingsPage = () => {
   const { t } = useTranslation();
@@ -27,7 +19,6 @@ const SettingsPage = () => {
 
   const handleClose = () => navigate(-1);
 
-  const getColorName = (key: string) => t(`Colors.${key}`);
   const { mode, toggleColorMode, primaryColor, setPrimaryColor, resetPrimaryColor } =
     useColorMode();
 
@@ -60,18 +51,11 @@ const SettingsPage = () => {
           <Box>
             <Typography>{t('SettingsPage.PrimaryColor')}</Typography>
             <Box className={styles.colorPresets}>
-              {COLOR_PRESETS.map((preset) => (
-                <button
-                  key={preset.value}
-                  type="button"
-                  className={`${styles.colorButton} ${
-                    primaryColor === preset.value ? styles.colorButtonSelected : ''
-                  }`}
-                  style={{ backgroundColor: preset.value }}
-                  onClick={() => setPrimaryColor(preset.value)}
-                  aria-label={getColorName(preset.key)}
-                />
-              ))}
+              <ColorSwatchPicker
+                colors={PRESET_COLORS}
+                selected={primaryColor}
+                onSelect={setPrimaryColor}
+              />
             </Box>
 
             <Box className={styles.customColorRow}>
