@@ -19,7 +19,7 @@ export interface GetListParams {
 // Note operations via API
 export const notesApi = {
   async getList(params: GetListParams): Promise<PaginatedResponse<NoteListItem>> {
-    const { filter, sortBy, sortOrder, limit = 200, offset = 0 } = params;
+    const { filter, sortBy, sortOrder, limit = 0, offset = 0 } = params;
     const queryParams: Record<string, string | number | boolean> = {
       limit,
       offset,
