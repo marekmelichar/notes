@@ -82,13 +82,19 @@ public class FilesController(FileService fileService, ILogger<FilesController> l
     // Upload and delete remain fully authenticated.
     [HttpGet("{id}")]
     [AllowAnonymous]
-    public async Task<ActionResult> GetFile(string id)
+    public async Task<ActionResult> GetFile(string id, [FromQuery] bool inline = false)
     {
         var fileUpload = await fileService.GetFileUploadAsync(id);
         if (fileUpload == null) return NotFound();
 
         var stream = fileService.GetFileStream(fileUpload.StoredFilename);
         if (stream == null) return NotFound();
+
+        if (inline)
+        {
+            Response.Headers.ContentDisposition = $"inline; filename=\"{fileUpload.OriginalFilename}\"";
+            return File(stream, fileUpload.ContentType);
+        }
 
         return File(stream, fileUpload.ContentType, fileUpload.OriginalFilename);
     }

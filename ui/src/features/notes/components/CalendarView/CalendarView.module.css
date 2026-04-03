@@ -105,6 +105,7 @@
   justify-content: flex-start;
   cursor: pointer;
   max-width: 100%;
+  color: var(--mui-palette-text-primary);
 }
 
 .noteChip .MuiChip-label {
@@ -118,6 +119,37 @@
   color: var(--mui-palette-text-secondary);
   font-size: 0.625rem;
   padding-left: 0.25rem;
+  cursor: pointer;
+  border-radius: 0.25rem;
+}
+
+.moreCount:hover {
+  color: var(--mui-palette-text-primary);
+  background-color: var(--mui-palette-action-hover);
+}
+
+.popover {
+  padding: 0.75rem;
+  max-width: 18rem;
+  max-height: 20rem;
+  overflow-y: auto;
+}
+
+.popoverTitle {
+  margin-bottom: 0.5rem;
+  color: var(--mui-palette-text-secondary);
+}
+
+.popoverList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.popoverChip.popoverChip {
+  justify-content: flex-start;
+  cursor: pointer;
+  color: var(--mui-palette-text-primary);
 }
 
 @media (max-width: 48rem) {

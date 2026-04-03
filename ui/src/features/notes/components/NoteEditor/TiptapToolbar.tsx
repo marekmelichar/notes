@@ -16,6 +16,7 @@ import LinkOffIcon from '@mui/icons-material/LinkOff';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined';
 import type { Editor } from '@tiptap/core';
+import { validateAndNormalizeUrl } from './linkUtils';
 import styles from './index.module.css';
 
 interface TiptapToolbarProps {
@@ -47,6 +48,8 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
   // Link popover state
   const [linkAnchor, setLinkAnchor] = useState<HTMLElement | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
+  const [linkText, setLinkText] = useState('');
+  const [isInsertingNewLink, setIsInsertingNewLink] = useState(false);
   const linkInputRef = useRef<HTMLInputElement>(null);
 
   const handleLinkClick = useCallback(
@@ -55,40 +58,52 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
         editor.chain().focus().unsetLink().run();
         return;
       }
+
+      const { from, to } = editor.state.selection;
+      const hasSelection = from !== to;
+
       setLinkUrl('');
+      setLinkText('');
+      setIsInsertingNewLink(!hasSelection);
       setLinkAnchor(event.currentTarget);
     },
     [editor],
   );
 
   const handleLinkSubmit = useCallback(() => {
-    const trimmed = linkUrl.trim();
-    if (!trimmed) {
+    const href = validateAndNormalizeUrl(linkUrl);
+    if (!href) {
       setLinkAnchor(null);
       setLinkUrl('');
+      setLinkText('');
       return;
     }
 
-    // Block dangerous protocols (javascript:, data:, vbscript:)
-    if (/^(javascript|data|vbscript):/i.test(trimmed)) {
-      setLinkAnchor(null);
-      setLinkUrl('');
-      return;
+    if (isInsertingNewLink) {
+      // No selection — insert link text + URL as a new inline link
+      const text = linkText.trim() || href;
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: 'text',
+          text,
+          marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
+        })
+        .run();
+    } else {
+      editor.chain().focus().setLink({ href }).run();
     }
 
-    // Auto-prefix https:// if no protocol is specified
-    const href = /^(https?:\/\/|mailto:)/i.test(trimmed)
-      ? trimmed
-      : `https://${trimmed}`;
-
-    editor.chain().focus().setLink({ href }).run();
     setLinkAnchor(null);
     setLinkUrl('');
-  }, [editor, linkUrl]);
+    setLinkText('');
+  }, [editor, linkUrl, linkText, isInsertingNewLink]);
 
   const handleLinkClose = useCallback(() => {
     setLinkAnchor(null);
     setLinkUrl('');
+    setLinkText('');
     editor.chain().focus().run();
   }, [editor]);
 
@@ -252,7 +267,7 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
       <Divider orientation="vertical" flexItem />
 
       <div className={styles.toolbarGroup}>
-        <Tooltip title={editor.isActive('link') ? t('Editor.Unlink') : t('Editor.Link')}>
+        <Tooltip title={editor.isActive('link') ? t('Editor.Unlink') : `${t('Editor.Link')} (Ctrl+K)`}>
           <IconButton
             size="small"
             aria-label={editor.isActive('link') ? t('Editor.Unlink') : t('Editor.Link')}
@@ -273,37 +288,68 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
             paper: { className: styles.linkPopover },
           }}
           onTransitionEnd={() => {
-            if (linkAnchor) linkInputRef.current?.focus();
+            if (linkAnchor) {
+              if (isInsertingNewLink) {
+                // Focus the text field first when inserting a new link
+                const textInput = document.querySelector<HTMLInputElement>(
+                  '[data-testid="toolbar-link-text-input"] input',
+                );
+                textInput?.focus();
+              } else {
+                linkInputRef.current?.focus();
+              }
+            }
           }}
         >
-          <Box className={styles.linkPopoverContent}>
-            <TextField
-              inputRef={linkInputRef}
-              size="small"
-              placeholder="https://"
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleLinkSubmit();
-                } else if (e.key === 'Escape') {
-                  handleLinkClose();
-                }
-              }}
-              fullWidth
-              autoComplete="off"
-              data-testid="toolbar-link-url-input"
-            />
-            <Button
-              size="small"
-              variant="contained"
-              onClick={handleLinkSubmit}
-              disabled={!linkUrl.trim()}
-              data-testid="toolbar-link-submit"
-            >
-              {t('Common.Ok')}
-            </Button>
+          <Box className={styles.linkPopoverContent} sx={{ flexDirection: 'column', alignItems: 'stretch' }}>
+            {isInsertingNewLink && (
+              <TextField
+                size="small"
+                placeholder={t('Editor.LinkText')}
+                value={linkText}
+                onChange={(e) => setLinkText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    linkInputRef.current?.focus();
+                  } else if (e.key === 'Escape') {
+                    handleLinkClose();
+                  }
+                }}
+                fullWidth
+                autoComplete="off"
+                data-testid="toolbar-link-text-input"
+              />
+            )}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <TextField
+                inputRef={linkInputRef}
+                size="small"
+                placeholder="https://"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleLinkSubmit();
+                  } else if (e.key === 'Escape') {
+                    handleLinkClose();
+                  }
+                }}
+                fullWidth
+                autoComplete="off"
+                data-testid="toolbar-link-url-input"
+              />
+              <Button
+                size="small"
+                variant="contained"
+                onClick={handleLinkSubmit}
+                disabled={!linkUrl.trim()}
+                data-testid="toolbar-link-submit"
+              >
+                {t('Common.Ok')}
+              </Button>
+            </Box>
           </Box>
         </Popover>
         <Tooltip title={t('Editor.Image')}>

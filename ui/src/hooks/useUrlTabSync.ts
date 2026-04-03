@@ -11,14 +11,15 @@ export function useUrlTabSync(urlNoteId: string | undefined) {
   const navigate = useNavigate();
   const activeTabId = useAppSelector(selectActiveTabId);
 
-  const prevUrlNoteId = useRef(urlNoteId);
+  const prevUrlNoteId = useRef<string | undefined>(undefined);
   const prevActiveTabId = useRef(activeTabId);
 
   useEffect(() => {
+    const isFirstRun = prevUrlNoteId.current === undefined;
     const urlChanged = urlNoteId !== prevUrlNoteId.current;
     const tabChanged = activeTabId !== prevActiveTabId.current;
 
-    if (urlChanged && urlNoteId && urlNoteId !== activeTabId) {
+    if ((urlChanged || isFirstRun) && urlNoteId && urlNoteId !== activeTabId) {
       dispatch(openTab(urlNoteId));
     } else if (tabChanged) {
       if (activeTabId && activeTabId !== urlNoteId) {

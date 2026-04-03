@@ -4,7 +4,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '@/theme/ThemeProvider';
-import { DEFAULT_PRIMARY_COLOR, DEFAULT_LINK_COLOR } from '@/theme/colorUtils';
+import { DEFAULT_PRIMARY_COLOR } from '@/theme/colorUtils';
 import { useAppDispatch, useAppSelector, selectNoteListHidden, selectIsMobile } from '@/store';
 import { toggleNoteListHidden } from '@/store/uiSlice';
 import { ColorSwatchPicker, PRESET_COLORS } from '@/components/ColorSwatchPicker';
@@ -22,19 +22,13 @@ const SettingsPage = () => {
   const {
     mode, toggleColorMode,
     primaryColor, setPrimaryColor, resetPrimaryColor,
-    linkColor, setLinkColor, resetLinkColor,
   } = useColorMode();
 
   const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPrimaryColor(event.target.value);
   };
 
-  const handleLinkColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setLinkColor(event.target.value);
-  };
-
   const isDefaultColor = primaryColor === DEFAULT_PRIMARY_COLOR;
-  const isDefaultLinkColor = linkColor === DEFAULT_LINK_COLOR;
 
   return (
     <Box className={styles.container}>
@@ -83,39 +77,6 @@ const SettingsPage = () => {
                 onClick={resetPrimaryColor}
                 className={styles.resetButton}
                 data-testid="settings-reset-color"
-              >
-                {t('SettingsPage.ResetToDefault')}
-              </Button>
-            )}
-          </Box>
-
-          <Box sx={{ mt: '2rem' }}>
-            <Typography>{t('SettingsPage.LinkColor')}</Typography>
-            <Box className={styles.colorPresets}>
-              <ColorSwatchPicker
-                colors={PRESET_COLORS}
-                selected={linkColor}
-                onSelect={setLinkColor}
-              />
-            </Box>
-
-            <Box className={styles.customColorRow}>
-              <Typography variant="body2">{t('SettingsPage.CustomColor')}</Typography>
-              <input
-                type="color"
-                value={linkColor}
-                onChange={handleLinkColorChange}
-                className={styles.colorInput}
-              />
-            </Box>
-
-            {!isDefaultLinkColor && (
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={resetLinkColor}
-                className={styles.resetButton}
-                data-testid="settings-reset-link-color"
               >
                 {t('SettingsPage.ResetToDefault')}
               </Button>

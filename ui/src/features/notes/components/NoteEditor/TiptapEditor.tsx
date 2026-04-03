@@ -1,4 +1,4 @@
-import { memo, forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
+import { memo, forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
 import { Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { EditorContent } from '@tiptap/react';
@@ -7,6 +7,8 @@ import { useFileUpload, isImageFile, FILE_ACCEPT } from './useFileUpload';
 import { useEditorExport, type ExportFormat, type ExportResult } from './useEditorExport';
 import { useTiptapEditor } from './useTiptapEditor';
 import { TiptapToolbar } from './TiptapToolbar';
+import { LinkBubbleMenu } from './LinkBubbleMenu';
+import { LinkDialog } from './LinkDialog';
 import styles from './index.module.css';
 
 export type { ExportFormat, ExportResult } from './useEditorExport';
@@ -33,8 +35,13 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
   ({ initialContent, noteId, onChange, scrollRef }, ref) => {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [linkDialogOpen, setLinkDialogOpen] = useState(false);
 
     const { uploadFile, handlePaste, handleDrop, handleDragOver } = useFileUpload(noteId);
+
+    const handleLinkShortcut = useCallback(() => {
+      setLinkDialogOpen(true);
+    }, []);
 
     const editor = useTiptapEditor({
       initialContent,
@@ -44,6 +51,7 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       handleDrop,
       handleDragOver,
       onUpdate: onChange,
+      onLinkShortcut: handleLinkShortcut,
     });
 
     const { exportTo } = useEditorExport(editor);
@@ -84,20 +92,12 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             editor
               .chain()
               .focus()
-              .insertContent({
-                type: 'paragraph',
-                content: [
-                  {
-                    type: 'text',
-                    text: response.originalFilename || file.name,
-                    marks: [
-                      {
-                        type: 'link',
-                        attrs: { href: response.url, target: '_blank' },
-                      },
-                    ],
-                  },
-                ],
+              .setFileEmbed({
+                fileId: response.id,
+                url: response.url,
+                fileName: response.originalFilename || file.name,
+                contentType: response.contentType || file.type,
+                fileSize: response.size || file.size,
               })
               .run();
           }
@@ -118,6 +118,15 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         />
         <Box ref={scrollRef} className={styles.editorContent}>
           <EditorContent editor={editor} className={styles.tiptapContainer} />
+          <LinkBubbleMenu editor={editor} />
+          <LinkDialog
+            editor={editor}
+            open={linkDialogOpen}
+            onClose={() => {
+              setLinkDialogOpen(false);
+              editor.chain().focus().run();
+            }}
+          />
           <input
             ref={fileInputRef}
             type="file"

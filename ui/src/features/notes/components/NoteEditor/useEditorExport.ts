@@ -8,6 +8,18 @@ const turndown = new TurndownService({
   bulletListMarker: '-',
 });
 
+// Convert fileEmbed divs to markdown links
+turndown.addRule('fileEmbed', {
+  filter: (node) =>
+    node.nodeName === 'DIV' && node.hasAttribute('data-file-embed'),
+  replacement: (_content, node) => {
+    const el = node as HTMLElement;
+    const name = el.getAttribute('data-file-name') || 'file';
+    const url = el.getAttribute('data-file-url') || '';
+    return `\n[${name}](${url})\n`;
+  },
+});
+
 function escapeHtml(text: string): string {
   const div = document.createElement('div');
   div.textContent = text;

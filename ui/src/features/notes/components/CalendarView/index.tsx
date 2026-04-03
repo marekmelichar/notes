@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Typography, IconButton, Chip } from '@mui/material';
+import { Box, Typography, IconButton, Chip, Popover } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TodayIcon from '@mui/icons-material/Today';
@@ -82,8 +82,22 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ notes }) => {
   const handleNextMonth = () => setCurrentMonth((m) => m.add(1, 'month'));
   const handleToday = () => setCurrentMonth(dayjs().startOf('month'));
 
+  const [popoverAnchor, setPopoverAnchor] = useState<HTMLElement | null>(null);
+  const [popoverNotes, setPopoverNotes] = useState<NoteListItem[]>([]);
+  const [popoverDate, setPopoverDate] = useState('');
+
   const handleNoteClick = (noteId: string) => {
     navigate(`/notes/${noteId}`);
+  };
+
+  const handleMoreClick = (event: React.MouseEvent<HTMLElement>, cell: DayCell) => {
+    setPopoverAnchor(event.currentTarget);
+    setPopoverNotes(cell.notes);
+    setPopoverDate(cell.date.format('D MMMM YYYY'));
+  };
+
+  const handlePopoverClose = () => {
+    setPopoverAnchor(null);
   };
 
   return (
@@ -136,7 +150,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ notes }) => {
                 />
               ))}
               {cell.notes.length > 3 && (
-                <Typography variant="caption" className={styles.moreCount}>
+                <Typography
+                  variant="caption"
+                  className={styles.moreCount}
+                  onClick={(e) => handleMoreClick(e, cell)}
+                >
                   +{cell.notes.length - 3} more
                 </Typography>
               )}
@@ -144,6 +162,30 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ notes }) => {
           </Box>
         ))}
       </Box>
+
+      <Popover
+        open={Boolean(popoverAnchor)}
+        anchorEl={popoverAnchor}
+        onClose={handlePopoverClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        slotProps={{ paper: { className: styles.popover } }}
+      >
+        <Typography variant="subtitle2" className={styles.popoverTitle}>
+          {popoverDate}
+        </Typography>
+        <Box className={styles.popoverList}>
+          {popoverNotes.map((note) => (
+            <Chip
+              key={note.id}
+              label={note.title}
+              size="small"
+              onClick={() => { handleNoteClick(note.id); handlePopoverClose(); }}
+              className={styles.popoverChip}
+            />
+          ))}
+        </Box>
+      </Popover>
     </Box>
   );
 };
