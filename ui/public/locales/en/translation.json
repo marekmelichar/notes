@@ -149,6 +149,7 @@
     "PrimaryColor": "Primary Color",
     "CustomColor": "Custom Color",
     "ResetToDefault": "Reset to Default",
+    "LinkColor": "Link Color",
     "Layout": "Layout",
     "ShowNoteList": "Show note list"
   },
