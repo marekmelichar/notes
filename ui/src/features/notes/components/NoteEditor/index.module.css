@@ -142,7 +142,7 @@
 }
 
 .prose a {
-  color: var(--mui-palette-primary-main);
+  color: var(--app-link-color, var(--mui-palette-primary-main));
   text-decoration: none;
   cursor: pointer;
 }

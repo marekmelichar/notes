@@ -149,6 +149,7 @@
     "PrimaryColor": "Barva",
     "CustomColor": "Vlastní",
     "ResetToDefault": "Výchozí",
+    "LinkColor": "Barva odkazů",
     "Layout": "Rozvržení",
     "ShowNoteList": "Zobrazit seznam poznámek"
   },

@@ -21,6 +21,10 @@
     "pw:test:ui": "playwright test --ui",
     "pw:codegen": "playwright codegen",
     "pw:report": "playwright show-report",
+    "docker:up": "docker compose -f ../docker-compose.yml up -d postgres keycloak api",
+    "docker:up:all": "docker compose -f ../docker-compose.yml up -d",
+    "docker:down": "docker compose -f ../docker-compose.yml down",
+    "docker:logs": "docker compose -f ../docker-compose.yml logs -f",
     "knip": "knip",
     "prepare": "cd .. && husky"
   },
