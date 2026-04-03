@@ -1,25 +1,5 @@
 import { describe, it, expect } from 'vitest';
-
-/**
- * Tests for the link URL validation logic used in TiptapToolbar.handleLinkSubmit.
- *
- * The logic is inline in the components, so we test the same regex patterns directly
- * to ensure the security invariants hold.
- */
-
-const DANGEROUS_PROTOCOL = /^(javascript|data|vbscript):/i;
-const HAS_SAFE_PROTOCOL = /^(https?:\/\/|mailto:)/i;
-
-function validateAndNormalizeUrl(input: string): string | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-
-  // Block dangerous protocols
-  if (DANGEROUS_PROTOCOL.test(trimmed)) return null;
-
-  // Auto-prefix https:// if no recognized protocol
-  return HAS_SAFE_PROTOCOL.test(trimmed) ? trimmed : `https://${trimmed}`;
-}
+import { validateAndNormalizeUrl, truncateUrl } from './linkUtils';
 
 describe('Link URL validation', () => {
   describe('dangerous protocol blocking', () => {
@@ -77,7 +57,6 @@ describe('Link URL validation', () => {
 
   describe('edge cases', () => {
     it('should not block strings containing "javascript" but not as protocol', () => {
-      // "javascript" as a search term, not a protocol
       expect(validateAndNormalizeUrl('https://search.com?q=javascript')).toBe('https://search.com?q=javascript');
     });
 
@@ -90,5 +69,30 @@ describe('Link URL validation', () => {
         'https://example.com/path?q=hello%20world&lang=en',
       );
     });
+  });
+});
+
+describe('truncateUrl', () => {
+  it('should strip https:// prefix', () => {
+    expect(truncateUrl('https://example.com')).toBe('example.com');
+  });
+
+  it('should strip http:// prefix', () => {
+    expect(truncateUrl('http://example.com')).toBe('example.com');
+  });
+
+  it('should not strip mailto: prefix', () => {
+    expect(truncateUrl('mailto:user@example.com')).toBe('mailto:user@example.com');
+  });
+
+  it('should truncate long URLs', () => {
+    const longUrl = 'https://example.com/very/long/path/that/exceeds/the/maximum/length/limit';
+    const result = truncateUrl(longUrl, 30);
+    expect(result).toBe('example.com/very/long/path/tha...');
+    expect(result.length).toBe(33); // 30 chars + "..."
+  });
+
+  it('should not truncate short URLs', () => {
+    expect(truncateUrl('https://a.com', 40)).toBe('a.com');
   });
 });

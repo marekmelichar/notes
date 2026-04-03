@@ -149,7 +149,6 @@
     "PrimaryColor": "Barva",
     "CustomColor": "Vlastní",
     "ResetToDefault": "Výchozí",
-    "LinkColor": "Barva odkazů",
     "Layout": "Rozvržení",
     "ShowNoteList": "Zobrazit seznam poznámek"
   },
@@ -182,9 +181,16 @@
     "HorizontalRule": "Vodorovná čára",
     "Link": "Přidat odkaz",
     "Unlink": "Odebrat odkaz",
+    "EditLink": "Upravit odkaz",
+    "OpenLink": "Otevřít odkaz",
+    "CopyLink": "Kopírovat odkaz",
+    "LinkCopied": "Zkopírováno!",
+    "LinkText": "Text odkazu",
     "Image": "Vložit obrázek",
     "AttachFile": "Připojit soubor",
-    "EnterUrl": "Zadejte URL:"
+    "EnterUrl": "Zadejte URL:",
+    "FileOpen": "Otevřít soubor",
+    "FileDelete": "Smazat soubor"
   },
   "Export": {
     "Export": "Exportovat",

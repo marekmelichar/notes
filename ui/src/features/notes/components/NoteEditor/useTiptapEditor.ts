@@ -4,6 +4,7 @@ import Link from '@tiptap/extension-link';
 import ImageExtension from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
+import { FileEmbedExtension } from './FileEmbedExtension';
 import type { JSONContent } from '@tiptap/core';
 import type { EditorView } from '@tiptap/pm/view';
 
@@ -15,6 +16,7 @@ interface UseTiptapEditorOptions {
   handleDrop: (view: EditorView, event: Event) => boolean;
   handleDragOver: (view: EditorView, event: Event) => boolean;
   onUpdate: () => void;
+  onLinkShortcut?: () => void;
 }
 
 export function useTiptapEditor({
@@ -25,6 +27,7 @@ export function useTiptapEditor({
   handleDrop,
   handleDragOver,
   onUpdate,
+  onLinkShortcut,
 }: UseTiptapEditorOptions) {
   return useEditor({
     extensions: [
@@ -33,8 +36,8 @@ export function useTiptapEditor({
         underline: false,
       }),
       Link.configure({
-        autolink: false,
-        linkOnPaste: false,
+        autolink: true,
+        linkOnPaste: true,
         openOnClick: false,
         HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
       }),
@@ -43,6 +46,7 @@ export function useTiptapEditor({
         HTMLAttributes: { class: 'editor-image' },
       }),
       Underline,
+      FileEmbedExtension,
       Placeholder.configure({ placeholder }),
     ],
     content: initialContent,
@@ -58,6 +62,26 @@ export function useTiptapEditor({
         dragover: handleDragOver,
       },
       handlePaste,
+      handleClick: (_view: EditorView, _pos: number, event: MouseEvent) => {
+        // Ctrl+Click (or Cmd+Click on Mac) opens links in a new tab
+        if ((event.ctrlKey || event.metaKey) && event.target instanceof HTMLElement) {
+          const link = event.target.closest('a');
+          if (link?.href) {
+            window.open(link.href, '_blank', 'noopener,noreferrer');
+            return true;
+          }
+        }
+        return false;
+      },
+      handleKeyDown: (_view: EditorView, event: KeyboardEvent) => {
+        // Ctrl+K / Cmd+K triggers link insertion
+        if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+          event.preventDefault();
+          onLinkShortcut?.();
+          return true;
+        }
+        return false;
+      },
     },
     onUpdate: () => {
       onUpdate();

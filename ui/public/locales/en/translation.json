@@ -149,7 +149,6 @@
     "PrimaryColor": "Primary Color",
     "CustomColor": "Custom Color",
     "ResetToDefault": "Reset to Default",
-    "LinkColor": "Link Color",
     "Layout": "Layout",
     "ShowNoteList": "Show note list"
   },
@@ -182,9 +181,16 @@
     "HorizontalRule": "Horizontal rule",
     "Link": "Add link",
     "Unlink": "Remove link",
+    "EditLink": "Edit link",
+    "OpenLink": "Open link",
+    "CopyLink": "Copy link",
+    "LinkCopied": "Copied!",
+    "LinkText": "Link text",
     "Image": "Insert image",
     "AttachFile": "Attach file",
-    "EnterUrl": "Enter URL:"
+    "EnterUrl": "Enter URL:",
+    "FileOpen": "Open file",
+    "FileDelete": "Delete file"
   },
   "Export": {
     "Export": "Export",

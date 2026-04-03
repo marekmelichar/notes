@@ -123,21 +123,19 @@ export function useFileUpload(noteId?: string) {
           view.dispatch(view.state.tr.insert(view.state.doc.content.size, imageNode));
         }
       } else {
-        const linkMark = view.state.schema.marks.link.create({
-          href: response.url,
-          target: '_blank',
+        const fileEmbedNode = view.state.schema.nodes.fileEmbed.create({
+          fileId: response.id,
+          url: response.url,
+          fileName: response.originalFilename || file.name,
+          contentType: response.contentType || file.type,
+          fileSize: response.size || file.size,
         });
-        const linkText = view.state.schema.text(
-          response.originalFilename || file.name,
-          [linkMark],
-        );
-        const linkParagraph = view.state.schema.nodes.paragraph.create({}, linkText);
         if (found) {
           view.dispatch(
-            view.state.tr.replaceWith(found.pos, found.pos + found.size, linkParagraph),
+            view.state.tr.replaceWith(found.pos, found.pos + found.size, fileEmbedNode),
           );
         } else {
-          view.dispatch(view.state.tr.insert(view.state.doc.content.size, linkParagraph));
+          view.dispatch(view.state.tr.insert(view.state.doc.content.size, fileEmbedNode));
         }
       }
     },
