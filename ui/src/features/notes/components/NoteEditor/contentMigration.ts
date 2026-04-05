@@ -161,8 +161,7 @@ function convertBlocks(blocks: BlockNoteBlock[]): JSONContent[] {
         }),
       });
     } else if (block.type === 'checkListItem') {
-      // Group consecutive checkListItem blocks into a bulletList.
-      // Prepend checkbox indicator (☑ / ☐) since TaskList extension is not installed.
+      // Group consecutive checkListItem blocks into a taskList with taskItem nodes.
       const items: BlockNoteBlock[] = [];
 
       while (i < blocks.length && blocks[i].type === 'checkListItem') {
@@ -171,25 +170,22 @@ function convertBlocks(blocks: BlockNoteBlock[]): JSONContent[] {
       }
 
       result.push({
-        type: 'bulletList',
+        type: 'taskList',
         content: items.map((item) => {
           const checked = item.props?.checked === true;
-          const prefix = checked ? '☑ ' : '☐ ';
-          const inlineContent = convertInlineContent(item.content as BlockNoteInline[]);
-          const prefixedContent: JSONContent[] = [
-            { type: 'text', text: prefix },
-            ...inlineContent,
-          ];
 
-          const listItemContent: JSONContent[] = [
-            { type: 'paragraph', content: prefixedContent },
+          const taskItemContent: JSONContent[] = [
+            {
+              type: 'paragraph',
+              content: convertInlineContent(item.content as BlockNoteInline[]),
+            },
           ];
 
           if (item.children && item.children.length > 0) {
-            listItemContent.push(...convertBlocks(item.children));
+            taskItemContent.push(...convertBlocks(item.children));
           }
 
-          return { type: 'listItem', content: listItemContent };
+          return { type: 'taskItem', attrs: { checked }, content: taskItemContent };
         }),
       });
     } else if (block.type === 'table') {

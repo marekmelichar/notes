@@ -176,6 +176,7 @@
     "InlineCode": "Inline code",
     "BulletList": "Bullet list",
     "OrderedList": "Numbered list",
+    "TaskList": "Todo list",
     "Blockquote": "Quote",
     "CodeBlock": "Code block",
     "HorizontalRule": "Horizontal rule",

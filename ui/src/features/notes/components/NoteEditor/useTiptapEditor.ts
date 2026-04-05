@@ -4,6 +4,8 @@ import Link from '@tiptap/extension-link';
 import ImageExtension from '@tiptap/extension-image';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 import { FileEmbedExtension } from './FileEmbedExtension';
 import type { JSONContent } from '@tiptap/core';
 import type { EditorView } from '@tiptap/pm/view';
@@ -46,6 +48,8 @@ export function useTiptapEditor({
         HTMLAttributes: { class: 'editor-image' },
       }),
       Underline,
+      TaskList,
+      TaskItem.configure({ nested: true }),
       FileEmbedExtension,
       Placeholder.configure({ placeholder }),
     ],

@@ -176,6 +176,7 @@
     "InlineCode": "Kód",
     "BulletList": "Odrážkový seznam",
     "OrderedList": "Číslovaný seznam",
+    "TaskList": "Úkolový seznam",
     "Blockquote": "Citace",
     "CodeBlock": "Blok kódu",
     "HorizontalRule": "Vodorovná čára",
