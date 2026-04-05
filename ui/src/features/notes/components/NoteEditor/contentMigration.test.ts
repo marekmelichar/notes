@@ -295,7 +295,7 @@ describe('migrateContent', () => {
     }
   });
 
-  it('should convert checkListItem with checked state to bullet list with ☑ prefix', () => {
+  it('should convert checkListItem with checked state to taskList with taskItem nodes', () => {
     const blocknote = [
       { type: 'checkListItem', props: { checked: true }, content: [{ type: 'text', text: 'Done task' }] },
       { type: 'checkListItem', props: { checked: false }, content: [{ type: 'text', text: 'Open task' }] },
@@ -303,18 +303,20 @@ describe('migrateContent', () => {
     const result = migrateContent(JSON.stringify(blocknote));
     expect(result?.content).toHaveLength(1);
     const list = result?.content?.[0];
-    expect(list?.type).toBe('bulletList');
+    expect(list?.type).toBe('taskList');
     expect(list?.content).toHaveLength(2);
 
     // First item: checked
-    const item1Text = list?.content?.[0].content?.[0].content;
-    expect(item1Text?.[0].text).toBe('☑ ');
-    expect(item1Text?.[1].text).toBe('Done task');
+    const item1 = list?.content?.[0];
+    expect(item1?.type).toBe('taskItem');
+    expect(item1?.attrs?.checked).toBe(true);
+    expect(item1?.content?.[0].content?.[0].text).toBe('Done task');
 
     // Second item: unchecked
-    const item2Text = list?.content?.[1].content?.[0].content;
-    expect(item2Text?.[0].text).toBe('☐ ');
-    expect(item2Text?.[1].text).toBe('Open task');
+    const item2 = list?.content?.[1];
+    expect(item2?.type).toBe('taskItem');
+    expect(item2?.attrs?.checked).toBe(false);
+    expect(item2?.content?.[0].content?.[0].text).toBe('Open task');
   });
 
   it('should handle checkListItem with nested children', () => {
@@ -329,11 +331,12 @@ describe('migrateContent', () => {
       },
     ];
     const result = migrateContent(JSON.stringify(blocknote));
-    const listItem = result?.content?.[0].content?.[0];
-    // Should have paragraph + nested bulletList
-    expect(listItem?.content).toHaveLength(2);
-    expect(listItem?.content?.[0].type).toBe('paragraph');
-    expect(listItem?.content?.[1].type).toBe('bulletList');
+    const taskItem = result?.content?.[0].content?.[0];
+    // Should have paragraph + nested taskList
+    expect(taskItem?.type).toBe('taskItem');
+    expect(taskItem?.content).toHaveLength(2);
+    expect(taskItem?.content?.[0].type).toBe('paragraph');
+    expect(taskItem?.content?.[1].type).toBe('taskList');
   });
 
   it('should not group checkListItem with bulletListItem', () => {
@@ -343,7 +346,7 @@ describe('migrateContent', () => {
     ];
     const result = migrateContent(JSON.stringify(blocknote));
     expect(result?.content).toHaveLength(2);
-    expect(result?.content?.[0].type).toBe('bulletList'); // checkListItem group
+    expect(result?.content?.[0].type).toBe('taskList'); // checkListItem group
     expect(result?.content?.[1].type).toBe('bulletList'); // bulletListItem group
   });
 

@@ -9,6 +9,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import IntegrationInstructionsOutlinedIcon from '@mui/icons-material/IntegrationInstructionsOutlined';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
+import ChecklistIcon from '@mui/icons-material/Checklist';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import LinkIcon from '@mui/icons-material/Link';
@@ -228,6 +229,17 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
             color={editor.isActive('orderedList') ? 'primary' : 'default'}
           >
             <FormatListNumberedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={t('Editor.TaskList')}>
+          <IconButton
+            size="small"
+            aria-label={t('Editor.TaskList')}
+            data-testid="toolbar-task-list"
+            onClick={() => editor.chain().focus().toggleTaskList().run()}
+            color={editor.isActive('taskList') ? 'primary' : 'default'}
+          >
+            <ChecklistIcon fontSize="small" />
           </IconButton>
         </Tooltip>
         <Tooltip title={t('Editor.Blockquote')}>
