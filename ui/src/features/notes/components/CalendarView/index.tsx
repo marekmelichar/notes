@@ -9,7 +9,10 @@ import type { NoteListItem } from '../../types';
 import styles from './CalendarView.module.css';
 
 function getWeekdayNames(): string[] {
-  const monday = dayjs().startOf('week').add(1, 'day');
+  // Find Monday: if locale starts week on Monday, startOf('week') is already Monday;
+  // if locale starts on Sunday, add 1 day.
+  const startOfWeek = dayjs().startOf('week');
+  const monday = startOfWeek.day() === 1 ? startOfWeek : startOfWeek.add(1, 'day');
   return Array.from({ length: 7 }, (_, i) => monday.add(i, 'day').format('dd'));
 }
 
@@ -140,6 +143,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ notes }) => {
               {cell.date.date()}
             </Typography>
             <Box className={styles.notesList}>
+              {cell.notes.length > 0 && (
+                <Typography
+                  variant="caption"
+                  className={styles.noteCount}
+                  onClick={(e) => handleMoreClick(e, cell)}
+                >
+                  {cell.notes.length}
+                </Typography>
+              )}
               {cell.notes.slice(0, 3).map((note) => (
                 <Chip
                   key={note.id}
