@@ -30,8 +30,7 @@ interface TiptapToolbarProps {
 export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
   const { t } = useTranslation();
 
-  // Re-render on any editor state change so toolbar buttons stay in sync
-  // (e.g. toggling a list must enable/disable indent buttons immediately).
+  // Re-render on any editor state change so toolbar buttons stay in sync.
   const [, setTick] = useState(0);
   const rafRef = useRef<number>(0);
   useEffect(() => {
