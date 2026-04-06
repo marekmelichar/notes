@@ -110,8 +110,20 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
     editor.chain().focus().run();
   }, [editor]);
 
+  const inListItem = editor.isActive('listItem') || editor.isActive('taskItem');
+
   return (
-    <div className={styles.toolbar}>
+    <div
+      className={styles.toolbar}
+      onMouseDown={(e) => {
+        // Prevent toolbar clicks from stealing focus from the editor.
+        // Without this, tapping a toolbar button on mobile blurs the editor
+        // before the click fires, which can disable buttons mid-tap.
+        if (!(e.target instanceof HTMLInputElement)) {
+          e.preventDefault();
+        }
+      }}
+    >
       <div className={styles.toolbarGroup}>
         <Tooltip title={t('Editor.Heading1')}>
           <IconButton
@@ -245,48 +257,38 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
           </IconButton>
         </Tooltip>
         <Tooltip title={`${t('Editor.Indent')} (Tab)`}>
-          <span>
-            <IconButton
-              size="small"
-              aria-label={t('Editor.Indent')}
-              data-testid="toolbar-indent"
-              disabled={
-                !editor.can().sinkListItem('listItem') &&
-                !editor.can().sinkListItem('taskItem')
+          <IconButton
+            size="small"
+            aria-label={t('Editor.Indent')}
+            data-testid="toolbar-indent"
+            disabled={!inListItem}
+            onClick={() => {
+              if (editor.isActive('taskItem')) {
+                editor.chain().focus().sinkListItem('taskItem').run();
+              } else {
+                editor.chain().focus().sinkListItem('listItem').run();
               }
-              onClick={() => {
-                if (editor.can().sinkListItem('taskItem')) {
-                  editor.chain().focus().sinkListItem('taskItem').run();
-                } else {
-                  editor.chain().focus().sinkListItem('listItem').run();
-                }
-              }}
-            >
-              <FormatIndentIncreaseIcon fontSize="small" />
-            </IconButton>
-          </span>
+            }}
+          >
+            <FormatIndentIncreaseIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
         <Tooltip title={`${t('Editor.Outdent')} (Shift+Tab)`}>
-          <span>
-            <IconButton
-              size="small"
-              aria-label={t('Editor.Outdent')}
-              data-testid="toolbar-outdent"
-              disabled={
-                !editor.can().liftListItem('listItem') &&
-                !editor.can().liftListItem('taskItem')
+          <IconButton
+            size="small"
+            aria-label={t('Editor.Outdent')}
+            data-testid="toolbar-outdent"
+            disabled={!inListItem}
+            onClick={() => {
+              if (editor.isActive('taskItem')) {
+                editor.chain().focus().liftListItem('taskItem').run();
+              } else {
+                editor.chain().focus().liftListItem('listItem').run();
               }
-              onClick={() => {
-                if (editor.can().liftListItem('taskItem')) {
-                  editor.chain().focus().liftListItem('taskItem').run();
-                } else {
-                  editor.chain().focus().liftListItem('listItem').run();
-                }
-              }}
-            >
-              <FormatIndentDecreaseIcon fontSize="small" />
-            </IconButton>
-          </span>
+            }}
+          >
+            <FormatIndentDecreaseIcon fontSize="small" />
+          </IconButton>
         </Tooltip>
         <Tooltip title={t('Editor.Blockquote')}>
           <IconButton
