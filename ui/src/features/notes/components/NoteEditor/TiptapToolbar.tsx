@@ -250,9 +250,12 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
               size="small"
               aria-label={t('Editor.Indent')}
               data-testid="toolbar-indent"
-              disabled={!editor.isActive('listItem') && !editor.isActive('taskItem')}
+              disabled={
+                !editor.can().sinkListItem('listItem') &&
+                !editor.can().sinkListItem('taskItem')
+              }
               onClick={() => {
-                if (editor.isActive('taskItem')) {
+                if (editor.can().sinkListItem('taskItem')) {
                   editor.chain().focus().sinkListItem('taskItem').run();
                 } else {
                   editor.chain().focus().sinkListItem('listItem').run();
@@ -269,9 +272,12 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
               size="small"
               aria-label={t('Editor.Outdent')}
               data-testid="toolbar-outdent"
-              disabled={!editor.isActive('listItem') && !editor.isActive('taskItem')}
+              disabled={
+                !editor.can().liftListItem('listItem') &&
+                !editor.can().liftListItem('taskItem')
+              }
               onClick={() => {
-                if (editor.isActive('taskItem')) {
+                if (editor.can().liftListItem('taskItem')) {
                   editor.chain().focus().liftListItem('taskItem').run();
                 } else {
                   editor.chain().focus().liftListItem('listItem').run();

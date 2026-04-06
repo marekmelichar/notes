@@ -97,8 +97,14 @@ export function useTiptapEditor({
         // Tab / Shift+Tab indents/outdents list items (including task items)
         if (event.key === 'Tab' && isInsideListItem(view)) {
           event.preventDefault();
-          const nodeType =
-            view.state.schema.nodes.taskItem || view.state.schema.nodes.listItem;
+          const { $from } = view.state.selection;
+          let nodeType = view.state.schema.nodes.listItem;
+          for (let depth = $from.depth; depth > 0; depth--) {
+            if ($from.node(depth).type.name === 'taskItem') {
+              nodeType = view.state.schema.nodes.taskItem;
+              break;
+            }
+          }
           if (event.shiftKey) {
             liftListItem(nodeType)(view.state, view.dispatch);
           } else {
