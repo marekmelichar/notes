@@ -110,8 +110,6 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
     editor.chain().focus().run();
   }, [editor]);
 
-  const inListItem = editor.isActive('listItem') || editor.isActive('taskItem');
-
   return (
     <div
       className={styles.toolbar}
@@ -261,7 +259,6 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
             size="small"
             aria-label={t('Editor.Indent')}
             data-testid="toolbar-indent"
-            disabled={!inListItem}
             onClick={() => {
               if (editor.isActive('taskItem')) {
                 editor.chain().focus().sinkListItem('taskItem').run();
@@ -278,7 +275,6 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
             size="small"
             aria-label={t('Editor.Outdent')}
             data-testid="toolbar-outdent"
-            disabled={!inListItem}
             onClick={() => {
               if (editor.isActive('taskItem')) {
                 editor.chain().focus().liftListItem('taskItem').run();
