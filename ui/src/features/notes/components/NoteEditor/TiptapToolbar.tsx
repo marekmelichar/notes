@@ -30,8 +30,8 @@ interface TiptapToolbarProps {
 export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
   const { t } = useTranslation();
 
-  // Re-render on editor selection changes (not content updates — selection
-  // changes already fire on content updates when the cursor moves).
+  // Re-render on any editor state change so toolbar buttons stay in sync
+  // (e.g. toggling a list must enable/disable indent buttons immediately).
   const [, setTick] = useState(0);
   const rafRef = useRef<number>(0);
   useEffect(() => {
@@ -41,10 +41,10 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
         setTick((n) => n + 1);
       });
     };
-    editor.on('selectionUpdate', update);
+    editor.on('transaction', update);
     return () => {
       cancelAnimationFrame(rafRef.current);
-      editor.off('selectionUpdate', update);
+      editor.off('transaction', update);
     };
   }, [editor]);
 
