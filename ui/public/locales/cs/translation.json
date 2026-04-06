@@ -192,6 +192,8 @@
     "CopyLink": "Kopírovat odkaz",
     "LinkCopied": "Zkopírováno!",
     "LinkText": "Text odkazu",
+    "Indent": "Odsadit",
+    "Outdent": "Zmenšit odsazení",
     "Image": "Vložit obrázek",
     "AttachFile": "Připojit soubor",
     "EnterUrl": "Zadejte URL:",

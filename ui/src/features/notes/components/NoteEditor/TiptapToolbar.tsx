@@ -15,6 +15,8 @@ import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import LinkIcon from '@mui/icons-material/Link';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import FormatIndentIncreaseIcon from '@mui/icons-material/FormatIndentIncrease';
+import FormatIndentDecreaseIcon from '@mui/icons-material/FormatIndentDecrease';
 import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined';
 import type { Editor } from '@tiptap/core';
 import { validateAndNormalizeUrl } from './linkUtils';
@@ -241,6 +243,44 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
           >
             <ChecklistIcon fontSize="small" />
           </IconButton>
+        </Tooltip>
+        <Tooltip title={`${t('Editor.Indent')} (Tab)`}>
+          <span>
+            <IconButton
+              size="small"
+              aria-label={t('Editor.Indent')}
+              data-testid="toolbar-indent"
+              disabled={!editor.isActive('listItem') && !editor.isActive('taskItem')}
+              onClick={() => {
+                if (editor.isActive('taskItem')) {
+                  editor.chain().focus().sinkListItem('taskItem').run();
+                } else {
+                  editor.chain().focus().sinkListItem('listItem').run();
+                }
+              }}
+            >
+              <FormatIndentIncreaseIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title={`${t('Editor.Outdent')} (Shift+Tab)`}>
+          <span>
+            <IconButton
+              size="small"
+              aria-label={t('Editor.Outdent')}
+              data-testid="toolbar-outdent"
+              disabled={!editor.isActive('listItem') && !editor.isActive('taskItem')}
+              onClick={() => {
+                if (editor.isActive('taskItem')) {
+                  editor.chain().focus().liftListItem('taskItem').run();
+                } else {
+                  editor.chain().focus().liftListItem('listItem').run();
+                }
+              }}
+            >
+              <FormatIndentDecreaseIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
         <Tooltip title={t('Editor.Blockquote')}>
           <IconButton

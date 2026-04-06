@@ -6,9 +6,19 @@ import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import { liftListItem, sinkListItem } from '@tiptap/pm/schema-list';
 import { FileEmbedExtension } from './FileEmbedExtension';
 import type { JSONContent } from '@tiptap/core';
 import type { EditorView } from '@tiptap/pm/view';
+
+function isInsideListItem(view: EditorView): boolean {
+  const { $from } = view.state.selection;
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const name = $from.node(depth).type.name;
+    if (name === 'listItem' || name === 'taskItem') return true;
+  }
+  return false;
+}
 
 interface UseTiptapEditorOptions {
   initialContent: JSONContent | undefined;
@@ -77,11 +87,23 @@ export function useTiptapEditor({
         }
         return false;
       },
-      handleKeyDown: (_view: EditorView, event: KeyboardEvent) => {
+      handleKeyDown: (view: EditorView, event: KeyboardEvent) => {
         // Ctrl+K / Cmd+K triggers link insertion
         if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
           event.preventDefault();
           onLinkShortcut?.();
+          return true;
+        }
+        // Tab / Shift+Tab indents/outdents list items (including task items)
+        if (event.key === 'Tab' && isInsideListItem(view)) {
+          event.preventDefault();
+          const nodeType =
+            view.state.schema.nodes.taskItem || view.state.schema.nodes.listItem;
+          if (event.shiftKey) {
+            liftListItem(nodeType)(view.state, view.dispatch);
+          } else {
+            sinkListItem(nodeType)(view.state, view.dispatch);
+          }
           return true;
         }
         return false;
