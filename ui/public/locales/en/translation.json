@@ -192,6 +192,8 @@
     "CopyLink": "Copy link",
     "LinkCopied": "Copied!",
     "LinkText": "Link text",
+    "Indent": "Indent",
+    "Outdent": "Outdent",
     "Image": "Insert image",
     "AttachFile": "Attach file",
     "EnterUrl": "Enter URL:",
