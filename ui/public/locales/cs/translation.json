@@ -42,7 +42,12 @@
     "ExpandSidebar": "Rozbalit panel",
     "CollapseNoteList": "Sbalit seznam",
     "ExpandNoteList": "Rozbalit seznam",
-    "SearchError": "Vyhledávání selhalo"
+    "SearchError": "Vyhledávání selhalo",
+    "Pwa": {
+      "UpdateAvailable": "Je dostupná nová verze",
+      "Update": "Aktualizovat",
+      "Dismiss": "Zavřít"
+    }
   },
   "Notes": {
     "AllNotes": "Všechny",
