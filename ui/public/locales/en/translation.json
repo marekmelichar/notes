@@ -42,7 +42,12 @@
     "ExpandSidebar": "Expand sidebar",
     "CollapseNoteList": "Collapse note list",
     "ExpandNoteList": "Expand note list",
-    "SearchError": "Search failed"
+    "SearchError": "Search failed",
+    "Pwa": {
+      "UpdateAvailable": "A new version is available",
+      "Update": "Update",
+      "Dismiss": "Dismiss"
+    }
   },
   "Notes": {
     "AllNotes": "All Notes",
