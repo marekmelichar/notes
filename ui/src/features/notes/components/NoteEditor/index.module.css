@@ -456,6 +456,52 @@
   }
 }
 
+/* Image with hover-revealed delete button */
+.imageWrapper {
+  margin: 0.5rem 0;
+}
+
+.imageBox {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.imageBox img {
+  display: block;
+  max-width: 100%;
+  border-radius: 0.375rem;
+}
+
+.imageBox[data-selected] {
+  outline: 2px solid var(--mui-palette-primary-main);
+  outline-offset: 2px;
+}
+
+.imageOverlay {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.imageBox:hover .imageOverlay,
+.imageBox[data-selected] .imageOverlay {
+  opacity: 1;
+}
+
+.imageDeleteBtn {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  color: #fff !important;
+}
+
+.imageDeleteBtn:hover {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
 /* File embed card */
 .fileEmbed {
   margin: 0.75rem 0;

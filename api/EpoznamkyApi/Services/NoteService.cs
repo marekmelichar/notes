@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EpoznamkyApi.Services;
 
-public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
+public partial class NoteService(AppDbContext db, FileService fileService, ILogger<NoteService> logger)
 {
     public async Task<PaginatedResponse<NoteResponse>> GetNotesAsync(string userId, int limit = 100, int offset = 0)
     {
@@ -169,7 +169,22 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
         var folderChanged = folderId != null && targetFolderId != note.FolderId;
 
         if (request.Title != null) note.Title = request.Title;
-        if (request.Content != null) note.Content = request.Content;
+
+        // Diff file references so we can clean up files removed from the note content.
+        // Done before assigning the new content so we keep the old snapshot.
+        List<string> removedStoredFilenames = [];
+        if (request.Content != null && request.Content != note.Content)
+        {
+            var oldIds = FileService.ExtractReferencedFileIds(note.Content);
+            var newIds = FileService.ExtractReferencedFileIds(request.Content);
+            oldIds.ExceptWith(newIds);
+            if (oldIds.Count > 0)
+            {
+                removedStoredFilenames = await fileService.DeleteFileUploadsByIdsAsync(oldIds, userId, note.Id);
+            }
+            note.Content = request.Content;
+        }
+
         if (folderId != null)
         {
             note.FolderId = targetFolderId;
@@ -195,6 +210,13 @@ public partial class NoteService(AppDbContext db, ILogger<NoteService> logger)
         }
 
         await db.SaveChangesAsync();
+
+        // Best-effort disk cleanup for files removed from the note content
+        foreach (var storedFilename in removedStoredFilenames)
+        {
+            fileService.DeleteFile(storedFilename);
+        }
+
         await PopulateNoteRelationsAsync([note]);
         return ToResponse(note);
     }
