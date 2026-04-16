@@ -87,7 +87,14 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         const response = await uploadFile(file);
         if (response) {
           if (isImageFile(file)) {
-            editor.chain().focus().setImage({ src: response.url }).run();
+            editor
+              .chain()
+              .focus()
+              .insertContent({
+                type: 'image',
+                attrs: { src: response.url, fileId: response.id },
+              })
+              .run();
           } else {
             editor
               .chain()

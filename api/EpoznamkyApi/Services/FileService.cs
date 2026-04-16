@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using EpoznamkyApi.Data;
 using EpoznamkyApi.Models;
 using Microsoft.EntityFrameworkCore;
@@ -39,9 +40,29 @@ public class FileStorageSettings
     ];
 }
 
-public class FileService(AppDbContext db, IOptions<FileStorageSettings> options, ILogger<FileService> logger)
+public partial class FileService(AppDbContext db, IOptions<FileStorageSettings> options, ILogger<FileService> logger)
 {
     private readonly FileStorageSettings _settings = options.Value;
+
+    // Matches file IDs embedded in note content. Both images (src="/api/v1/files/{id}")
+    // and fileEmbed nodes (url="/api/v1/files/{id}") share the same URL shape.
+    [GeneratedRegex(@"/api/v1/files/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})")]
+    private static partial Regex FileIdInContentRegex();
+
+    /// <summary>
+    /// Extracts all file UUIDs referenced inside a note's content JSON.
+    /// </summary>
+    public static HashSet<string> ExtractReferencedFileIds(string? content)
+    {
+        if (string.IsNullOrEmpty(content)) return [];
+
+        var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (Match match in FileIdInContentRegex().Matches(content))
+        {
+            ids.Add(match.Groups[1].Value);
+        }
+        return ids;
+    }
 
     // DB operations
 
@@ -65,6 +86,31 @@ public class FileService(AppDbContext db, IOptions<FileStorageSettings> options,
         db.FileUploads.Remove(fileUpload);
         await db.SaveChangesAsync();
         logger.LogInformation("File {FileId} deleted by user {UserId}", fileUpload.Id, fileUpload.UserId);
+    }
+
+    /// <summary>
+    /// Removes FileUpload rows for the given IDs (scoped to a user and note) and
+    /// returns the stored filenames so the caller can do best-effort disk cleanup.
+    /// </summary>
+    public async Task<List<string>> DeleteFileUploadsByIdsAsync(IReadOnlyCollection<string> fileIds, string userId, string noteId)
+    {
+        if (fileIds.Count == 0) return [];
+
+        var files = await db.FileUploads
+            .Where(f => fileIds.Contains(f.Id) && f.UserId == userId && f.NoteId == noteId)
+            .ToListAsync();
+
+        if (files.Count == 0) return [];
+
+        db.FileUploads.RemoveRange(files);
+        await db.SaveChangesAsync();
+
+        foreach (var f in files)
+        {
+            logger.LogInformation("File {FileId} removed (orphaned from note {NoteId})", f.Id, noteId);
+        }
+
+        return files.Select(f => f.StoredFilename).ToList();
     }
 
     // Disk I/O operations

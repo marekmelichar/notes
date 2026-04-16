@@ -1,7 +1,7 @@
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
-import ImageExtension from '@tiptap/extension-image';
+import { CustomImageExtension } from './CustomImageExtension';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import TaskList from '@tiptap/extension-task-list';
@@ -43,7 +43,7 @@ export function useTiptapEditor({
         openOnClick: false,
         HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
       }),
-      ImageExtension.configure({
+      CustomImageExtension.configure({
         allowBase64: false,
         HTMLAttributes: { class: 'editor-image' },
       }),

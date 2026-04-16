@@ -116,7 +116,10 @@ export function useFileUpload(noteId?: string) {
       const found = findPlaceholder(view, placeholderText);
 
       if (isImageFile(file)) {
-        const imageNode = view.state.schema.nodes.image.create({ src: response.url });
+        const imageNode = view.state.schema.nodes.image.create({
+          src: response.url,
+          fileId: response.id,
+        });
         if (found) {
           view.dispatch(view.state.tr.replaceWith(found.pos, found.pos + found.size, imageNode));
         } else {

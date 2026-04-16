@@ -41,6 +41,7 @@ builder.Services.Configure<FileStorageSettings>(
     builder.Configuration.GetSection("FileStorage"));
 builder.Services.AddScoped<FileService>();
 builder.Services.AddHostedService<TrashCleanupService>();
+builder.Services.AddHostedService<OrphanFileCleanupService>();
 
 // Health checks
 builder.Services.AddHealthChecks()
