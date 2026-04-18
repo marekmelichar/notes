@@ -1,0 +1,151 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      ui: ${{ steps.filter.outputs.ui }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'api/**'
+              - 'init-db.sql'
+              - '.github/workflows/ci.yml'
+            ui:
+              - 'ui/**'
+              - '.github/workflows/ci.yml'
+
+  ui-lint-test:
+    name: UI lint + unit tests
+    needs: changes
+    if: needs.changes.outputs.ui == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint (tsc --noEmit + eslint)
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:run
+
+  ui-build:
+    name: UI production build
+    needs: changes
+    if: needs.changes.outputs.ui == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+  api-test:
+    name: API build + integration tests
+    needs: changes
+    if: needs.changes.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore epoznamky.cz.sln
+
+      - name: Build (Release)
+        run: dotnet build epoznamky.cz.sln --no-restore --configuration Release
+
+      - name: Integration tests
+        run: |
+          dotnet test api/EpoznamkyApi.IntegrationTests/EpoznamkyApi.IntegrationTests.csproj \
+            --no-build --configuration Release \
+            --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" \
+            --results-directory ./TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-results
+          path: TestResults
+          retention-days: 7
+
+  # Single required check for branch protection. Add this to main branch
+  # protection settings as the only required status, and it will transitively
+  # require every job above.
+  ci-gate:
+    name: CI gate
+    if: always()
+    needs: [changes, ui-lint-test, ui-build, api-test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all required jobs succeeded or were skipped
+        run: |
+          # Fail the gate if any dependency failed or was cancelled.
+          # Skipped jobs are OK (paths-filter short-circuits untouched areas).
+          for result in \
+            "${{ needs.changes.result }}" \
+            "${{ needs.ui-lint-test.result }}" \
+            "${{ needs.ui-build.result }}" \
+            "${{ needs.api-test.result }}"; do
+            if [ "$result" != "success" ] && [ "$result" != "skipped" ]; then
+              echo "A required job did not succeed: result=$result"
+              exit 1
+            fi
+          done
+          echo "All required jobs passed or were skipped."
