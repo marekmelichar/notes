@@ -41,7 +41,8 @@ The **[ADR log](./adr/)** captures *why* we built it this way. Read these before
 
 ## For AI assistants
 
-- **[`AGENTS.md`](../AGENTS.md)** at the repo root — the orientation file, kept lean. It points back here for depth.
+- **[`CLAUDE.md`](../CLAUDE.md)** at the repo root — the canonical orientation file, auto-loaded by Claude Code. Kept lean; points back here for depth.
+- **[`AGENTS.md`](../AGENTS.md)** is a short pointer to `CLAUDE.md` for tooling that follows the AGENTS.md convention.
 
 ---
 
@@ -50,7 +51,7 @@ The **[ADR log](./adr/)** captures *why* we built it this way. Read these before
 These docs are load-bearing. To keep them honest:
 
 1. **Code change → doc check.** If you touch architecture, auth, deployment, or a documented API contract, update the doc in the same PR. Stale docs are worse than missing ones.
-2. **One source of truth.** Don't duplicate facts between `AGENTS.md` and `docs/`. Agent file orients; `docs/` is the depth.
+2. **One source of truth.** Don't duplicate facts between `CLAUDE.md` and `docs/`. Agent file orients; `docs/` is the depth.
 3. **Decisions → ADRs.** New library? New pattern? Reversal of an existing approach? Write an ADR before the code lands. Template in [`adr/README.md`](./adr/README.md).
 4. **Diagrams = Mermaid.** Renders natively in GitHub, lives in markdown, diffs cleanly.
 5. **Show, don't tell.** Prefer file paths, code references, and concrete examples over abstractions.

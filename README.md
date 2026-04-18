@@ -56,7 +56,8 @@ notes/
 ├── init-db.sql                 Creates `notes` + `keycloak` databases
 ├── notes-{dev,prod}-realm.json Keycloak realm exports
 ├── README.md         ← you are here
-├── AGENTS.md         Orientation for AI assistants
+├── CLAUDE.md         Orientation for AI assistants (auto-loaded by Claude Code)
+├── AGENTS.md         Pointer to CLAUDE.md for tools using the AGENTS.md convention
 └── CONTRIBUTING.md   Branches, commits, PRs, code style
 ```
 
