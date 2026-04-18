@@ -98,6 +98,45 @@ services:
       - keycloak
     restart: unless-stopped
 
+  # Nightly Postgres backup with off-host upload via rclone.
+  # See deploy/backup/README.md for configuration (RCLONE_CONFIG_* env vars).
+  postgres-backup:
+    build:
+      context: ./deploy/backup
+      dockerfile: Dockerfile
+    image: nettio-notes-backup:local
+    container_name: nettio-notes-backup
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: notes
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      BACKUP_CRON: ${BACKUP_CRON:-0 3 * * *}
+      LOCAL_RETENTION_DAYS: ${BACKUP_LOCAL_RETENTION_DAYS:-7}
+      RUN_ON_START: ${BACKUP_RUN_ON_START:-true}
+      RCLONE_REMOTE: ${BACKUP_RCLONE_REMOTE:-}
+      TZ: ${BACKUP_TZ:-UTC}
+      # rclone config is provided via RCLONE_CONFIG_* env vars in .env on the
+      # host; no rclone.conf file is mounted. See deploy/backup/README.md.
+      RCLONE_CONFIG_NOTES_TYPE: ${RCLONE_CONFIG_NOTES_TYPE:-}
+      RCLONE_CONFIG_NOTES_PROVIDER: ${RCLONE_CONFIG_NOTES_PROVIDER:-}
+      RCLONE_CONFIG_NOTES_ACCESS_KEY_ID: ${RCLONE_CONFIG_NOTES_ACCESS_KEY_ID:-}
+      RCLONE_CONFIG_NOTES_SECRET_ACCESS_KEY: ${RCLONE_CONFIG_NOTES_SECRET_ACCESS_KEY:-}
+      RCLONE_CONFIG_NOTES_ENDPOINT: ${RCLONE_CONFIG_NOTES_ENDPOINT:-}
+      RCLONE_CONFIG_NOTES_REGION: ${RCLONE_CONFIG_NOTES_REGION:-}
+      RCLONE_CONFIG_NOTES_ACL: ${RCLONE_CONFIG_NOTES_ACL:-}
+      RCLONE_CONFIG_NOTES_ACCOUNT: ${RCLONE_CONFIG_NOTES_ACCOUNT:-}
+      RCLONE_CONFIG_NOTES_KEY: ${RCLONE_CONFIG_NOTES_KEY:-}
+      RCLONE_CONFIG_NOTES_HARD_DELETE: ${RCLONE_CONFIG_NOTES_HARD_DELETE:-}
+    volumes:
+      - backups_data:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   uploads_data:
+  backups_data:
