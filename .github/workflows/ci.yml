@@ -114,7 +114,8 @@ jobs:
         run: |
           dotnet test api/EpoznamkyApi.IntegrationTests/EpoznamkyApi.IntegrationTests.csproj \
             --no-build --configuration Release \
-            --logger "GitHubActions" --logger "trx;LogFileName=test-results.trx" \
+            --logger "console;verbosity=normal" \
+            --logger "trx;LogFileName=test-results.trx" \
             --results-directory ./TestResults
 
       - name: Upload test results
