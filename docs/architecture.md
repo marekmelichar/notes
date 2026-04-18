@@ -89,7 +89,7 @@ sequenceDiagram
 | State | Redux Toolkit | Hand-written async thunks; see [ADR 0002](./adr/0002-redux-toolkit-not-rtk-query.md) |
 | UI | MUI v6 + CSS Modules | Dynamic theme with light/dark + custom primary |
 | Editor | TipTap (ProseMirror) | See [editor architecture](../ui/docs/editor-architecture.md) |
-| Routing | react-router-dom v6 | `createBrowserRouter` + `ProtectedRoute` guard |
+| Routing | react-router-dom v7 | `createBrowserRouter` + `ProtectedRoute` guard |
 | i18n | i18next + http-backend | English + Czech, runtime-loaded from `/locales/` |
 | API | .NET 10 + ASP.NET Core | Controllers + minimal API mix |
 | ORM | Entity Framework Core + Npgsql | Code-first migrations |

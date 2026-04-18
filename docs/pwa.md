@@ -58,17 +58,20 @@ VitePWA({
 `registerType: 'prompt'` means the SW does **not** auto-activate a new version. It waits for the app to call `updateServiceWorker()`. The prompt is wired in `ui/src/components/PwaUpdatePrompt/index.tsx`:
 
 ```tsx
-const { needRefresh, updateServiceWorker } = useRegisterSW({
-  onNeedRefresh: () => { /* triggers Snackbar */ },
-});
+const {
+  needRefresh: [needRefresh, setNeedRefresh],
+  updateServiceWorker,
+} = useRegisterSW();
 ```
+
+`useRegisterSW` returns `needRefresh` as a `[value, setter]` tuple — the component drives state directly rather than via `onNeedRefresh` callback.
 
 When a new SW is detected:
 
 1. The `needRefresh` state goes true.
 2. A MUI Snackbar appears with **Update** / **Dismiss** buttons.
 3. Clicking **Update** calls `updateServiceWorker(true)` — skipWaiting + reload.
-4. Dismiss leaves the new SW in `waiting` state; the user picks it up next visit.
+4. Dismiss calls `setNeedRefresh(false)`; the new SW stays in `waiting` state and activates on next full close + open.
 
 ```mermaid
 sequenceDiagram

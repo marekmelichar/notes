@@ -27,7 +27,8 @@ We don't write API unit tests separately — controllers are thin and the integr
 
 - Environment: `jsdom`
 - Setup: `tests/setup.ts` (matchMedia mock, cleanup)
-- Pattern: `src/**/*.{test,spec}.{ts,tsx}`
+- Include: `**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}`
+- Exclude: `node_modules/`, `dist/`, `build/`, `tests/` (Playwright lives there — kept out of Vitest)
 - Coverage threshold: **80%** for lines, functions, branches, statements
 
 ### Conventions

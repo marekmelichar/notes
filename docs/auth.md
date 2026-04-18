@@ -15,7 +15,7 @@ sequenceDiagram
     participant API as .NET API
 
     U->>SPA: Open app
-    SPA->>KC: init({ onLoad: 'check-sso' })<br/>silent-check-sso.html iframe
+    SPA->>KC: init({ onLoad: 'check-sso' })<br/>(top-window redirect — no iframe)
     alt User has active KC session
         KC-->>SPA: Access + refresh token (PKCE S256)
     else No session
@@ -73,11 +73,23 @@ Nginx serves `env.js` with `Cache-Control: no-store` so config changes take effe
 
 `ui/src/features/auth/utils/keycloak.ts`:
 
-- `keycloak.init({ onLoad: 'check-sso', flow: 'standard', pkceMethod: 'S256', checkLoginIframe: false, silentCheckSsoRedirectUri: '/silent-check-sso.html' })`
-- **Proactive refresh**: schedules `keycloak.updateToken()` 60s before access token expires
-- **Visibility-change listener**: re-checks/refreshes on tab focus (catches missed refreshes after device sleep)
-- **Mutex**: prevents concurrent refreshes when both proactive timer and 401 interceptor fire
-- **Exponential backoff** with max 3 retries on refresh failure
+```ts
+keycloak.init({
+  onLoad: 'check-sso',
+  pkceMethod: 'S256',
+  flow: 'standard',
+  checkLoginIframe: false,
+  enableLogging: false,
+  scope: 'openid offline_access',
+});
+```
+
+- **Proactive refresh**: schedules `keycloak.updateToken(60)` 60s before access token expires (constant `REFRESH_MARGIN_SECONDS`)
+- **`onTokenExpired` fallback**: fires if the scheduled refresh missed (e.g. device sleep)
+- **Visibility-change listener**: re-checks/refreshes on tab focus
+- **Mutex** (`isRefreshing`): prevents concurrent refresh attempts (visibility change + `onTokenExpired` racing)
+- **Exponential backoff** with max 3 retries (`MAX_REFRESH_RETRIES = 3`, base delay 2 s)
+- **Init promise memoised** to survive React StrictMode double-mount
 
 ### Token attachment
 
@@ -95,7 +107,9 @@ Response interceptor:
 
 ### Silent SSO
 
-`ui/public/silent-check-sso.html` is the iframe target Keycloak loads to detect an existing SSO session without redirecting the top-level window. It just `postMessage`s the URL back to the parent. Don't delete it — `keycloak.init({ onLoad: 'check-sso' })` requires it.
+With `onLoad: 'check-sso'` **and** `checkLoginIframe: false` **and** no `silentCheckSsoRedirectUri` set in init, Keycloak performs a full top-window redirect to the auth server to check for an existing session — no iframe involved.
+
+`ui/public/silent-check-sso.html` is currently a **dead leftover** from when init used `silentCheckSsoRedirectUri`. Nothing in the codebase references it. Safe to delete in a cleanup PR.
 
 ## Backend validation
 
@@ -126,13 +140,35 @@ Notes:
 
 ## Reading the user identity
 
-In a controller:
+`BaseController` exposes `UserId`, `UserEmail`, `UserName` properties. The actual extraction (from `BaseController.cs`):
 
 ```csharp
-var userId = User.FindFirst("sub")?.Value;
+protected string UserId
+{
+    get
+    {
+        var sub = User.FindFirstValue("sub")
+               ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!string.IsNullOrEmpty(sub)) return sub;
+
+        // Dev-only fallback for tests / seed scripts
+        if (env.IsDevelopment())
+        {
+            var headerUserId = Request.Headers["X-User-Id"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(headerUserId)) return headerUserId;
+        }
+        return "anonymous";
+    }
+}
 ```
 
-In `BaseController` (where most controllers inherit), this is exposed as `UserId`. Always treat it as the source of truth — never accept a `userId` from the request body.
+Notes:
+- Uses `FindFirstValue` (extension) — not `FindFirst("sub")?.Value`. Both work; `FindFirstValue` is the idiomatic ASP.NET helper.
+- Falls back to `ClaimTypes.NameIdentifier` to handle providers that map `sub` differently (defensive — Keycloak returns `sub` as-is because we keep `JwtSecurityTokenHandler.DefaultInboundClaimTypeMap` cleared).
+- `X-User-Id` header fallback is **dev-only** (gated on `IsDevelopment()`). Useful for integration tests; unreachable in prod.
+- "anonymous" sentinel only fires when no claim is present and we're not in dev — practically only on `[AllowAnonymous]` endpoints.
+
+Always treat `UserId` as the source of truth. **Never** accept a `userId` from request bodies, query strings, or headers (other than the dev `X-User-Id`).
 
 ## Logout
 
@@ -154,7 +190,7 @@ In `BaseController` (where most controllers inherit), this is exposed as `UserId
 | Frontend Keycloak setup | `ui/src/features/auth/utils/keycloak.ts` |
 | Token attachment / 401 refresh | `ui/src/lib/apiManager.ts` |
 | Runtime config injector | `ui/docker-entrypoint.sh`, `ui/public/env.js` |
-| Silent SSO iframe | `ui/public/silent-check-sso.html` |
+| Silent SSO file (currently unused — see § Silent SSO) | `ui/public/silent-check-sso.html` |
 | Route guard | `ui/src/features/auth/components/ProtectedRoute/` |
 | API JWT validation | `api/EpoznamkyApi/Program.cs` |
 | User identity in controllers | `api/EpoznamkyApi/Controllers/BaseController.cs` |

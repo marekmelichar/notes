@@ -82,11 +82,13 @@ Set in middleware (`Program.cs`) and `ui/nginx.conf`:
 
 | Header | Value | Source |
 |---|---|---|
-| `X-Content-Type-Options` | `nosniff` | API + UI |
-| `X-Frame-Options` | `SAMEORIGIN` | UI Nginx |
+| `X-Content-Type-Options` | `nosniff` | API (`Program.cs`) + UI Nginx |
+| `X-Frame-Options` | `DENY` (API responses) / `SAMEORIGIN` (UI responses) | API sets `DENY`; UI Nginx sets `SAMEORIGIN`. Each origin response carries its own value. |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | API |
-| `Strict-Transport-Security` | `max-age=…` | Edge Nginx |
+| `Strict-Transport-Security` | `max-age=…` | Edge Nginx (`deploy/nginx.conf`) |
 | `X-XSS-Protection` | `1; mode=block` | UI Nginx (legacy header, harmless) |
+
+There's an integration test in `api/EpoznamkyApi.IntegrationTests/Tests/CrossCutting/SecurityHeadersTests.cs` that locks the API's `X-Frame-Options: DENY`. If you change the value, update the test.
 
 **No CSP yet.** Adding one is on the to-do list — TipTap and MUI both inline styles, so a CSP needs care (likely `style-src 'unsafe-inline' 'self'`).
 
