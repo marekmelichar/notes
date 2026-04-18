@@ -202,7 +202,7 @@ Here the fallback uses i18n (`t()`) because the component has access to the tran
 | `foldersSlice.ts` | create, update, delete | Redux `showError()` |
 | `tagsSlice.ts` | create, update, delete | Redux `showError()` |
 | `useFileUpload.ts` | file upload | notistack `enqueueSnackbar()` |
-| `SearchDialog/index.tsx` | search | Redux `showError()` |
+| `ui/src/components/SearchDialog/index.tsx` | search | Redux `showError()` |
 | `apiManager.tsx` interceptor | 401 (session expired) | Keycloak redirect |
 
 ### Adding Error Handling to New Code

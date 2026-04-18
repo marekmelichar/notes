@@ -146,7 +146,7 @@ if (tagsByIdsCache.size > MAX_CACHE_SIZE) {
 
 ### 8. No list virtualization
 
-**Files**: `NoteList/index.tsx`, `NotesSidebar/index.tsx`
+**Files**: `ui/src/features/notes/components/NoteList/index.tsx`, `ui/src/features/notes/components/NotesSidebar/index.tsx`
 
 All 821 notes render to the DOM simultaneously. Only ~10-20 are visible.
 
