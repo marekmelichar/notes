@@ -1,70 +1,115 @@
 # notes.nettio.eu
 
-A notes application with a React frontend, a .NET API, PostgreSQL persistence, and Keycloak authentication.
+A server-backed, single-owner notes app. React + Vite frontend, .NET 10 API, PostgreSQL 16, Keycloak 26 auth, packaged as a PWA.
 
-## Current Architecture
+## What it is
 
-- `ui/`: React 19, TypeScript, Vite, MUI, Redux Toolkit, TipTap, Axios
-- `api/`: .NET 10, ASP.NET Core, Entity Framework Core, PostgreSQL
-- `auth`: Keycloak with JWT bearer validation
-- `infra`: Docker Compose for local development, Nginx and GitHub Actions for deployment
+- **Single-tenant per user** — every entity has a `UserId`; ownership enforced server-side.
+- **Rich text editing** via TipTap.
+- **Folder + tag organization** with full-text search.
+- **Installable PWA** with ~1h offline read cache. Not offline-first — see [ADR 0005](./docs/adr/0005-no-offline-first-sync.md).
+- **OIDC auth** via self-hosted Keycloak (PKCE, JWT bearer).
 
-The app is currently a server-backed, single-owner notes product. It does not ship an offline-first sync layer, generated API client, or collaboration workflow.
+## Quick start
 
-## Repository Layout
+```bash
+# Bring up the full stack (Postgres + Keycloak + API + frontend)
+docker compose up -d
+
+# Or run the frontend on Vite for hot reload, with everything else in Docker
+cd ui && npm install && npm run dev
+```
+
+| What | Where |
+|---|---|
+| Frontend (Vite) | http://localhost:5173 |
+| Frontend (Docker) | http://localhost:3000 |
+| API | http://localhost:5001 |
+| API OpenAPI | http://localhost:5001/openapi/v1.json *(dev only)* |
+| Keycloak | http://localhost:8080 (admin / admin) |
+| Postgres | localhost:5432 (postgres / postgres) |
+
+Test user: `testuser / testuser`.
+
+## Tech stack
+
+| Layer | Tech |
+|---|---|
+| Frontend | React 19, TypeScript, Vite 7, MUI v6, Redux Toolkit, TipTap |
+| Backend | .NET 10, ASP.NET Core, EF Core, Npgsql |
+| Database | PostgreSQL 16 (shared with Keycloak) |
+| Auth | Keycloak 26 (OIDC/JWT) |
+| Edge | Nginx 1.27 + Let's Encrypt |
+| CI/CD | GitHub Actions → GHCR → SSH deploy |
+
+## Repository layout
 
 ```text
-notes.nettio.eu/
-├── api/                    # .NET API and integration tests
-├── ui/                     # React frontend
-├── deploy/                 # Deployment scripts and configs
-├── docs/                   # Product and operational docs
-├── docker-compose.yml      # Local development stack
-└── docker-compose.prod.yml # Production deployment stack
+notes/
+├── api/              .NET API project + integration tests
+├── ui/               React frontend (also contains its own docs/)
+├── deploy/           Production Nginx config
+├── docs/             ← Documentation lives here
+├── scripts/          One-off ops scripts
+├── docker-compose.yml          Local dev stack
+├── docker-compose.prod.yml     Production stack
+├── init-db.sql                 Creates `notes` + `keycloak` databases
+├── notes-{dev,prod}-realm.json Keycloak realm exports
+├── README.md         ← you are here
+├── AGENTS.md         Orientation for AI assistants
+└── CONTRIBUTING.md   Branches, commits, PRs, code style
 ```
 
-## Local Development
+## Documentation
 
-### Prerequisites
+The doc set lives in [`docs/`](./docs/README.md). Highlights:
 
-- Docker and Docker Compose
-- Node.js 22+
-- .NET 10 SDK
+- **[Architecture](./docs/architecture.md)** — system overview, request flow, components
+- **[Data model](./docs/data-model.md)** — entities, relationships, schema
+- **[Auth](./docs/auth.md)** — Keycloak realm, OIDC flow, JWT validation
+- **[API](./docs/api.md)** — endpoint catalog, conventions
+- **[Deployment](./docs/deployment.md)** — CI/CD pipeline, deploy runbook
+- **[Operations](./docs/operations.md)** — logs, backup, restore, troubleshooting
+- **[Security](./docs/security.md)** — threat model, secrets, ownership
+- **[PWA](./docs/pwa.md)** — service worker, update prompt, offline behavior
+- **[Testing](./docs/testing.md)** — vitest + playwright, coverage thresholds
+- **[Error handling](./docs/error-handling.md)** — ProblemDetails end-to-end
+- **[ADRs](./docs/adr/)** — architecture decisions and their rationale
 
-### Start the stack
+Frontend-specific deep dives in [`ui/docs/`](./ui/docs/) — [editor architecture](./ui/docs/editor-architecture.md), [styling](./ui/docs/styling-guide.md), [theming](./ui/docs/theming.md), [i18n](./ui/docs/i18n.md), [performance](./ui/docs/performance.md).
+
+## Common commands
 
 ```bash
+# Local dev stack
 docker compose up -d
-```
+docker compose down
 
-Services:
-
-- Frontend via Docker: `http://localhost:3000`
-- Frontend via Vite: `http://localhost:5173`
-- API: `http://localhost:5001`
-- Keycloak Admin: `http://localhost:8080`
-- PostgreSQL: `localhost:5432`
-
-### Frontend development
-
-```bash
+# Frontend
 cd ui
 npm install
-npm run dev
+npm run dev           # vite at :5173
+npm run build         # production build
+npm run lint          # tsc + eslint
+npm run test:run      # unit tests once
+npx playwright test   # E2E (needs full stack running)
+
+# Backend
+cd api
+dotnet build
+dotnet run --project EpoznamkyApi   # API at :5001
+dotnet test                          # integration tests
+
+# DB migrations
+cd api/EpoznamkyApi
+dotnet ef migrations add <Name>
+dotnet ef database update           # dev only; prod is manual
 ```
 
-### Quality checks
+## Contributing
 
-```bash
-cd ui
-npm run lint
-npm run build
-```
-
-## Deployment
-
-See `deploy/` and the GitHub Actions workflow for deployment details. Production uses container images, Nginx reverse proxying, and TLS termination at the edge.
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md). TL;DR: branch from `main`, atomic commits, PR with test plan, pre-commit hook runs `lint + build`.
 
 ## License
 
-Private - All rights reserved
+Private — all rights reserved.
