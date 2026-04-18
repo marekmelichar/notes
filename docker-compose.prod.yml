@@ -10,6 +10,7 @@ services:
       - "443:443"
     volumes:
       - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/security-headers.conf:/etc/nginx/security-headers.conf:ro
       - ./deploy/certbot/conf:/etc/letsencrypt:ro
       - ./deploy/certbot/www:/var/www/certbot:ro
       - /home/deploy/nettio/landing:/var/www/nettio:ro
