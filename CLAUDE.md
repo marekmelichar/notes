@@ -91,7 +91,7 @@ cd api && dotnet test
 3. **Write an ADR** if you introduce a new dep, new pattern, or reverse a previous decision.
 4. **Tests**: at minimum, happy path + one edge case. See [docs/testing.md](./docs/testing.md).
 5. **Commits**: `<type>: <subject>`, atomic, no commented-out code or stray `console.log`s. See [CONTRIBUTING.md](./CONTRIBUTING.md).
-6. **Pre-commit hook** runs `lint + build`. **Never bypass with `--no-verify`** — fix the hook if it's wrong.
+6. **Pre-commit hook** runs `validate-docs + lint + build`. The docs validator (`scripts/validate-docs.mjs`) fails if any file path or markdown link in a `.md` doesn't resolve — keeps doc rot out of `main`. **Never bypass with `--no-verify`** — fix the hook if it's wrong.
 
 ## Things to flag (don't silently ignore)
 

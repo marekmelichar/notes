@@ -55,3 +55,13 @@ These docs are load-bearing. To keep them honest:
 3. **Decisions → ADRs.** New library? New pattern? Reversal of an existing approach? Write an ADR before the code lands. Template in [`adr/README.md`](./adr/README.md).
 4. **Diagrams = Mermaid.** Renders natively in GitHub, lives in markdown, diffs cleanly.
 5. **Show, don't tell.** Prefer file paths, code references, and concrete examples over abstractions.
+
+### Automated checks
+
+`scripts/validate-docs.mjs` runs in pre-commit and in CI (`.github/workflows/validate.yml`). It fails the build if any markdown reference (file path or internal link) doesn't resolve. Run locally:
+
+```bash
+node scripts/validate-docs.mjs
+```
+
+This catches mechanical drift (renamed/deleted files, broken nav). It does **not** catch semantic drift (e.g. an endpoint changed shape but the doc wasn't updated). For that, see the [quarterly fact-check](../CONTRIBUTING.md#scheduled-fact-check) procedure in CONTRIBUTING.

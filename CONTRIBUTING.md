@@ -68,7 +68,13 @@ Types match the branch prefixes (`feat`, `fix`, `refactor`, `docs`, `chore`, `pe
 
 ## Pre-commit hook
 
-The repo runs `npm run lint && npm run build` (in `ui/`) on every commit. This catches type errors, ESLint issues, and Vite build breaks before they hit the branch. **Never bypass with `--no-verify`** — if the hook is wrong, fix the hook (in the same PR).
+The repo runs three checks on every commit (`.husky/pre-commit`):
+
+1. `node scripts/validate-docs.mjs` — verifies every file path and internal link in any `.md` actually resolves
+2. `npm run lint` (in `ui/`) — `tsc --noEmit && eslint`
+3. `npm run build` (in `ui/`) — full Vite build
+
+This catches doc rot, type errors, ESLint issues, and Vite build breaks before they hit the branch. **Never bypass with `--no-verify`** — if the hook is wrong, fix the hook (in the same PR).
 
 Tests are not in the hook (kept fast). Run them yourself before pushing meaningful changes:
 
@@ -78,6 +84,31 @@ cd api && dotnet test
 ```
 
 See [docs/testing.md](./docs/testing.md).
+
+## Documentation discipline
+
+Docs are load-bearing. The PR template (`.github/PULL_REQUEST_TEMPLATE.md`) prompts you to confirm doc updates; the Validate CI workflow fails the build if a doc references a file that no longer exists.
+
+What that catches:
+- Renamed or deleted files still referenced in `docs/`
+- Broken internal markdown links (`[text](./missing.md)`)
+- ADR references to numbers that don't exist
+
+What it doesn't catch (still on you):
+- Semantic drift: code value changes (e.g. `Audience = "account"` → `"api"`) but doc still says the old value
+- Behavioral changes that aren't visible in file paths
+
+For the second class, see the [scheduled fact-check](#scheduled-fact-check) cadence below.
+
+### Scheduled fact-check
+
+Quarterly, run a fresh fact-check pass against the codebase. The procedure:
+
+1. Spawn an exploration agent with the prompt from [`docs/README.md → maintenance rules`](./docs/README.md#doc-maintenance-rules), asking it to compare each doc in `docs/` against the relevant code path and report discrepancies.
+2. Open a single PR titled `docs: quarterly fact-check pass` with the fixes.
+3. Note any drift patterns (e.g. "endpoint catalog drifted because controllers changed without doc updates") and consider tightening process or adding generated docs.
+
+The schedule is a calendar reminder, not a hard cron. The pre-commit + CI validator handles the high-frequency drift.
 
 ## Code style
 

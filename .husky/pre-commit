@@ -1,6 +1,11 @@
 #!/bin/sh
 
-cd ui
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+echo "Validating docs..."
+node "$REPO_ROOT/scripts/validate-docs.mjs" || exit 1
+
+cd "$REPO_ROOT/ui"
 
 echo "Running lint..."
 npm run lint || exit 1
