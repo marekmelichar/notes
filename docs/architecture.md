@@ -132,7 +132,6 @@ notes/
 │   ├── public/
 │   │   ├── env.js                   # Runtime config (rewritten by docker-entrypoint.sh)
 │   │   ├── locales/                 # en, cs translations
-│   │   └── silent-check-sso.html    # Keycloak silent SSO probe
 │   ├── tests/                       # Playwright E2E
 │   ├── docs/                        # Frontend-specific docs
 │   ├── Dockerfile

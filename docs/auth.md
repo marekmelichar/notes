@@ -105,11 +105,11 @@ Response interceptor:
 - Refresh fail → set Redux `auth.accessStatus = 'unauthorized'` → router redirects to `/no-access`
 - `403` → same `unauthorized` state (server says you're authenticated but lack access — for this single-tenant app this typically means the JWT is for a different user than the entity's owner)
 
-### Silent SSO
+### How `check-sso` works here
 
-With `onLoad: 'check-sso'` **and** `checkLoginIframe: false` **and** no `silentCheckSsoRedirectUri` set in init, Keycloak performs a full top-window redirect to the auth server to check for an existing session — no iframe involved.
+With `onLoad: 'check-sso'`, **`checkLoginIframe: false`**, and **no** `silentCheckSsoRedirectUri` set in init, Keycloak performs a full top-window redirect to the auth server to check for an existing session — no iframe involved. If the user is already SSO'd, the redirect comes back with tokens; if not, init resolves with `authenticated: false` and we explicitly call `keycloak.login()`.
 
-`ui/public/silent-check-sso.html` is currently a **dead leftover** from when init used `silentCheckSsoRedirectUri`. Nothing in the codebase references it. Safe to delete in a cleanup PR.
+(Earlier the project used the iframe-based silent check via `silent-check-sso.html`; that was removed once `checkLoginIframe: false` was adopted.)
 
 ## Backend validation
 
@@ -190,7 +190,6 @@ Always treat `UserId` as the source of truth. **Never** accept a `userId` from r
 | Frontend Keycloak setup | `ui/src/features/auth/utils/keycloak.ts` |
 | Token attachment / 401 refresh | `ui/src/lib/apiManager.ts` |
 | Runtime config injector | `ui/docker-entrypoint.sh`, `ui/public/env.js` |
-| Silent SSO file (currently unused — see § Silent SSO) | `ui/public/silent-check-sso.html` |
 | Route guard | `ui/src/features/auth/components/ProtectedRoute/` |
 | API JWT validation | `api/EpoznamkyApi/Program.cs` |
 | User identity in controllers | `api/EpoznamkyApi/Controllers/BaseController.cs` |

@@ -164,7 +164,7 @@ echo | openssl s_client -servername notes.nettio.eu -connect notes.nettio.eu:443
 ### Login redirects in a loop
 
 - Redirect URI in the realm doesn't include the current origin → Keycloak silently fails the post-login redirect. Edit `notes-prod-realm.json`, restart `keycloak`.
-- Cookies blocked / third-party cookie restrictions → check that `silent-check-sso.html` is reachable at the same origin.
+- Cookies blocked / third-party cookie restrictions → check that the Keycloak SSO cookie can be set on the auth domain (current setup uses a top-window redirect, no iframe — see [auth.md § How `check-sso` works here](./auth.md#how-check-sso-works-here)).
 
 ### `503 Service Unavailable` from the edge
 
