@@ -1,14 +1,16 @@
-ARG NODE_VERSION=25
-FROM node:$NODE_VERSION AS build
+ARG NODE_VERSION=22
+FROM node:${NODE_VERSION}-alpine AS build
 
 WORKDIR /opt/app
 
-# Create placeholder env.js for build
+# Placeholder env.js so the build doesn't fail on missing runtime config.
+# The real env.js is rewritten at container start by
+# /docker-entrypoint.d/40-write-env-js.sh.
 RUN echo 'window.API_URL="";window.KEYCLOAK_URL="";window.KEYCLOAK_REALM="";window.KEYCLOAK_CLIENT_ID="";' > env.js
 
 COPY package.json package-lock.json ./
 COPY .npmrc* ./
-RUN npm ci --legacy-peer-deps
+RUN npm ci --legacy-peer-deps --no-audit --no-fund
 
 COPY . .
 
@@ -16,18 +18,21 @@ RUN npm run build && \
     mkdir -p ./build && \
     node -p "require('./package.json').version" > ./build/version.txt
 
-# Production stage
-FROM nginx:1.27-alpine
+# ---
+# Production stage: nginxinc/nginx-unprivileged runs as UID 101 (nginx),
+# listens on 8080 by default, and needs no capabilities to start.
+FROM nginxinc/nginx-unprivileged:1.27-alpine
 
-# Copy built assets
-COPY --from=build /opt/app/build /usr/share/nginx/html
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+# Static assets owned by the nginx user so /docker-entrypoint.d scripts can
+# overwrite env.js at container start without elevating.
+COPY --chown=nginx:nginx --from=build /opt/app/build /usr/share/nginx/html
 
-# Copy entrypoint script for runtime env configuration
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Our server block (listens on 8080 to match the unprivileged image).
+COPY --chown=nginx:nginx ./nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# Runtime env.js generator: the base image runs every /docker-entrypoint.d/*.sh
+# file in order before `nginx -g 'daemon off;'`. 40- puts us after built-in
+# env substitution scripts (10-, 20-, 30-).
+COPY --chmod=755 docker-entrypoint.sh /docker-entrypoint.d/40-write-env-js.sh
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8080
