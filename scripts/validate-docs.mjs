@@ -175,14 +175,37 @@ function resolveRef(ref, fromDoc) {
   return resolve(dirname(fromDoc), pathPart);
 }
 
-/** Check if a path exists (file or directory). */
+/**
+ * Check if a path exists with EXACT case-sensitive match.
+ *
+ * On macOS APFS (case-insensitive, case-preserving), statSync succeeds for
+ * mismatched case (e.g. TESTING.md when only testing.md exists). CI runs on
+ * Linux (case-sensitive) and would fail. This function walks each path
+ * segment and verifies it appears verbatim in its parent directory.
+ */
 function pathExists(p) {
   try {
     statSync(p);
-    return true;
   } catch {
     return false;
   }
+  // Walk segments from REPO_ROOT outward, verifying each one exists with the
+  // exact case in its parent directory.
+  const rel = relative(REPO_ROOT, p);
+  if (rel.startsWith('..') || rel === '') return true; // outside repo or repo root itself
+  const segments = rel.split(/[\\/]/);
+  let current = REPO_ROOT;
+  for (const seg of segments) {
+    let entries;
+    try {
+      entries = readdirSync(current);
+    } catch {
+      return false;
+    }
+    if (!entries.includes(seg)) return false;
+    current = join(current, seg);
+  }
+  return true;
 }
 
 // ---------- Main ----------

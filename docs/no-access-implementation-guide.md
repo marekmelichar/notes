@@ -290,4 +290,5 @@ This feature is fully implemented in the notes.nettio.eu application:
 
 - [Authentication Documentation](../ui/docs/authentication.md)
 - [State Management](../ui/docs/state-management.md)
-- [Testing Guide](TESTING.md)
+- [Feature checklist](feature-checklist.md)
+- [Testing infrastructure](testing.md)
