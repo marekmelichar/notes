@@ -123,17 +123,57 @@ Check the `OrphanFileCleanupService` log on startup — it'll report any files t
 
 ## TLS certificates
 
-Let's Encrypt via certbot in a sidecar. Certs live in the `certbot` shared volume (mounted into the host as `deploy/certbot/conf` per the prod compose).
+Let's Encrypt via certbot in a sidecar. Certs live in the `certbot` shared volume (mounted into the host as `deploy/certbot/conf` per the prod compose). The sidecar's entrypoint only runs `certbot renew` in a 12-hour loop — **it does not obtain initial certs**. Bootstrapping is a one-off step, documented below.
+
+Edge Nginx references three cert bundles (`deploy/nginx.conf`):
+
+- `nettio.eu` / `www.nettio.eu` → `live/nettio.eu/`
+- `notes.nettio.eu` → `live/notes.nettio.eu/`
+- `auth.nettio.eu` → `live/auth.nettio.eu/`
+
+If any of those paths are missing at startup nginx will fail to load. HSTS is enabled (`max-age=63072000`), so once a browser has connected successfully it **cannot** click through a later cert error — keeping the renew loop healthy is not optional.
+
+### Check expiry
 
 ```bash
-# Force renewal (manual)
+# Current cert the edge is actually serving
+echo | openssl s_client -servername notes.nettio.eu -connect notes.nettio.eu:443 2>/dev/null \
+  | openssl x509 -noout -issuer -subject -dates
+
+# All certs in the volume (via the helper)
+bash deploy/check-certs.sh
+```
+
+`deploy/check-certs.sh` exits `1` if any cert expires within 20 days — wire it into cron (or a `@daily` Docker healthcheck) and mail on non-zero.
+
+### Force renewal
+
+```bash
 docker compose -f docker-compose.prod.yml run --rm certbot renew --force-renewal
 docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
-
-# Inspect expiry
-echo | openssl s_client -servername notes.nettio.eu -connect notes.nettio.eu:443 2>/dev/null \
-  | openssl x509 -noout -dates
 ```
+
+### First-time issuance (bootstrap)
+
+Use when `deploy/certbot/conf/live/<domain>/` does not exist — e.g. fresh VPS, or the volume was wiped. The helper script handles the chicken-and-egg (nginx needs certs to start, certbot needs port 80 to issue them) by running certbot in `--standalone` mode while nginx is stopped:
+
+```bash
+# On the VPS, in /opt/nettio
+sudo bash deploy/bootstrap-certs.sh you@example.com
+docker compose -f docker-compose.prod.yml up -d
+```
+
+Set `CERTBOT_STAGING=1` to dry-run against Let's Encrypt's staging environment first (recommended on a new box — staging has no rate limit but issues an untrusted cert; delete it with `certbot delete --cert-name <domain>` before issuing the real one).
+
+### Diagnosing `NET::ERR_CERT_AUTHORITY_INVALID`
+
+HSTS makes this user-invisible-fixable; the fix must happen on the server. In order:
+
+1. `docker compose -f docker-compose.prod.yml ps` — is `nginx` actually `Up`? If not, it's almost always a missing cert file referenced by `deploy/nginx.conf`. Check `logs nginx` for `cannot load certificate`.
+2. `bash deploy/check-certs.sh` — expired or missing?
+3. `docker compose -f docker-compose.prod.yml logs --tail=200 certbot` — what did the last renew say? Common failure: HTTP-01 challenge returning 404 because port 80 isn't reaching the container (firewall / cloud SG), or `/.well-known/acme-challenge/` routing broke.
+4. `openssl s_client ... | openssl x509 -noout -issuer` — issuer `(STAGING) Pretend Pear` or `Fake LE` means someone issued against staging; delete and re-issue without `--staging`.
+5. If cert is valid but the browser still rejects: check system clock drift on the VPS (`timedatectl`). A clock >24h off makes every cert look invalid.
 
 ## Routine maintenance
 
