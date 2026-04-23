@@ -82,6 +82,8 @@
     "SaveError": "Failed to save note",
     "DeleteError": "Failed to delete note",
     "RestoreError": "Failed to restore note",
+    "ConflictDefault": "This note was changed elsewhere. Reload to see the newer version.",
+    "ConflictLocked": "Save blocked — this note has a conflicting change. Reload to continue editing.",
     "AutoSaveIn": "Auto-save in",
     "Words": "words",
     "Characters": "characters",

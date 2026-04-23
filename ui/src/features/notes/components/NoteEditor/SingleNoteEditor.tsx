@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { Box, useMediaQuery } from '@mui/material';
+import { Alert, Box, useMediaQuery } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { showError, showSuccess } from '@/store/notificationsSlice';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -8,6 +8,7 @@ import { useAutoSave, useScrollDirection } from '@/hooks';
 import { setTabUnsaved } from '@/store/tabsSlice';
 import {
   selectNoteDetail,
+  selectNoteConflict,
   updateNote,
   deleteNote,
   restoreNote,
@@ -36,6 +37,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const note = useAppSelector((state) => selectNoteDetail(state, noteId));
+  const conflictMessage = useAppSelector((state) => selectNoteConflict(state, noteId));
   const folders = useAppSelector(selectFoldersSortedByName);
   const isMobile = useMediaQuery('(max-width: 48rem)');
   const [title, setTitle] = useState(note?.title || '');
@@ -49,9 +51,16 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
   const editorScrollRef = useRef<HTMLDivElement>(null);
   useScrollDirection(editorScrollRef);
 
-  // Track the last saved values
-  const lastSavedContentRef = useRef<string>(note?.content || '');
-  const lastSavedTitleRef = useRef<string>(note?.title || '');
+  // Last-saved baselines. `null` means "not hydrated yet" — the editor hasn't
+  // had server content applied, so any "current content" read is a stale
+  // ghost-tab snapshot. See 2026-04-23 incident + ADR 0009.
+  const lastSavedContentRef = useRef<string | null>(null);
+  const lastSavedTitleRef = useRef<string | null>(null);
+  // Which note id's baseline is currently loaded in the editor.
+  const hydratedNoteIdRef = useRef<string | null>(null);
+  // True if the note had non-empty content when we hydrated. An empty save is
+  // only legitimate if baseline was ever non-empty for this note.
+  const baselineEverNonEmptyRef = useRef<boolean>(false);
   const titleRef = useRef(title);
   titleRef.current = title;
 
@@ -60,17 +69,40 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
 
   // Perform the actual save operation
   const performSave = useCallback(async () => {
+    // Guard against stale / ghost-tab saves that could wipe server content.
+    // See docs/adr/0009-optimistic-concurrency-on-note-put.md.
     if (!note || isSavingRef.current) return;
+    // (a) Note isn't loaded / (b) editor not yet hydrated for THIS note.
+    if (
+      hydratedNoteIdRef.current !== note.id ||
+      lastSavedContentRef.current === null ||
+      lastSavedTitleRef.current === null
+    ) {
+      return;
+    }
+    // Conflict detected from a previous save — user must reload to continue.
+    if (conflictMessage) return;
 
     const content = editorRef.current ? await editorRef.current.getContent() : '[]';
     const currentTitle = titleRef.current;
     const updates: { content?: string; title?: string } = {};
 
-    const hasContentChanged = content !== lastSavedContentRef.current;
-    const hasTitleChanged = currentTitle !== lastSavedTitleRef.current;
-
     const previousContent = lastSavedContentRef.current;
     const previousTitle = lastSavedTitleRef.current;
+
+    const hasContentChanged = content !== previousContent;
+    const hasTitleChanged = currentTitle !== previousTitle;
+
+    // (c) Reject a save where the editor went from "baseline never non-empty"
+    // to "still empty" — this is the ghost-tab wipe signature.
+    const editorIsEmpty = editorRef.current?.isEmpty() ?? true;
+    if (
+      hasContentChanged &&
+      editorIsEmpty &&
+      !baselineEverNonEmptyRef.current
+    ) {
+      return;
+    }
 
     if (hasContentChanged) {
       updates.content = content;
@@ -87,17 +119,24 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
       try {
         await dispatch(updateNote({ id: note.id, updates })).unwrap();
         setLastSaved(new Date());
+        // After a content save succeeds, the baseline is now definitely
+        // non-empty-or-empty-by-intent — flip the flag so future edits can
+        // save an empty doc (legitimate content deletion).
+        if (hasContentChanged) {
+          baselineEverNonEmptyRef.current = true;
+        }
         markCleanRef.current();
       } catch {
         lastSavedContentRef.current = previousContent;
         lastSavedTitleRef.current = previousTitle;
-        dispatch(showError(t('Notes.SaveError')));
+        // The thunk already surfaces a user-visible snackbar (including the
+        // 409 "conflict" detail); no duplicate showError here.
       } finally {
         isSavingRef.current = false;
         setIsSaving(false);
       }
     }
-  }, [note, dispatch, t]);
+  }, [note, conflictMessage, dispatch]);
 
   const {
     hasUnsavedChanges,
@@ -127,12 +166,16 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     }
   }, [saveRef, performSave, hasUnsavedChangesRef]);
 
-  // Update title when note changes externally
+  // Hydrate the baseline when the note loads (or the noteId changes).
+  // Flipping hydratedNoteIdRef is the signal that lastSavedContentRef now
+  // reflects server state and subsequent saves are safe to dispatch.
   useEffect(() => {
     if (note) {
       setTitle(note.title || '');
       lastSavedContentRef.current = note.content || '';
       lastSavedTitleRef.current = note.title || '';
+      hydratedNoteIdRef.current = note.id;
+      baselineEverNonEmptyRef.current = (note.content || '').length > 0;
       markClean();
     }
   }, [note?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -286,6 +329,12 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
         onTagsChange={handleTagsChange}
         onExport={handleExport}
       />
+
+      {conflictMessage && (
+        <Alert severity="warning" data-testid="note-conflict-banner" sx={{ m: 1 }}>
+          {conflictMessage}
+        </Alert>
+      )}
 
       <ErrorBoundary
         key={note.id}

@@ -29,8 +29,10 @@ public class NotesUpdateTests(DatabaseFixture db) : IntegrationTestBase(db)
             title: "Original", content: "Original content"));
         var created = await createResponse.ReadAs<NoteResponse>();
 
-        // Update only content, title should remain unchanged
-        var response = await Client.UpdateNote(created.Id, TestDataFactory.UpdateNoteRequest(content: "New content"));
+        // Content updates require the optimistic-concurrency token (ADR 0009).
+        var response = await Client.UpdateNote(
+            created.Id,
+            TestDataFactory.UpdateNoteRequest(content: "New content", updatedAt: created.UpdatedAt));
 
         var updated = await response.ReadAs<NoteResponse>();
         updated.Title.Should().Be("Original");

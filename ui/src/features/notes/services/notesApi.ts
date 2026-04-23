@@ -61,7 +61,10 @@ export const notesApi = {
     return response.data;
   },
 
-  async update(id: string, updates: Partial<Note>): Promise<Note> {
+  async update(
+    id: string,
+    updates: Partial<Note> & { updatedAt?: number },
+  ): Promise<Note> {
     const response = await apiManager.put<Note>(`${API_BASE}/notes/${id}`, updates);
     return response.data;
   },

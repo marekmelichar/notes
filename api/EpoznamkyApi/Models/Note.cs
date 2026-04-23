@@ -70,6 +70,13 @@ public class UpdateNoteRequest
 
     [Range(0, int.MaxValue)]
     public int? Order { get; set; }
+
+    // Optimistic concurrency token — the UpdatedAt the client last observed.
+    // Required for any request that modifies Content (enforced in the service)
+    // to prevent a stale editor tab overwriting newer server-side content.
+    // See ADR 0009 and docs/adr/0009-optimistic-concurrency-on-note-put.md.
+    [Range(0, long.MaxValue)]
+    public long? UpdatedAt { get; set; }
 }
 
 public class ReorderNotesRequest

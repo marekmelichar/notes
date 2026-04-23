@@ -56,6 +56,10 @@ export interface NotesState {
   isCreating: boolean;
   isSearchActive: boolean;
   error: string | null;
+  // Note ids locked out from further autosaves after a 409 conflict, keyed
+  // to the user-visible message. Cleared by reloading the detail or via
+  // the clearNoteConflict reducer.
+  conflictedNoteIds: Record<string, string>;
 }
 
 export interface FoldersState {

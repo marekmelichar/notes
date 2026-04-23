@@ -34,7 +34,7 @@ Use it with any client generator or import into Swagger UI / Bruno / Insomnia. N
 | `GET` | `/search?q=<text>` | Full-text search returning full notes. |
 | `GET` | `/{id}` | Fetch single note |
 | `POST` | `/` | Create. Body: `CreateNoteRequest` (`title`, `content`, `folderId?`, `tags[]`, `isPinned`). Returns the created `Note`. |
-| `PUT` | `/{id}` | Partial update. Body: `UpdateNoteRequest` (any field optional). |
+| `PUT` | `/{id}` | Partial update. Body: `UpdateNoteRequest` (any field optional). **Content updates** must include `updatedAt` (ms-epoch of the version the client last observed) as an optimistic-concurrency token — see [ADR 0009](./adr/0009-optimistic-concurrency-on-note-put.md). |
 | `DELETE` | `/{id}` | Soft delete (`IsDeleted=true`, `DeletedAt=now`). |
 | `DELETE` | `/{id}/permanent` | Hard delete + drop attached files. |
 | `POST` | `/{id}/restore` | Undelete (clear `IsDeleted` + `DeletedAt`). |
@@ -99,6 +99,52 @@ All errors are RFC 7807. Example:
 ```
 
 Validation errors include an `errors` map keyed by field. Full table of error sites + how the UI surfaces them: [error-handling.md](./error-handling.md).
+
+## Optimistic concurrency on note content
+
+`PUT /api/v1/notes/{id}` enforces a compare-and-swap on `updatedAt` for any
+request that sets `content`. The client supplies the `updatedAt` it last
+observed; the server checks it against the row's current value and:
+
+- **Matches** → save, bump `updatedAt`, return `200 OK` with the new `Note`.
+- **Mismatch** → `409 Conflict` + ProblemDetails (`detail` describes the
+  reason). The caller must reload the note and let the user decide how to
+  merge.
+- **Missing** (content present, `updatedAt` absent) → `400 Bad Request`.
+- **Suspicious shrink** (existing > 256 B, new < 64 B) → `409 Conflict`.
+  Belt-and-braces defense against stale-editor wipes.
+
+Metadata-only updates (`title`, `folderId`, `tags`, `isPinned`, `order`) do
+not require `updatedAt`. Background: [ADR 0009](./adr/0009-optimistic-concurrency-on-note-put.md);
+root-cause incident: 2026-04-23 ghost-tab note wipe.
+
+Example request:
+
+```http
+PUT /api/v1/notes/c93f1c18-... HTTP/1.1
+Authorization: Bearer …
+Content-Type: application/json
+
+{
+  "content": "<p>Updated note body</p>",
+  "updatedAt": 1745020800000
+}
+```
+
+Example conflict response:
+
+```json
+HTTP/1.1 409 Conflict
+Content-Type: application/problem+json
+
+{
+  "type": "https://tools.ietf.org/html/rfc7231#section-6.5.8",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "This note was changed elsewhere. Reload to see the newer version.",
+  "traceId": "0HNV76DA8TJHJ:00000003"
+}
+```
 
 ## Request/response examples
 

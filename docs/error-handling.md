@@ -106,6 +106,9 @@ Model validation errors include an `errors` field:
 | Controller | Error | Status | Detail |
 |---|---|---|---|
 | `NotesController` | Search query too long | 400 | "Search query must not exceed 200 characters." |
+| `NotesController` | Content update missing `updatedAt` | 400 | "Missing UpdatedAt token for a content update. Reload the note and retry." |
+| `NotesController` | Stale `updatedAt` on content update | 409 | "This note was changed elsewhere. Reload to see the newer version." |
+| `NotesController` | Suspicious-shrink on content update | 409 | "Refusing to replace a non-empty note with a near-empty one. Reload and retry if this was intended." |
 | `FoldersController` | Circular parent reference | 400 | "Circular reference detected." |
 | `FilesController` | Empty file | 400 | "File is empty." |
 | `FilesController` | File too large | 400 | "File exceeds maximum allowed size." |
@@ -114,6 +117,27 @@ Model validation errors include an `errors` field:
 | All controllers | Resource not found | 404 | (title only: "Not Found") |
 | All controllers | Invalid model | 400 | (validation errors object) |
 | Middleware | No auth token | 401 | (title only: "Unauthorized") |
+
+### Note-save 409 Conflict (optimistic concurrency)
+
+`PUT /api/v1/notes/{id}` enforces optimistic concurrency on `content` updates
+via a client-supplied `updatedAt` token. Two 409 sub-cases:
+
+- **Stale token** — the `updatedAt` in the request doesn't match the row's
+  current `updatedAt`. The note was saved elsewhere since the editor last
+  loaded. Detail: `"This note was changed elsewhere. Reload to see the
+  newer version."`
+- **Suspicious shrink** — a sanity guard: existing content > 256 bytes would
+  be replaced by content < 64 bytes. This is the signature of a stale
+  editor's empty autosave (see 2026-04-23 incident). Detail: `"Refusing to
+  replace a non-empty note with a near-empty one. Reload and retry if this
+  was intended."`
+
+Both surface as 409 ProblemDetails. The UI (see `notesSlice.ts`) latches the
+note into a per-id conflict state: the banner `data-testid="note-conflict-
+banner"` appears, autosaves are blocked, and reloading the note (or
+dispatching `clearNoteConflict`) clears the lock. Contract + example
+payloads: [docs/api.md](./api.md#optimistic-concurrency-on-note-content).
 
 ## UI Side (React + TypeScript)
 
