@@ -123,7 +123,9 @@ Check the `OrphanFileCleanupService` log on startup — it'll report any files t
 
 ## TLS certificates
 
-Let's Encrypt via certbot in a sidecar. Certs live in the `certbot` shared volume (mounted into the host as `deploy/certbot/conf` per the prod compose). The sidecar's entrypoint only runs `certbot renew` in a 12-hour loop — **it does not obtain initial certs**. Bootstrapping is a one-off step, documented below.
+Let's Encrypt via certbot in a sidecar. Certs live in the `certbot` shared volume (mounted into the host as `deploy/certbot/conf` per the prod compose). The sidecar runs `deploy/certbot-renew.sh` — a 12-hour loop that calls `certbot renew --deploy-hook /usr/local/bin/reload-nginx.sh`. The deploy hook fires per-lineage **only when a cert was actually renewed**, and reloads nginx by sending `SIGHUP` to the `nettio-nginx` container via the mounted docker socket.
+
+The renewal loop does **not** obtain initial certs — bootstrapping is a one-off step, documented below.
 
 Edge Nginx references three cert bundles (`deploy/nginx.conf`):
 
@@ -131,7 +133,7 @@ Edge Nginx references three cert bundles (`deploy/nginx.conf`):
 - `notes.nettio.eu` → `live/notes.nettio.eu/`
 - `auth.nettio.eu` → `live/auth.nettio.eu/`
 
-If any of those paths are missing at startup nginx will fail to load. HSTS is enabled (`max-age=63072000`), so once a browser has connected successfully it **cannot** click through a later cert error — keeping the renew loop healthy is not optional.
+If any of those paths are missing at startup nginx will fail to load. HSTS is enabled (`max-age=63072000`), so once a browser has connected successfully it **cannot** click through a later cert error — keeping the renew-and-reload chain healthy is not optional.
 
 ### Check expiry
 
@@ -140,17 +142,45 @@ If any of those paths are missing at startup nginx will fail to load. HSTS is en
 echo | openssl s_client -servername notes.nettio.eu -connect notes.nettio.eu:443 2>/dev/null \
   | openssl x509 -noout -issuer -subject -dates
 
-# All certs in the volume (via the helper)
+# Expiry of every cert in the volume (exits 1 if any within 20 days)
 bash deploy/check-certs.sh
 ```
 
-`deploy/check-certs.sh` exits `1` if any cert expires within 20 days — wire it into cron (or a `@daily` Docker healthcheck) and mail on non-zero.
+`deploy/check-certs.sh` execs into the `nettio-certbot` container so it doesn't need sudo for the 700-mode `live/` directory. Wire it into cron and mail on non-zero exit.
+
+### Smoke test after a renewal
+
+The 2026-04-23 incident was a renew-without-reload: fresh cert on disk, stale cert in memory. To confirm the hook is working, compare the "not before" timestamp of what nginx is serving against what's on disk — they should match.
+
+```bash
+# Served
+served=$(echo | openssl s_client -servername notes.nettio.eu -connect notes.nettio.eu:443 2>/dev/null \
+  | openssl x509 -noout -startdate | cut -d= -f2)
+# On disk
+ondisk=$(docker exec nettio-certbot \
+  openssl x509 -in /etc/letsencrypt/live/notes.nettio.eu/fullchain.pem -noout -startdate \
+  | cut -d= -f2)
+echo "served:  $served"
+echo "on-disk: $ondisk"
+[ "$served" = "$ondisk" ] && echo "OK: nginx is serving the on-disk cert" || echo "DRIFT: reload hook didn't fire"
+```
+
+Run this after `--force-renewal` or whenever `check-certs.sh` shows a newly-renewed cert. Drift → check `docker compose -f docker-compose.prod.yml logs certbot` for `[reload-nginx]` output.
 
 ### Force renewal
 
 ```bash
-docker compose -f docker-compose.prod.yml run --rm certbot renew --force-renewal
-docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+# Triggers a renew pass; if any cert is renewed, the deploy hook
+# reloads nginx automatically — no manual `nginx -s reload` needed.
+docker compose -f docker-compose.prod.yml exec certbot \
+  certbot renew --force-renewal \
+    --deploy-hook /usr/local/bin/reload-nginx.sh
+```
+
+If you really need to force an nginx reload without renewing anything (e.g. after editing `deploy/nginx.conf`):
+
+```bash
+docker kill -s HUP nettio-nginx
 ```
 
 ### First-time issuance (bootstrap)
@@ -165,15 +195,29 @@ docker compose -f docker-compose.prod.yml up -d
 
 Set `CERTBOT_STAGING=1` to dry-run against Let's Encrypt's staging environment first (recommended on a new box — staging has no rate limit but issues an untrusted cert; delete it with `certbot delete --cert-name <domain>` before issuing the real one).
 
+### Retiring a domain
+
+Every cert bundle under `deploy/certbot/conf/live/` needs a matching `server` block in `deploy/nginx.conf`, or SNI falls through to the default vhost and the browser gets a SAN-mismatch error. When a domain is retired, delete both:
+
+```bash
+# Stop serving it
+# (remove the server block for the domain from deploy/nginx.conf, commit, redeploy)
+
+# Stop renewing it
+docker compose -f docker-compose.prod.yml exec certbot \
+  certbot delete --cert-name <domain>
+```
+
 ### Diagnosing `NET::ERR_CERT_AUTHORITY_INVALID`
 
 HSTS makes this user-invisible-fixable; the fix must happen on the server. In order:
 
-1. `docker compose -f docker-compose.prod.yml ps` — is `nginx` actually `Up`? If not, it's almost always a missing cert file referenced by `deploy/nginx.conf`. Check `logs nginx` for `cannot load certificate`.
-2. `bash deploy/check-certs.sh` — expired or missing?
-3. `docker compose -f docker-compose.prod.yml logs --tail=200 certbot` — what did the last renew say? Common failure: HTTP-01 challenge returning 404 because port 80 isn't reaching the container (firewall / cloud SG), or `/.well-known/acme-challenge/` routing broke.
-4. `openssl s_client ... | openssl x509 -noout -issuer` — issuer `(STAGING) Pretend Pear` or `Fake LE` means someone issued against staging; delete and re-issue without `--staging`.
-5. If cert is valid but the browser still rejects: check system clock drift on the VPS (`timedatectl`). A clock >24h off makes every cert look invalid.
+1. Compare served vs on-disk (smoke test above). If they differ → the reload hook didn't fire. Check `docker compose -f docker-compose.prod.yml logs certbot` for `[reload-nginx]` lines; manual workaround is `docker kill -s HUP nettio-nginx`.
+2. `docker compose -f docker-compose.prod.yml ps` — is `nginx` actually `Up`? If not, it's almost always a missing cert file referenced by `deploy/nginx.conf`. Check `logs nginx` for `cannot load certificate`.
+3. `bash deploy/check-certs.sh` — expired or missing?
+4. `docker compose -f docker-compose.prod.yml logs --tail=200 certbot` — what did the last renew say? Common failure: HTTP-01 challenge returning 404 because port 80 isn't reaching the container (firewall / cloud SG), or `/.well-known/acme-challenge/` routing broke.
+5. `openssl s_client ... | openssl x509 -noout -issuer` — issuer `(STAGING) Pretend Pear` or `Fake LE` means someone issued against staging; delete and re-issue without `--staging`.
+6. If cert is valid but the browser still rejects: check system clock drift on the VPS (`timedatectl`). A clock >24h off makes every cert look invalid.
 
 ## Routine maintenance
 
