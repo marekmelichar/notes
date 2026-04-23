@@ -24,14 +24,16 @@ public static class TestDataFactory
         string? folderId = null,
         List<string>? tags = null,
         bool? isPinned = null,
-        int? order = null) => new()
+        int? order = null,
+        long? updatedAt = null) => new()
     {
         Title = title,
         Content = content,
         FolderId = folderId,
         Tags = tags,
         IsPinned = isPinned,
-        Order = order
+        Order = order,
+        UpdatedAt = updatedAt
     };
 
     public static CreateFolderRequest CreateFolderRequest(

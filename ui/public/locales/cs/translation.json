@@ -82,6 +82,8 @@
     "SaveError": "Nepodařilo se uložit poznámku",
     "DeleteError": "Nepodařilo se smazat poznámku",
     "RestoreError": "Nepodařilo se obnovit poznámku",
+    "ConflictDefault": "Poznámka byla změněna jinde. Načtěte znovu pro zobrazení novější verze.",
+    "ConflictLocked": "Ukládání zablokováno — poznámka má konflikt. Načtěte znovu pro pokračování v úpravách.",
     "AutoSaveIn": "Automatické uložení za",
     "Words": "slov",
     "Characters": "znaků",

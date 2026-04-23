@@ -230,3 +230,109 @@ describe('notesSlice error handling with ProblemDetails', () => {
     expect(errors).toHaveLength(0);
   });
 });
+
+describe('notesSlice optimistic concurrency (ADR 0009)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function sampleNote(overrides: Partial<import('../types').Note> = {}): import('../types').Note {
+    return {
+      id: 'note-1',
+      title: 'Title',
+      content: 'server content',
+      folderId: null,
+      tags: [],
+      isPinned: false,
+      isDeleted: false,
+      deletedAt: null,
+      order: 0,
+      createdAt: 1000,
+      updatedAt: 2000,
+      syncedAt: null,
+      ...overrides,
+    };
+  }
+
+  it('forwards the cached server updatedAt when the update contains content', async () => {
+    const store = createTestStore();
+    // Seed the detail cache — mirrors what loadNoteDetail.fulfilled does.
+    const seed = sampleNote({ updatedAt: 5555 });
+    mockedApi.create.mockResolvedValue(seed);
+    await store.dispatch(createNote({ title: 'seed' }));
+
+    mockedApi.update.mockResolvedValue(sampleNote({ updatedAt: 6666 }));
+
+    await store.dispatch(updateNote({ id: seed.id, updates: { content: 'new' } }));
+
+    expect(mockedApi.update).toHaveBeenCalledTimes(1);
+    const [, body] = mockedApi.update.mock.calls[0];
+    expect(body).toMatchObject({ content: 'new', updatedAt: 5555 });
+  });
+
+  it('omits updatedAt for metadata-only updates', async () => {
+    const store = createTestStore();
+    const seed = sampleNote({ updatedAt: 5555 });
+    mockedApi.create.mockResolvedValue(seed);
+    await store.dispatch(createNote({ title: 'seed' }));
+
+    mockedApi.update.mockResolvedValue(sampleNote({ isPinned: true }));
+
+    await store.dispatch(updateNote({ id: seed.id, updates: { isPinned: true } }));
+
+    const [, body] = mockedApi.update.mock.calls[0];
+    expect(body).not.toHaveProperty('updatedAt');
+  });
+
+  it('marks the note conflicted and surfaces the server detail on 409', async () => {
+    const store = createTestStore();
+    const seed = sampleNote();
+    mockedApi.create.mockResolvedValue(seed);
+    await store.dispatch(createNote({ title: 'seed' }));
+
+    mockedApi.update.mockRejectedValue(
+      problemDetails('This note was changed elsewhere. Reload to see the newer version.', 409),
+    );
+
+    await store.dispatch(updateNote({ id: seed.id, updates: { content: 'x' } }));
+
+    const state = store.getState().notes;
+    expect(state.conflictedNoteIds[seed.id]).toBe(
+      'This note was changed elsewhere. Reload to see the newer version.',
+    );
+    const errors = getErrorNotifications(store);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toBe(
+      'This note was changed elsewhere. Reload to see the newer version.',
+    );
+  });
+
+  it('blocks subsequent saves once a note is conflicted (no API call)', async () => {
+    const store = createTestStore();
+    const seed = sampleNote();
+    mockedApi.create.mockResolvedValue(seed);
+    await store.dispatch(createNote({ title: 'seed' }));
+
+    mockedApi.update.mockRejectedValueOnce(problemDetails('conflict', 409));
+    await store.dispatch(updateNote({ id: seed.id, updates: { content: 'x' } }));
+    expect(mockedApi.update).toHaveBeenCalledTimes(1);
+
+    // Second save must be short-circuited by the slice before calling the API.
+    await store.dispatch(updateNote({ id: seed.id, updates: { content: 'y' } }));
+    expect(mockedApi.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the conflict flag via the clearNoteConflict reducer', async () => {
+    const store = createTestStore();
+    const seed = sampleNote();
+    mockedApi.create.mockResolvedValue(seed);
+    await store.dispatch(createNote({ title: 'seed' }));
+
+    mockedApi.update.mockRejectedValueOnce(problemDetails('conflict', 409));
+    await store.dispatch(updateNote({ id: seed.id, updates: { content: 'x' } }));
+    expect(store.getState().notes.conflictedNoteIds[seed.id]).toBeDefined();
+
+    store.dispatch(notesSlice.actions.clearNoteConflict(seed.id));
+    expect(store.getState().notes.conflictedNoteIds[seed.id]).toBeUndefined();
+  });
+});

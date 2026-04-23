@@ -7,8 +7,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EpoznamkyApi.Services;
 
+/// <summary>
+/// Thrown by NoteService when an UpdateNote request fails an optimistic concurrency
+/// or sanity check. The controller maps this to HTTP 409 Conflict + ProblemDetails.
+/// </summary>
+public class NoteConflictException(string detail) : Exception(detail);
+
 public partial class NoteService(AppDbContext db, FileService fileService, ILogger<NoteService> logger)
 {
+    // Suspicious-shrink sanity guard: if a client tries to replace content > this
+    // many bytes with content < this many bytes, we reject the write as 409. This
+    // is a belt-and-braces defense against a stale editor autosaving over a
+    // much-larger server-side doc (see 2026-04-23 incident where a 36 KB note
+    // was wiped by a ghost-tab autosave of an empty TipTap doc).
+    private const int SuspiciousShrinkNewMaxBytes = 64;
+    private const int SuspiciousShrinkExistingMinBytes = 256;
+
     public async Task<PaginatedResponse<NoteResponse>> GetNotesAsync(string userId, int limit = 100, int offset = 0)
     {
         var query = db.Notes
@@ -151,6 +165,41 @@ public partial class NoteService(AppDbContext db, FileService fileService, ILogg
         {
             logger.LogDebug("Note {NoteId} not found for user {UserId} during update", id, userId);
             return null;
+        }
+
+        // Content-mutating updates must carry the client's observed UpdatedAt so
+        // we can reject stale writes (see ADR 0009). Metadata-only updates
+        // (pin/folder/tags/order) don't require the token to preserve the
+        // existing partial-update semantics.
+        if (request.Content != null)
+        {
+            if (!request.UpdatedAt.HasValue)
+            {
+                // Missing token = malformed request (400). This is a contract
+                // requirement for content updates, not a concurrency state
+                // issue, so it surfaces separately from the 409 case.
+                throw new InvalidOperationException(
+                    "Missing UpdatedAt token for a content update. Reload the note and retry.");
+            }
+            if (request.UpdatedAt.Value != note.UpdatedAt)
+            {
+                logger.LogWarning(
+                    "Concurrency conflict on Note {NoteId} for user {UserId}: client UpdatedAt {ClientUpdatedAt} != server UpdatedAt {ServerUpdatedAt}",
+                    id, userId, request.UpdatedAt.Value, note.UpdatedAt);
+                throw new NoteConflictException(
+                    "This note was changed elsewhere. Reload to see the newer version.");
+            }
+
+            var newByteCount = System.Text.Encoding.UTF8.GetByteCount(request.Content);
+            var existingByteCount = System.Text.Encoding.UTF8.GetByteCount(note.Content);
+            if (newByteCount < SuspiciousShrinkNewMaxBytes && existingByteCount > SuspiciousShrinkExistingMinBytes)
+            {
+                logger.LogWarning(
+                    "Suspicious-shrink rejected on Note {NoteId} for user {UserId}: {NewBytes}B would replace {ExistingBytes}B",
+                    id, userId, newByteCount, existingByteCount);
+                throw new NoteConflictException(
+                    "Refusing to replace a non-empty note with a near-empty one. Reload and retry if this was intended.");
+            }
         }
 
         var folderId = request.FolderId == null

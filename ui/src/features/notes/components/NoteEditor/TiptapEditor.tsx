@@ -22,6 +22,7 @@ export interface TiptapEditorHandle {
   getContent: () => Promise<string>;
   exportTo: (format: ExportFormat, title?: string) => Promise<ExportResult>;
   getStats: () => EditorStats;
+  isEmpty: () => boolean;
 }
 
 interface TiptapEditorProps {
@@ -71,6 +72,9 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             wordCount: textContent.trim().split(/\s+/).filter(Boolean).length,
           };
         },
+        // An unmounted / still-initializing editor reports empty — the
+        // SingleNoteEditor guard treats that as "not safe to save".
+        isEmpty: () => editor?.isEmpty ?? true,
       }),
       [editor, exportTo],
     );

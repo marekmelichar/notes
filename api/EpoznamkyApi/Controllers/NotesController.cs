@@ -99,6 +99,10 @@ public class NotesController(NoteService noteService, FileService fileService) :
             if (note == null) return NotFound();
             return note;
         }
+        catch (NoteConflictException ex)
+        {
+            return Problem(detail: ex.Message, statusCode: 409);
+        }
         catch (InvalidOperationException ex)
         {
             return Problem(detail: ex.Message, statusCode: 400);

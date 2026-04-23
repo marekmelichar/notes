@@ -50,6 +50,13 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+// Methods where silent 401→refresh→retry is safe. Mutating methods are
+// excluded because the buffered request body is a snapshot taken *before* the
+// token expired — replaying it can overwrite newer server state with stale
+// data (see 2026-04-23 note-wipe incident + ADR 0009). The caller must
+// re-derive the body from current editor/UI state after the refresh.
+const IDEMPOTENT_RETRY_METHODS = new Set(['get', 'head', 'options']);
+
 // Response interceptor for authentication errors with silent token refresh
 apiManager.interceptors.response.use(
   (response) => {
@@ -65,9 +72,40 @@ apiManager.interceptors.response.use(
       _retry?: boolean;
     };
     const statusCode = error.response?.status;
+    const method = (originalRequest?.method ?? 'get').toLowerCase();
+    const isIdempotent = IDEMPOTENT_RETRY_METHODS.has(method);
 
     // Handle 401 Unauthorized - attempt silent token refresh
     if (statusCode === 401 && originalRequest && !originalRequest._retry) {
+      // For mutating requests (PUT/POST/PATCH/DELETE) we still refresh the
+      // token so the next call works, but we DO NOT replay the original
+      // request body — surface the 401 to the caller so they can rebuild the
+      // body from current state.
+      if (!isIdempotent) {
+        if (!isRefreshing) {
+          isRefreshing = true;
+          try {
+            console.debug('Refreshing token after 401 on mutating request (no replay)');
+            const refreshed = await keycloak.updateToken(-1);
+            if (refreshed && keycloak.token) {
+              store.dispatch(updateToken(keycloak.token));
+              processQueue(null, keycloak.token);
+            } else {
+              console.warn('Token refresh returned false despite 401 - session may be invalid');
+              processQueue(error, null);
+              store.dispatch(setSessionExpired(true));
+            }
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            processQueue(refreshError, null);
+            store.dispatch(setSessionExpired(true));
+          } finally {
+            isRefreshing = false;
+          }
+        }
+        return Promise.reject(error);
+      }
+
       // If already refreshing, queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

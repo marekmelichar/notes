@@ -48,6 +48,7 @@ What else did we look at? Why did we reject each?
 | [0006](./0006-pwa-via-vite-plugin-pwa.md) | Ship as a PWA via vite-plugin-pwa | Accepted (retroactive) |
 | [0007](./0007-feature-folders-frontend.md) | Organize frontend by feature folders | Accepted (retroactive) |
 | [0008](./0008-soft-delete-with-trash-cleanup.md) | Soft-delete notes with a sweeper service | Accepted (retroactive) |
+| [0009](./0009-optimistic-concurrency-on-note-put.md) | Client-supplied `UpdatedAt` as the concurrency token on note PUT | Accepted |
 
 ## "Retroactive" status
 

@@ -4,6 +4,7 @@ import {
   createSelector,
   type PayloadAction,
 } from "@reduxjs/toolkit";
+import axios from "axios";
 import { notesApi, type GetListParams } from "../services/notesApi";
 import { showSuccess, showError } from "@/store/notificationsSlice";
 import { getApiErrorMessage } from "@/lib";
@@ -57,6 +58,7 @@ const initialState: NotesState = {
   isCreating: false,
   isSearchActive: false,
   error: null,
+  conflictedNoteIds: {},
 };
 
 const buildListParams = (state: NotesState): GetListParams => ({
@@ -105,12 +107,46 @@ export const createNote = createAsyncThunk(
   ),
 );
 
-export const updateNote = createAsyncThunk(
+export const updateNote = createAsyncThunk<
+  Note,
+  { id: string; updates: Partial<Note> },
+  { state: { notes: NotesState }; rejectValue: { conflict: boolean; message: string } }
+>(
   "notes/updateNote",
-  withApiError<{ id: string; updates: Partial<Note> }, Note>(
-    "Notes.SaveError",
-    async ({ id, updates }) => notesApi.update(id, updates),
-  ),
+  async ({ id, updates }, { getState, dispatch, rejectWithValue }) => {
+    // Block autosaves once a conflict has been reported for this note;
+    // user must reload (or the detail is re-fetched) to clear the flag.
+    const conflicted = getState().notes.conflictedNoteIds[id];
+    if (conflicted) {
+      return rejectWithValue({
+        conflict: true,
+        message: i18n.t("Notes.ConflictLocked"),
+      });
+    }
+
+    // For content-mutating updates, send the last-observed server UpdatedAt
+    // as an optimistic-concurrency token. Metadata-only updates skip it to
+    // preserve existing partial-update semantics.
+    const body: Partial<Note> & { updatedAt?: number } = { ...updates };
+    if (updates.content !== undefined) {
+      const current = getState().notes.noteDetails[id];
+      if (current) {
+        body.updatedAt = current.updatedAt;
+      }
+    }
+
+    try {
+      return await notesApi.update(id, body);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        const detail = getApiErrorMessage(error, i18n.t("Notes.ConflictDefault"));
+        dispatch(showError(detail));
+        return rejectWithValue({ conflict: true, message: detail });
+      }
+      dispatch(showError(getApiErrorMessage(error, i18n.t("Notes.SaveError"))));
+      throw error;
+    }
+  },
 );
 
 export const deleteNote = createAsyncThunk(
@@ -187,6 +223,9 @@ export const notesSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    clearNoteConflict: (state, action: PayloadAction<string>) => {
+      delete state.conflictedNoteIds[action.payload];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -205,6 +244,9 @@ export const notesSlice = createSlice({
       })
       .addCase(loadNoteDetail.fulfilled, (state, action) => {
         state.noteDetails[action.payload.id] = action.payload;
+        // Loading a fresh detail clears any conflict flag — the stashed
+        // UpdatedAt is now current, so autosaves can resume.
+        delete state.conflictedNoteIds[action.payload.id];
       })
       .addCase(createNote.pending, (state) => {
         state.isCreating = true;
@@ -224,6 +266,12 @@ export const notesSlice = createSlice({
           state.notes[index] = toListItem(updated);
         }
         state.noteDetails[updated.id] = updated;
+        delete state.conflictedNoteIds[updated.id];
+      })
+      .addCase(updateNote.rejected, (state, action) => {
+        if (action.payload?.conflict) {
+          state.conflictedNoteIds[action.meta.arg.id] = action.payload.message;
+        }
       })
       .addCase(deleteNote.fulfilled, (state, action) => {
         const note = state.notes.find((n) => n.id === action.payload);
@@ -279,6 +327,7 @@ export const {
   setViewMode,
   clearSearch,
   clearError,
+  clearNoteConflict,
 } = notesSlice.actions;
 
 // Selectors
@@ -290,6 +339,9 @@ export const selectNoteById = (state: { notes: NotesState }, id: string) =>
 
 export const selectNoteDetail = (state: { notes: NotesState }, id: string) =>
   state.notes.noteDetails[id] ?? null;
+
+export const selectNoteConflict = (state: { notes: NotesState }, id: string) =>
+  state.notes.conflictedNoteIds[id] ?? null;
 
 // Notes are already filtered/sorted by the server — alias for clarity
 export const selectFilteredNotes = selectAllNotes;
