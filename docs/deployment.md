@@ -72,7 +72,7 @@ If a change touches **only docs** (or another non-deploying path), the workflow 
 | `nginx` | `nginx:1.27-alpine` | TLS edge, reverse proxy, landing page | Mounts `deploy/nginx.conf`, `deploy/certbot/conf` |
 | `certbot` | `certbot/certbot` | Renew Let's Encrypt every 12h | Writes into shared volume |
 | `postgres` | `postgres:16` | Both `notes` and `keycloak` DBs | Volume `postgres_data`, init `init-db.sql` |
-| `keycloak` | `quay.io/keycloak/keycloak:26.0` | Auth | `start --import-realm` from `notes-prod-realm.json`; `KC_HOSTNAME=https://notes.nettio.eu`, admin host `https://auth.nettio.eu`, `--proxy-headers xforwarded` |
+| `keycloak` | `quay.io/keycloak/keycloak:26.0` | Auth | `start --import-realm` from `notes-prod-realm.json`; `KC_HOSTNAME=https://notes.nettio.eu`, admin host `https://auth.nettio.eu`, `KC_PROXY_HEADERS=xforwarded` (env var, not a CLI flag) |
 | `api` | `ghcr.io/<repo>/api:latest` | .NET API | Volume `uploads_data:/app/uploads` |
 | `frontend` | `ghcr.io/<repo>/frontend:latest` | React SPA via internal Nginx | `docker-entrypoint.sh` rewrites `env.js` from `${API_URL}`, `${KEYCLOAK_URL}`, `${KEYCLOAK_REALM}`, `${KEYCLOAK_CLIENT_ID}` |
 

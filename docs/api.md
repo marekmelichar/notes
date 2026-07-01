@@ -180,7 +180,6 @@ Location: /api/v1/notes/c93f1c18-…
   "createdAt": 1745020800000,
   "updatedAt": 1745020800000,
   "syncedAt": null,
-  "userId": "f47ac10b-…",
   "tags": ["a4d7…", "b2e9…"]
 }
 ```
