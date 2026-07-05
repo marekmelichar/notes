@@ -47,5 +47,6 @@ docker-compose.override.yml
 # Import data
 scripts/import.sql
 
-# Claude Code
-.claude/
+# Claude Code — ignore local settings, but track shared skills/workflows
+.claude/*
+!.claude/skills/
