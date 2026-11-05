@@ -42,6 +42,36 @@ describe('LinkBubbleMenu', () => {
     mounts.length = 0;
   });
 
+  it('does not throw when the editor view is not mounted yet', () => {
+    const editor = new Editor({
+      element: null,
+      extensions: buildEditorExtensions('Write'),
+      content: '<p><a href="https://example.com/docs">Docs</a> tail</p>',
+    });
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    mounts.push({ editor, host });
+
+    expect(() =>
+      render(
+        <ThemeProvider theme={theme}>
+          <LinkBubbleMenu editor={editor} />
+        </ThemeProvider>,
+      ),
+    ).not.toThrow();
+    expect(screen.queryByTestId('link-bubble-open')).not.toBeInTheDocument();
+
+    act(() => {
+      editor.mount(host);
+      editor.commands.setTextSelection(2);
+    });
+    const link = host.querySelector('a');
+    act(() => {
+      link?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(screen.getByTestId('link-bubble-open')).toBeInTheDocument();
+  });
+
   it('stays hidden while the caret is merely inside a link', () => {
     const { editor } = renderBubble();
     editor.commands.setTextSelection(2);

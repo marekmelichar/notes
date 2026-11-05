@@ -252,8 +252,13 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
         return;
       }
       // Popovers (link dialog, bubble, menus) consume Escape first.
-      if (e.key === 'Escape' && !e.defaultPrevented && !e.isComposing) {
-        exitFocusMode();
+      // ProseMirror also preventDefaults Escape while the caret is in the
+      // note, so that case still leaves focus mode.
+      if (e.key === 'Escape' && !e.isComposing) {
+        const target = e.target;
+        const inNote =
+          target instanceof Element && Boolean(target.closest('.ProseMirror'));
+        if (!e.defaultPrevented || inNote) exitFocusMode();
       }
     };
 

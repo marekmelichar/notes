@@ -319,6 +319,7 @@ function ToolButton({ label, testId, onClick, active, shortcut, markdown, childr
         aria-label={label}
         aria-pressed={active}
         data-testid={testId}
+        onMouseDown={(event) => event.preventDefault()}
         onClick={onClick}
         color={active ? 'primary' : 'default'}
       >

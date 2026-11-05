@@ -312,4 +312,24 @@ describe('SingleNoteEditor save guards (ADR 0009)', () => {
     expect(editor).toHaveAttribute('data-focus-mode', 'false');
     expect(localStorage.getItem(FOCUS_MODE_STORAGE_KEY)).toBe('0');
   });
+
+  it('leaves focus mode on Escape even when the editor preventDefaults it', () => {
+    localStorage.setItem(FOCUS_MODE_STORAGE_KEY, '1');
+    const note = sampleNote();
+    const store = buildStore(note);
+
+    render(
+      <Wrapper store={store}>
+        <SingleNoteEditor noteId={note.id} isActive />
+      </Wrapper>,
+    );
+
+    const prose = document.createElement('div');
+    prose.className = 'ProseMirror';
+    document.body.appendChild(prose);
+    prose.addEventListener('keydown', (event) => event.preventDefault());
+    fireEvent.keyDown(prose, { key: 'Escape' });
+    prose.remove();
+    expect(screen.getByTestId('note-editor')).toHaveAttribute('data-focus-mode', 'false');
+  });
 });

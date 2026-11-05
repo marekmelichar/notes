@@ -63,7 +63,8 @@ export const Header = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      // The note editor uses the same chord for links and preventDefaults it.
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k' && !e.defaultPrevented) {
         e.preventDefault();
         handleOpenSearch();
       }

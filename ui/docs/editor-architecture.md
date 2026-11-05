@@ -133,7 +133,8 @@ An empty note's placeholder names the three shortcuts people forget (`#`, `-`, a
 
 **Link URL validation** (`linkUtils`, used by the link dialog, the bubble, the markdown `[label](url)` rule, and `SafeLink.isAllowedUri`, plus content migration):
 - Blocks `javascript:`, `data:`, `vbscript:` protocols, including schemes split by whitespace or control characters (`java\nscript:`), via `isSafeLinkHref`
-- Auto-prefixes `https://` when no protocol specified
+- Rejects other explicit schemes (`ftp://`, `file://`) instead of rewriting them to `https://ftp://…`
+- Auto-prefixes `https://` when no protocol is specified, including `host:port`
 - All links render with `target="_blank" rel="noopener noreferrer"`
 - `allowBase64: false` on images is unchanged; autolink uses `defaultProtocol: 'https'`
 

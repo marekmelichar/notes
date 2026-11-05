@@ -18,6 +18,17 @@ import type { Editor } from '@tiptap/core';
 import { validateAndNormalizeUrl, truncateUrl } from './linkUtils';
 import styles from './index.module.css';
 
+/** The real ProseMirror DOM, or null while the editor is created but not mounted. */
+function mountedEditorDom(editor: Editor): HTMLElement | null {
+  if (editor.isDestroyed) return null;
+  try {
+    const dom = editor.view.dom;
+    return dom instanceof HTMLElement ? dom : null;
+  } catch {
+    return null;
+  }
+}
+
 interface LinkBubbleMenuProps {
   editor: Editor;
   /** Hide while the keyboard link dialog is open so the two don't stack. */
@@ -44,16 +55,14 @@ export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProp
 
   // Show only after a plain click on a link. Arrowing through a sentence
   // or typing inside a link should not pop a menu over the next line.
+  // The view does not exist until TipTap emits `mount` (useEditor creates the
+  // editor before EditorContent attaches it). Reading view.dom earlier throws
+  // and the editor error boundary replaces the whole note.
   useEffect(() => {
-    const dom = editor.view.dom;
-    const onClick = (event: MouseEvent) => {
-      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return;
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const linkEl = target.closest('a');
-      if (!(linkEl instanceof HTMLElement) || !dom.contains(linkEl)) return;
-      if (!editor.isActive('link')) return;
+    let dom: HTMLElement | null = null;
 
+    const show = (linkEl: HTMLElement) => {
+      if (editor.isDestroyed || !dom?.contains(linkEl) || !editor.isActive('link')) return;
       const href =
         (editor.getAttributes('link').href as string) || linkEl.getAttribute('href') || '';
       setCurrentHref(href);
@@ -61,8 +70,43 @@ export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProp
       setEditError(false);
       setAnchorEl(linkEl);
     };
-    dom.addEventListener('click', onClick);
-    return () => dom.removeEventListener('click', onClick);
+
+    const onClick = (event: MouseEvent) => {
+      if (!dom || editor.isDestroyed) return;
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const linkEl = target.closest('a');
+      if (!(linkEl instanceof HTMLElement) || !dom.contains(linkEl)) return;
+      // The caret enters the link after this click, so isActive is often
+      // still false until the next turn.
+      if (editor.isActive('link')) show(linkEl);
+      else window.setTimeout(() => show(linkEl), 0);
+    };
+
+    const attach = () => {
+      if (editor.isDestroyed) return;
+      const next = mountedEditorDom(editor);
+      if (!next || next === dom) return;
+      dom?.removeEventListener('click', onClick);
+      dom = next;
+      dom.addEventListener('click', onClick);
+    };
+
+    const detach = () => {
+      dom?.removeEventListener('click', onClick);
+      dom = null;
+    };
+
+    editor.on('mount', attach);
+    editor.on('unmount', detach);
+    attach();
+
+    return () => {
+      editor.off('mount', attach);
+      editor.off('unmount', detach);
+      detach();
+    };
   }, [editor]);
 
   useEffect(() => {

@@ -54,6 +54,16 @@ describe('Link URL validation', () => {
       expect(validateAndNormalizeUrl('example.com/page?q=1')).toBe('https://example.com/page?q=1');
     });
 
+    it('should auto-prefix https:// for a host and port', () => {
+      expect(validateAndNormalizeUrl('example.com:8080/path')).toBe('https://example.com:8080/path');
+    });
+
+    it('should reject unsupported schemes instead of prefixing https://', () => {
+      expect(validateAndNormalizeUrl('ftp://files.example.com/readme.txt')).toBeNull();
+      expect(validateAndNormalizeUrl('file:///tmp/secret.txt')).toBeNull();
+      expect(validateAndNormalizeUrl('blob:https://example.com/uuid')).toBeNull();
+    });
+
     it('should return null for empty input', () => {
       expect(validateAndNormalizeUrl('')).toBeNull();
     });

@@ -102,11 +102,11 @@
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    scrollbar-width: thin;
   }
 
   .toolbar::-webkit-scrollbar {
-    display: none;
+    height: 4px;
   }
 
   .toolbarGroup {
@@ -268,16 +268,23 @@
 }
 
 /* The empty-note hint, and the level of an empty heading under the caret.
+   A 0-height float clips the hint once overflow is hidden, so the hint is
+   absolutely positioned in the empty block and ellipsizes inside it.
    Empty paragraphs mid-note stay quiet. */
+.tiptapContainer :global(.ProseMirror p.is-editor-empty:first-child),
+.tiptapContainer :global(.ProseMirror :is(h1, h2, h3).is-empty) {
+  position: relative;
+}
+
 .tiptapContainer :global(.ProseMirror p.is-editor-empty:first-child::before),
 .tiptapContainer :global(.ProseMirror :is(h1, h2, h3).is-empty::before) {
   content: attr(data-placeholder);
-  float: left;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
   color: var(--mui-palette-text-secondary);
   pointer-events: none;
-  height: 0;
   white-space: nowrap;
-  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
 }

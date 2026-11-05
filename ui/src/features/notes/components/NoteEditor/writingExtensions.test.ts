@@ -134,6 +134,15 @@ describe('editor writing shortcuts', () => {
     );
   });
 
+  it('does not link an unsupported scheme such as ftp://', () => {
+    const editor = editorWith();
+    typeText(editor, '[Files](ftp://files.example.com/readme.txt) ');
+    expect(textRuns(editor).some((run) => run.marks.some((mark) => mark.type === 'link'))).toBe(
+      false,
+    );
+    expect(editor.getText()).toContain('ftp://files.example.com/readme.txt');
+  });
+
   it('autolinks a url on space and does not swallow the following word', () => {
     const editor = editorWith();
     typeText(editor, 'https://example.com tail');
