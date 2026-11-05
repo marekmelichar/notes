@@ -86,6 +86,17 @@ describe('TiptapToolbar', () => {
     expect(editor.state.doc.firstChild?.attrs.level).toBe(1);
   });
 
+  it('keeps the heading when the current level is picked again', async () => {
+    const user = userEvent.setup();
+    const { editor } = renderToolbar('<h2>Hello</h2>');
+
+    await user.click(screen.getByTestId('toolbar-heading'));
+    await user.click(screen.getByTestId('toolbar-heading2'));
+
+    expect(editor.state.doc.firstChild?.type.name).toBe('heading');
+    expect(editor.state.doc.firstChild?.attrs.level).toBe(2);
+  });
+
   it('inserts a file from the single insert button', async () => {
     const user = userEvent.setup();
     const { onFilePicker } = renderToolbar();

@@ -127,14 +127,14 @@ Markdown-style input and the matching shortcuts come from StarterKit (and are co
 
 An empty note's placeholder names the three shortcuts people forget (`#`, `-`, and the link shortcut). It only shows while the document is empty. An empty heading under the caret shows its level ("Heading 2") as a placeholder; empty paragraphs mid-note stay quiet.
 
-**Links.** The toolbar button and `Ctrl/Cmd+K` open one dialog: apply to the selection, edit the link under the caret, or insert text plus a URL. A rejected URL stays in the field with an error instead of closing the dialog. Editing an existing link offers Remove. The bubble (open, copy, edit, remove) appears when you click a link and goes away when you type or move the caret off it — it does not follow the caret through a sentence.
+**Links.** The toolbar button and `Ctrl/Cmd+K` open one dialog: apply to the selection, edit the link under the caret, or insert text plus a URL. A rejected URL stays in the field with an error instead of closing the dialog. Editing an existing link offers Remove. The bubble (open, copy, edit, remove) appears when you click a link and goes away when you type, move the caret off it, or press `Esc` — it does not follow the caret through a sentence. It reads the URL from the clicked link, not the selection, and clicking another link moves it there.
 
 ## Security
 
-**Link URL validation** (`linkUtils`, used by the link dialog, the bubble, the markdown `[label](url)` rule, and `SafeLink.isAllowedUri`, plus content migration):
-- Blocks `javascript:`, `data:`, `vbscript:` protocols, including schemes split by whitespace or control characters (`java\nscript:`), via `isSafeLinkHref`
-- Rejects other explicit schemes (`ftp://`, `file://`) instead of rewriting them to `https://ftp://…`
-- Auto-prefixes `https://` when no protocol is specified, including `host:port`
+**Link URL validation** has two levels:
+- **Typed links** (`validateAndNormalizeUrl`: link dialog, bubble edit, markdown `[label](url)` rule, content migration) allow only `http`, `https`, and `mailto`. Other explicit schemes (`ftp://`, `file://`) are rejected instead of being rewritten to `https://ftp://…`. A bare host gets `https://`, including `example.com:8080` and dot-free `localhost:3000`.
+- **Stored, pasted, and autolinked links** (`SafeLink.isAllowedUri`, which TipTap also runs on render and parse) use TipTap's own check plus `isSafeLinkHref`. Existing `tel:` or `ftp:` links keep their href, and a link mark with no href renders instead of throwing.
+- Both block `javascript:`, `data:`, `vbscript:`, including schemes split by whitespace or control characters (`java\nscript:`), via `isSafeLinkHref`.
 - All links render with `target="_blank" rel="noopener noreferrer"`
 - `allowBase64: false` on images is unchanged; autolink uses `defaultProtocol: 'https'`
 
@@ -200,11 +200,11 @@ Toggled via `EditorHeader`:
 | `useAutoSave.test.ts` | 13 | Countdown, timer reset, save triggers, flush, cleanup |
 | `useFileUpload.test.ts` | 10 | Upload success/error, offline, size limit, noteId routing |
 | `useEditorExport.test.ts` | 11 | Markdown/HTML export, title escaping, XSS prevention |
-| `linkValidation.test.ts` | 16 | Protocol blocking, URL normalization, edge cases |
-| `writingExtensions.test.ts` | 9 | Markdown shortcuts, empty-heading placeholder, validated `[label](url)`, autolink does not swallow the next word |
-| `TiptapToolbar.test.tsx` | 4 | Compact toolbar, markdown hints in More, heading menu, link button does not unlink |
+| `linkValidation.test.ts` | 24 | Protocol blocking, URL normalization, edge cases |
+| `writingExtensions.test.ts` | 12 | Markdown shortcuts, empty-heading placeholder, stored tel:/ftp: links and null href render, validated `[label](url)`, autolink does not swallow the next word |
+| `TiptapToolbar.test.tsx` | 5 | Compact toolbar, markdown hints in More, heading menu (re-picking a level keeps it), link button does not unlink |
 | `LinkDialog.test.tsx` | 3 | Rejected URL stays open, https normalization, unlink |
-| `LinkBubbleMenu.test.tsx` | 2 | Bubble opens on click, not while the caret merely sits in a link |
+| `LinkBubbleMenu.test.tsx` | 5 | Opens on click (not on caret), before mount, shows the clicked link's URL, moves between links, Esc closes before focus mode hears it |
 | `focusPreference.test.ts` | 3 | Focus-mode localStorage round-trip |
 | `shortcutLabel.test.ts` | 4 | Ctrl vs ⌘ shortcut labels, tooltip hint formatting |
 | `EditorFooter.test.tsx` | 7 | Component rendering, all display states |

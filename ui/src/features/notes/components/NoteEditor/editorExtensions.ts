@@ -8,7 +8,7 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { CustomImageExtension } from './CustomImageExtension';
 import { FileEmbedExtension } from './FileEmbedExtension';
-import { validateAndNormalizeUrl } from './linkUtils';
+import { isSafeLinkHref, validateAndNormalizeUrl } from './linkUtils';
 
 /**
  * Markdown link at the cursor: `[label](url)`.
@@ -69,8 +69,11 @@ export function buildEditorExtensions(placeholder: EditorPlaceholder) {
       // Match validateAndNormalizeUrl, which prefixes https — not TipTap's http default.
       defaultProtocol: 'https',
       HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
+      // Runs when links are rendered, parsed, pasted, and autolinked — so it must accept
+      // what is already stored (tel:, ftp:) and a missing href, which TipTap passes as
+      // null. Typed links get the stricter http/https/mailto rule in validateAndNormalizeUrl.
       isAllowedUri: (url, { defaultValidate }) =>
-        validateAndNormalizeUrl(url) !== null && defaultValidate(url),
+        !url || (isSafeLinkHref(url) && defaultValidate(url)),
     }),
     CustomImageExtension.configure({
       allowBase64: false,

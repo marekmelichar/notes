@@ -58,6 +58,13 @@ describe('Link URL validation', () => {
       expect(validateAndNormalizeUrl('example.com:8080/path')).toBe('https://example.com:8080/path');
     });
 
+    it('should treat a dot-free name followed by a port as a host', () => {
+      expect(validateAndNormalizeUrl('localhost:3000')).toBe('https://localhost:3000');
+      expect(validateAndNormalizeUrl('intranet:8080/wiki?q=1')).toBe('https://intranet:8080/wiki?q=1');
+      expect(validateAndNormalizeUrl('tel:123456')).toBeNull();
+      expect(validateAndNormalizeUrl('mailto:me@example.com')).toBe('mailto:me@example.com');
+    });
+
     it('should reject unsupported schemes instead of prefixing https://', () => {
       expect(validateAndNormalizeUrl('ftp://files.example.com/readme.txt')).toBeNull();
       expect(validateAndNormalizeUrl('file:///tmp/secret.txt')).toBeNull();

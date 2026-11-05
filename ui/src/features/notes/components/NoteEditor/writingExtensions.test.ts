@@ -134,6 +134,32 @@ describe('editor writing shortcuts', () => {
     );
   });
 
+  it('keeps stored tel: and ftp: links, and still blanks javascript: on render', () => {
+    const editor = editorWith(
+      '<p><a href="tel:+420123456">Call</a> <a href="ftp://files.example.com/a">Files</a> ' +
+        '<a href="javascript:alert(1)">Bad</a></p>',
+    );
+    const hrefs = Array.from(editor.view.dom.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(['tel:+420123456', 'ftp://files.example.com/a']);
+    expect(editor.getText()).toContain('Bad');
+  });
+
+  it('renders a link mark without an href instead of throwing', () => {
+    const editor = editorWith();
+    expect(() =>
+      editor.commands.setContent({
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'orphan', marks: [{ type: 'link', attrs: { href: null } }] }],
+          },
+        ],
+      }),
+    ).not.toThrow();
+    expect(editor.view.dom.querySelector('a')).not.toBeNull();
+  });
+
   it('does not link an unsupported scheme such as ftp://', () => {
     const editor = editorWith();
     typeText(editor, '[Files](ftp://files.example.com/readme.txt) ');

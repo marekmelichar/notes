@@ -29,6 +29,24 @@ function mountedEditorDom(editor: Editor): HTMLElement | null {
   }
 }
 
+/**
+ * href of the link mark under a rendered <a>, read from the document at that
+ * element's position rather than from the selection (which may still be elsewhere).
+ */
+function hrefOfLinkElement(editor: Editor, linkEl: HTMLElement): string {
+  try {
+    const pos = editor.view.posAtDOM(linkEl, 0);
+    const mark = editor.state.doc
+      .nodeAt(pos)
+      ?.marks.find((candidate) => candidate.type.name === 'link');
+    const href: unknown = mark?.attrs.href;
+    if (typeof href === 'string' && href) return href;
+  } catch {
+    // Fall through to the DOM attribute.
+  }
+  return linkEl.getAttribute('href') ?? '';
+}
+
 interface LinkBubbleMenuProps {
   editor: Editor;
   /** Hide while the keyboard link dialog is open so the two don't stack. */
@@ -63,8 +81,7 @@ export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProp
 
     const show = (linkEl: HTMLElement) => {
       if (editor.isDestroyed || !dom?.contains(linkEl) || !editor.isActive('link')) return;
-      const href =
-        (editor.getAttributes('link').href as string) || linkEl.getAttribute('href') || '';
+      const href = hrefOfLinkElement(editor, linkEl);
       setCurrentHref(href);
       setIsEditing(false);
       setEditError(false);
@@ -78,10 +95,10 @@ export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProp
       if (!(target instanceof Element)) return;
       const linkEl = target.closest('a');
       if (!(linkEl instanceof HTMLElement) || !dom.contains(linkEl)) return;
-      // The caret enters the link after this click, so isActive is often
-      // still false until the next turn.
-      if (editor.isActive('link')) show(linkEl);
-      else window.setTimeout(() => show(linkEl), 0);
+      // Always wait a turn: the caret has not moved into the clicked link yet, so
+      // isActive/getAttributes may still describe the previous link, and the
+      // ClickAwayListener's dismiss for this same click must run before we show.
+      window.setTimeout(() => show(linkEl), 0);
     };
 
     const attach = () => {
@@ -129,6 +146,23 @@ export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProp
   useEffect(() => {
     if (suspended) dismiss();
   }, [suspended, dismiss]);
+
+  // Esc closes the bubble before anything else hears it (e.g. focus mode).
+  // Capture phase on document, then stop: the editor-wide handler never sees it.
+  // In edit mode the URL field handles Esc itself (back to view mode).
+  const isEditingRef = useRef(isEditing);
+  isEditingRef.current = isEditing;
+  useEffect(() => {
+    if (!anchorEl || suspended) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.isComposing || isEditingRef.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      dismiss();
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [anchorEl, suspended, dismiss]);
 
   useEffect(() => {
     if (!copied) return;

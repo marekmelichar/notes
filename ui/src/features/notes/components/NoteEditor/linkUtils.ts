@@ -1,14 +1,22 @@
 const DANGEROUS_PROTOCOL = /^(javascript|data|vbscript):/i;
 const ALLOWED_SCHEMES = new Set(['http', 'https', 'mailto']);
+/** Schemes whose body is often all digits, so `tel:123` is not mistaken for host:port. */
+const NUMERIC_BODY_SCHEMES = new Set(['tel', 'sms', 'fax', 'callto']);
+/** A port right after the colon: `localhost:3000`, `intranet:8080/path`. */
+const PORT_AFTER_COLON = /^\d{1,5}(?:[/?#]|$)/;
 
 /**
  * Scheme of an explicit URL, or null when the text is a bare host (including host:port).
- * A dotted token before the colon is a hostname (`example.com:8080`), not a scheme.
+ * A dotted token before the colon is a hostname (`example.com:8080`), not a scheme, and so
+ * is a dot-free name followed by a port (`localhost:3000`).
  */
 function explicitScheme(input: string): string | null {
   const match = /^([a-z][a-z0-9+.-]*):/i.exec(input);
   if (!match || match[1].includes('.')) return null;
-  return match[1].toLowerCase();
+  const name = match[1].toLowerCase();
+  const rest = input.slice(match[0].length);
+  if (PORT_AFTER_COLON.test(rest) && !NUMERIC_BODY_SCHEMES.has(name)) return null;
+  return name;
 }
 
 /**
@@ -34,8 +42,10 @@ export function validateAndNormalizeUrl(input: string): string | null {
 /**
  * Rejects dangerous schemes even when split by whitespace or control
  * characters, which browsers ignore inside a scheme ("java\nscript:").
- * Every link path (dialog, bubble, markdown rule, autolink, paste) goes
- * through validateAndNormalizeUrl, so this is the one place to check.
+ * validateAndNormalizeUrl (what the user types: dialog, bubble, markdown rule)
+ * applies it on top of the http/https/mailto allowlist. SafeLink.isAllowedUri
+ * (render, parse, paste, autolink) applies it on top of TipTap's own check,
+ * so stored tel:/ftp: links keep their href.
  */
 export function isSafeLinkHref(href: string): boolean {
   // eslint-disable-next-line no-control-regex

@@ -134,7 +134,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
               key={level}
               selected={headingLevel === level}
               data-testid={`toolbar-heading${level}`}
-              onClick={() => run(() => editor.chain().focus().toggleHeading({ level }).run())}
+              onClick={() => run(() => editor.chain().focus().setHeading({ level }).run())}
             >
               <ListItemText>{t(`Editor.Heading${level}`)}</ListItemText>
               <Typography variant="caption" className={styles.menuShortcut}>
@@ -319,7 +319,6 @@ function ToolButton({ label, testId, onClick, active, shortcut, markdown, childr
         aria-label={label}
         aria-pressed={active}
         data-testid={testId}
-        onMouseDown={(event) => event.preventDefault()}
         onClick={onClick}
         color={active ? 'primary' : 'default'}
       >
