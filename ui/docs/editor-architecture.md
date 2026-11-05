@@ -13,7 +13,6 @@ NoteEditor/
 ├── TiptapToolbar.tsx       # Compact formatting bar; secondary marks live in More
 ├── editorExtensions.ts     # TipTap extension list, safe links, markdown link input
 ├── useTiptapEditor.ts      # Hook — mounts the extension list and editor props
-├── focusPreference.ts      # Focus-mode preference in localStorage
 ├── shortcutLabel.ts        # Ctrl / ⌘ labels for toolbar tooltips
 ├── useFileUpload.ts        # File upload — paste/drop handling, size validation, placeholder nodes
 ├── useEditorExport.ts      # Export to markdown (Turndown) and HTML, with title injection
@@ -110,7 +109,7 @@ Configured in `useTiptapEditor.ts`:
 
 The toolbar shows the controls you reach for while drafting: heading, bold, italic, lists, quote, link, and insert. Underline, strike, code, indent, and the horizontal rule sit in **More**, so the bar stays one short row. On a phone (`max-width: 48rem`) numbered list and quote move into More too, and the eight remaining controls spread across the row at up to 44px each, shrinking on very narrow screens instead of scrolling sideways. Image and file upload share one insert button — they open the same picker.
 
-**Focus mode** (`Ctrl/Cmd+Shift+Enter` toggles, `Esc` leaves; remembered in `notes.editor.focusMode`) hides the toolbar, the note actions, and the footer, and limits the line length to about 68 characters. The title and the focus button stay. `Ctrl/Cmd+S` still saves. The chord avoids `\`, which needs AltGr (reported as Ctrl+Alt) on Czech and German layouts. `Esc` that a popover (link dialog, bubble, menu) already handled does not leave focus mode. An unsaved note shows a dot on the focus button while chrome is hidden.
+**Line length.** On a wide pane the text column is capped at about 72 characters (`max-width: calc(72ch + 5rem)` on `.ProseMirror`, padding included) and centred; narrower panes are unaffected. There is no separate focus mode — the toolbar is already one short row and the sidebar and note list have their own collapse buttons.
 
 Markdown-style input and the matching shortcuts come from StarterKit (and are covered by `writingExtensions.test.ts`). Toolbar tooltips and More-menu items show both, e.g. "Bold (Ctrl+B · \*\*text\*\*)":
 
@@ -204,8 +203,7 @@ Toggled via `EditorHeader`:
 | `writingExtensions.test.ts` | 12 | Markdown shortcuts, empty-heading placeholder, stored tel:/ftp: links and null href render, validated `[label](url)`, autolink does not swallow the next word |
 | `TiptapToolbar.test.tsx` | 6 | Compact toolbar, phone layout moves numbered list and quote into More, markdown hints in More, heading menu (re-picking a level keeps it), link button does not unlink |
 | `LinkDialog.test.tsx` | 3 | Rejected URL stays open, https normalization, unlink |
-| `LinkBubbleMenu.test.tsx` | 5 | Opens on click (not on caret), before mount, shows the clicked link's URL, moves between links, Esc closes before focus mode hears it |
-| `focusPreference.test.ts` | 3 | Focus-mode localStorage round-trip |
+| `LinkBubbleMenu.test.tsx` | 5 | Opens on click (not on caret), before mount, shows the clicked link's URL, moves between links, Esc closes it before page-level handlers hear it |
 | `shortcutLabel.test.ts` | 4 | Ctrl vs ⌘ shortcut labels, tooltip hint formatting |
 | `EditorFooter.test.tsx` | 7 | Component rendering, all display states |
 | `editor.spec.ts` (E2E) | 3 | Save→reload persistence, title update, unsaved indicator |

@@ -28,5 +28,3 @@ export function withHints(label: string, ...hints: (string | undefined)[]): stri
   const joined = joinHints(...hints);
   return joined ? `${label} (${joined})` : label;
 }
-
-export const FOCUS_MODE_SHORTCUT = ['Mod', 'Shift', 'Enter'] as const;

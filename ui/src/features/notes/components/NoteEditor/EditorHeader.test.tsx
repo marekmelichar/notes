@@ -34,24 +34,8 @@ const makeNote = (overrides: Partial<Note> = {}): Note => ({
 });
 
 const folders: Folder[] = [
-  {
-    id: 'f1',
-    name: 'Work',
-    color: '#f44336',
-    parentId: null,
-    order: 0,
-    createdAt: 0,
-    updatedAt: 0,
-  },
-  {
-    id: 'f2',
-    name: 'Personal',
-    color: '#2196f3',
-    parentId: null,
-    order: 1,
-    createdAt: 0,
-    updatedAt: 0,
-  },
+  { id: 'f1', name: 'Work', color: '#f44336', parentId: null, order: 0, createdAt: 0, updatedAt: 0 },
+  { id: 'f2', name: 'Personal', color: '#2196f3', parentId: null, order: 1, createdAt: 0, updatedAt: 0 },
 ];
 
 const defaultProps = {
@@ -69,8 +53,6 @@ const defaultProps = {
   onFolderChange: vi.fn(),
   onTagsChange: vi.fn(),
   onExport: vi.fn().mockResolvedValue(undefined),
-  focusMode: false,
-  onToggleFocus: vi.fn(),
 };
 
 const renderWithTheme = (props = {}) =>
@@ -245,26 +227,6 @@ describe('EditorHeader', () => {
       renderWithTheme({ isMobile: true });
       expect(screen.getByTestId('editor-tags-toggle')).toBeInTheDocument();
       expect(screen.queryByTestId('tag-picker')).not.toBeInTheDocument();
-    });
-  });
-
-  describe('focus mode', () => {
-    it('should call onToggleFocus from the focus button', async () => {
-      const user = userEvent.setup();
-      const onToggleFocus = vi.fn();
-      renderWithTheme({ onToggleFocus });
-
-      await user.click(screen.getByTestId('editor-focus-toggle'));
-      expect(onToggleFocus).toHaveBeenCalled();
-    });
-
-    it('should hide note actions and show an unsaved hint while focused', () => {
-      renderWithTheme({ focusMode: true, hasUnsavedChanges: true });
-
-      expect(screen.queryByTestId('editor-save-button')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('editor-folder-button')).not.toBeInTheDocument();
-      expect(screen.getByTestId('editor-focus-toggle')).toHaveAttribute('aria-pressed', 'true');
-      expect(screen.getByTestId('editor-unsaved-dot')).toBeInTheDocument();
     });
   });
 

@@ -200,8 +200,6 @@
     "Outdent": "Outdent",
     "InsertFile": "Insert image or file",
     "MoreFormatting": "More formatting",
-    "FocusMode": "Focus mode",
-    "ExitFocusMode": "Exit focus mode",
     "InvalidLink": "Use an http, https, or mailto link",
     "EnterUrl": "Enter URL:",
     "FileOpen": "Open file",

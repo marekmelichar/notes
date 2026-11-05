@@ -147,8 +147,8 @@ export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProp
     if (suspended) dismiss();
   }, [suspended, dismiss]);
 
-  // Esc closes the bubble before anything else hears it (e.g. focus mode).
-  // Capture phase on document, then stop: the editor-wide handler never sees it.
+  // Esc closes the bubble before anything else on the page hears it.
+  // Capture phase on document, then stop propagation.
   // In edit mode the URL field handles Esc itself (back to view mode).
   const isEditingRef = useRef(isEditing);
   isEditingRef.current = isEditing;

@@ -24,7 +24,6 @@ import { EditorHeader } from './EditorHeader';
 import { EditorFooter } from './EditorFooter';
 import { EditorErrorFallback } from './EditorErrorFallback';
 import { migrateContent } from './contentMigration';
-import { readFocusMode, writeFocusMode } from './focusPreference';
 import type { EditorSaveHandle } from '../EditorPanel';
 import styles from './index.module.css';
 
@@ -46,25 +45,11 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
   const [stats, setStats] = useState<EditorStats>({ wordCount: 0, charCount: 0 });
-  const [focusMode, setFocusMode] = useState(readFocusMode);
 
   // Editor ref for content access and export
   const editorRef = useRef<TiptapEditorHandle>(null);
   const editorScrollRef = useRef<HTMLDivElement>(null);
   useScrollDirection(editorScrollRef);
-
-  const toggleFocusMode = useCallback(() => {
-    setFocusMode((current) => {
-      const next = !current;
-      writeFocusMode(next);
-      return next;
-    });
-    // The toggle lives in the header. Put the caret back in the note so
-    // typing continues without a second click.
-    requestAnimationFrame(() => {
-      editorScrollRef.current?.querySelector<HTMLElement>('[contenteditable="true"]')?.focus();
-    });
-  }, []);
 
   // Last-saved baselines. `null` means "not hydrated yet" — the editor hasn't
   // had server content applied, so any "current content" read is a stale
@@ -226,15 +211,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     [markDirty],
   );
 
-  const exitFocusMode = useCallback(() => {
-    setFocusMode((current) => {
-      if (current) writeFocusMode(false);
-      return false;
-    });
-  }, []);
-
-  // Editor-wide shortcuts — only when active:
-  // Ctrl/Cmd+S saves, Ctrl/Cmd+Shift+Enter toggles focus mode, Esc leaves it.
+  // Keyboard shortcut for save (Ctrl/Cmd + S) — only when active
   useEffect(() => {
     if (!isActive) return;
 
@@ -242,23 +219,6 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         saveNow();
-        return;
-      }
-      // Layout-neutral chord: on Czech/German layouts `\` needs AltGr (= Ctrl+Alt),
-      // so Ctrl+\ would be unreachable. Ignore key-repeat so holding it doesn't flicker.
-      if (!e.repeat && (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key === 'Enter') {
-        e.preventDefault();
-        toggleFocusMode();
-        return;
-      }
-      // Popovers (link dialog, bubble, menus) consume Escape first.
-      // ProseMirror also preventDefaults Escape while the caret is in the
-      // note, so that case still leaves focus mode.
-      if (e.key === 'Escape' && !e.isComposing) {
-        const target = e.target;
-        const inNote =
-          target instanceof Element && Boolean(target.closest('.ProseMirror'));
-        if (!e.defaultPrevented || inNote) exitFocusMode();
       }
     };
 
@@ -266,7 +226,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [saveNow, isActive, toggleFocusMode, exitFocusMode]);
+  }, [saveNow, isActive]);
 
   // Warn about unsaved changes on tab close; best-effort save on unmount.
   useEffect(() => {
@@ -350,9 +310,8 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
 
   return (
     <Box
-      className={`${styles.editorContainer} ${focusMode ? styles.focusMode : ''} ${!isActive ? styles.editorHidden : ''}`}
+      className={`${styles.editorContainer} ${!isActive ? styles.editorHidden : ''}`}
       data-testid="note-editor"
-      data-focus-mode={focusMode ? 'true' : 'false'}
     >
       <EditorHeader
         note={note}
@@ -369,8 +328,6 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
         onFolderChange={handleFolderChange}
         onTagsChange={handleTagsChange}
         onExport={handleExport}
-        focusMode={focusMode}
-        onToggleFocus={toggleFocusMode}
       />
 
       {conflictMessage && (

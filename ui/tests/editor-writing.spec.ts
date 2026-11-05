@@ -136,17 +136,17 @@ test('editor writing, save, and persistence on the real stack', async ({ page })
   await expect(page.getByTestId('editor-save-button')).toHaveText(/^(Save|Uložit)$/);
   await expect(page.getByTestId('editor-save-button')).toContainText(/Saved|Uloženo/i, { timeout: 15000 });
 
-  await page.keyboard.press('Control+Shift+Enter');
-  await expect(page.getByTestId('note-editor')).toHaveAttribute('data-focus-mode', 'true');
-  await expect(page.getByTestId('editor-toolbar')).toBeHidden();
-  await shot(page, 'desktop-focus.png');
-  await page.keyboard.press('Escape');
-  await expect(page.getByTestId('note-editor')).toHaveAttribute('data-focus-mode', 'false');
-  await expect(page.getByTestId('editor-toolbar')).toBeVisible();
+  // Readable line length on a wide pane: the text column is capped and centred.
+  const column = await editor.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const pane = (el.parentElement as HTMLElement).getBoundingClientRect();
+    return { width: box.width, pane: pane.width, left: box.left - pane.left, right: pane.right - box.right };
+  });
+  expect(column.width).toBeLessThan(column.pane);
+  expect(Math.abs(column.left - column.right)).toBeLessThan(2);
 
   await page.reload();
   await expect(page.getByTestId('header')).toBeVisible({ timeout: 20000 });
-  await expect(page.getByTestId('note-editor')).toHaveAttribute('data-focus-mode', 'false');
   await expect(editor).toContainText('Opening sentence.');
   await expect(editor).toContainText('autosave token');
   await expect(page.getByTestId('editor-title-input')).toHaveValue(title);
@@ -287,15 +287,12 @@ test('editor chrome fits a phone viewport', async ({ page }) => {
   });
   expect(overlap).toBe('ok');
 
-  await page.getByTestId('editor-toolbar').evaluate((node) => {
-    node.scrollLeft = 0;
-  });
+  // The toolbar fits in one row: nothing hidden past the right edge.
+  const toolbarFits = await page
+    .getByTestId('editor-toolbar')
+    .evaluate((node) => node.scrollWidth <= node.clientWidth);
+  expect(toolbarFits).toBe(true);
   await shot(page, 'phone-normal.png');
-  await page.keyboard.press('Control+Shift+Enter');
-  await expect(page.getByTestId('note-editor')).toHaveAttribute('data-focus-mode', 'true');
-  await shot(page, 'phone-focus.png');
-  await page.keyboard.press('Escape');
-  await expect(page.getByTestId('note-editor')).toHaveAttribute('data-focus-mode', 'false');
 
   expect(errors, errors.join('\n')).toEqual([]);
 });
