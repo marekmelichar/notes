@@ -47,6 +47,46 @@
 
 .newNoteButton {
   margin-right: 1rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Phone: tighter spacing so logo, search, "+ Note", calendar, language and
+   profile fit one row down to 320px. */
+@media (max-width: 48rem) {
+  .actions {
+    gap: 0.25rem;
+  }
+
+  .newNoteButton {
+    margin-right: 0;
+    min-width: 0;
+    padding-inline: 0.625rem;
+  }
+
+  .newNoteButton :global(.MuiButton-startIcon) {
+    margin-right: 0.25rem;
+  }
+
+  /* Scoped under .actions so they win over the base rules further down. */
+  .actions .calendarButton {
+    margin-right: 0;
+  }
+
+  .actions .avatarButton {
+    margin-left: 0;
+  }
+}
+
+/* Below 360px only the "+" remains; the accessible name is still "New Note". */
+@media (max-width: 22.4375rem) {
+  .newNoteLabel {
+    display: none;
+  }
+
+  .newNoteButton :global(.MuiButton-startIcon) {
+    margin: 0;
+  }
 }
 
 .calendarButton {

@@ -55,6 +55,7 @@
     "Trash": "Trash",
     "Unfiled": "Unfiled",
     "NewNote": "New Note",
+    "NewNoteShort": "Note",
     "CreateNote": "Create Note",
     "SelectNote": "Select a note or create a new one",
     "SelectNoteHint": "Your notes will appear here when you select them from the list",
