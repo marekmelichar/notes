@@ -10,8 +10,11 @@ NoteEditor/
 ├── EditorHeader.tsx        # Title input, folder/tag pickers, pin, delete, export, view toggle
 ├── TiptapEditor.tsx        # Editor rendering — toolbar, ProseMirror, markdown preview
 ├── EditorFooter.tsx        # Word/char count, auto-save countdown, last saved time
-├── TiptapToolbar.tsx       # Formatting buttons, link popover with URL validation
-├── useTiptapEditor.ts      # Hook — configures TipTap extensions (StarterKit, Link, Image, etc.)
+├── TiptapToolbar.tsx       # Compact formatting bar; secondary marks live in More
+├── editorExtensions.ts     # TipTap extension list, safe links, markdown link input
+├── useTiptapEditor.ts      # Hook — mounts the extension list and editor props
+├── focusPreference.ts      # Focus-mode preference in localStorage
+├── shortcutLabel.ts        # Ctrl / ⌘ labels for toolbar tooltips
 ├── useFileUpload.ts        # File upload — paste/drop handling, size validation, placeholder nodes
 ├── useEditorExport.ts      # Export to markdown (Turndown) and HTML, with title injection
 ├── contentMigration.ts     # BlockNote JSON → TipTap JSON migration (runs on content load)
@@ -25,7 +28,7 @@ SingleNoteEditor
 ├── EditorHeader        — title, actions, folder/tag pickers
 ├── ErrorBoundary
 │   └── TiptapEditor    — React.memo'd, only re-renders on viewMode/note change
-│       ├── TiptapToolbar  — formatting buttons, link input
+│       ├── TiptapToolbar  — primary formatting; More menu for the rest
 │       ├── EditorContent  — ProseMirror (editor mode)
 │       └── Markdown       — react-markdown preview (markdown mode)
 └── EditorFooter        — word count + auto-save status
@@ -95,18 +98,44 @@ Configured in `useTiptapEditor.ts`:
 
 | Extension | Purpose | Config |
 |-----------|---------|--------|
-| StarterKit | Paragraph, headings, bold, italic, strike, code, lists, blockquote, code block, horizontal rule | defaults |
-| Link | Hyperlinks | `autolink: false`, `linkOnPaste: false`, `openOnClick: false` |
+| StarterKit | Paragraph, headings, bold, italic, strike, code, lists, blockquote, code block, horizontal rule, and their markdown input rules | `link: false`, `underline: false` (registered separately below) |
+| SafeLink | Hyperlinks, autolink, `[label](url)` | `autolink: true`, `linkOnPaste: true`, `openOnClick: false`, `defaultProtocol: 'https'`, `inclusive: false`. `isAllowedUri` rejects empty and dangerous protocols |
 | Image | Embedded images | `allowBase64: false` |
 | Underline | Underline formatting | defaults |
+| Task list / item | Checklists | task item `nested: true` |
+| File embed | Non-image uploads | custom node |
 | Placeholder | Empty editor placeholder text | i18n key `Editor.Placeholder` |
+
+## Writing
+
+The toolbar shows the controls you reach for while drafting: heading, bold, italic, lists, quote, link, and insert. Underline, strike, code, indent, and the horizontal rule sit in **More**, so the bar stays one short row and scrolls less on a phone. Image and file upload share one insert button — they open the same picker.
+
+**Focus mode** (`Ctrl/Cmd+\`, remembered in `notes.editor.focusMode`) hides the toolbar, the note actions, and the footer, and limits the line length to about 68 characters. The title and the focus button stay. `Ctrl/Cmd+S` still saves. An unsaved note shows a dot on the focus button while chrome is hidden.
+
+Markdown-style input and the matching shortcuts come from StarterKit (and are covered by `writingExtensions.test.ts`):
+
+| Type this | Or press | Result |
+|-----------|----------|--------|
+| `# `, `## `, `### ` | `Ctrl/Cmd+Alt+1/2/3` | Heading |
+| `- ` or `* ` | `Ctrl/Cmd+Shift+8` | Bullet list |
+| `1. ` | `Ctrl/Cmd+Shift+7` | Numbered list |
+| `[ ] ` | `Ctrl/Cmd+Shift+9` | Todo list |
+| `**bold**`, `*italic*` | `Ctrl/Cmd+B`, `Ctrl/Cmd+I` | Bold, italic |
+| `[label](url)` | `Ctrl/Cmd+K` | Link |
+
+`[label](url)` runs through the same `validateAndNormalizeUrl` check as the dialog. A `javascript:`, `data:`, or `vbscript:` target is left as typed text. Link marks are not inclusive, so the word you type after a finished link is not swallowed by it.
+
+An empty note's placeholder names the three shortcuts people forget (`#`, `-`, and the link shortcut). It only shows while the document is empty.
+
+**Links.** The toolbar button and `Ctrl/Cmd+K` open one dialog: apply to the selection, edit the link under the caret, or insert text plus a URL. A rejected URL stays in the field with an error instead of closing the dialog. Editing an existing link offers Remove. The bubble (open, copy, edit, remove) appears when you click a link and goes away when you type or move the caret off it — it does not follow the caret through a sentence.
 
 ## Security
 
-**Link URL validation** (TiptapToolbar + contentMigration):
+**Link URL validation** (`linkUtils`, used by the link dialog, the bubble, the markdown `[label](url)` rule, and `SafeLink.isAllowedUri`, plus content migration):
 - Blocks `javascript:`, `data:`, `vbscript:` protocols
 - Auto-prefixes `https://` when no protocol specified
 - All links render with `target="_blank" rel="noopener noreferrer"`
+- `allowBase64: false` on images is unchanged; autolink uses `defaultProtocol: 'https'`
 
 **File uploads** (useFileUpload):
 - 100 MB size limit (client-side)
@@ -171,5 +200,11 @@ Toggled via `EditorHeader`:
 | `useFileUpload.test.ts` | 10 | Upload success/error, offline, size limit, noteId routing |
 | `useEditorExport.test.ts` | 11 | Markdown/HTML export, title escaping, XSS prevention |
 | `linkValidation.test.ts` | 15 | Protocol blocking, URL normalization, edge cases |
+| `writingExtensions.test.ts` | 8 | Markdown shortcuts, validated `[label](url)`, autolink does not swallow the next word |
+| `TiptapToolbar.test.tsx` | 4 | Compact toolbar, heading menu, link button does not unlink |
+| `LinkDialog.test.tsx` | 3 | Rejected URL stays open, https normalization, unlink |
+| `LinkBubbleMenu.test.tsx` | 2 | Bubble opens on click, not while the caret merely sits in a link |
+| `focusPreference.test.ts` | 3 | Focus-mode localStorage round-trip |
+| `shortcutLabel.test.ts` | 2 | Ctrl vs ⌘ shortcut labels |
 | `EditorFooter.test.tsx` | 7 | Component rendering, all display states |
 | `editor.spec.ts` (E2E) | 3 | Save→reload persistence, title update, unsaved indicator |

@@ -23,7 +23,9 @@ import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
 import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import type { Note, NoteListItem, Folder } from '../../types';
+import { formatShortcut } from './shortcutLabel';
 import type { ExportFormat } from './TiptapEditor';
 import { TagPicker } from '../TagPicker';
 import styles from './index.module.css';
@@ -43,6 +45,8 @@ interface EditorHeaderProps {
   onFolderChange: (folderId: string | null) => void;
   onTagsChange: (tagIds: string[]) => void;
   onExport: (format: ExportFormat) => Promise<void>;
+  focusMode: boolean;
+  onToggleFocus: () => void;
 }
 
 export const EditorHeader = ({
@@ -60,6 +64,8 @@ export const EditorHeader = ({
   onFolderChange,
   onTagsChange,
   onExport,
+  focusMode,
+  onToggleFocus,
 }: EditorHeaderProps) => {
   const { t } = useTranslation();
 
@@ -101,8 +107,10 @@ export const EditorHeader = ({
   );
 
   return (
-    <Box className={`${styles.header} ${isMobile ? `${styles.headerMobile} ${!showMobileControls ? styles.headerMobileCollapsed : ''}` : ''}`}>
-      {/* Row 1: Title + toggle on mobile */}
+    <Box
+      className={`${styles.header} ${focusMode ? styles.headerFocus : ''} ${isMobile ? `${styles.headerMobile} ${!showMobileControls || focusMode ? styles.headerMobileCollapsed : ''}` : ''}`}
+    >
+      {/* Row 1: Title + focus toggle (+ mobile controls when chrome is visible) */}
       <Box className={styles.titleRow}>
         <input
           type="text"
@@ -113,7 +121,26 @@ export const EditorHeader = ({
           autoComplete="off"
           data-testid="editor-title-input"
         />
-        {isMobile && (
+        <Box className={styles.focusToggle}>
+          <Tooltip
+            title={`${t(focusMode ? 'Editor.ExitFocusMode' : 'Editor.FocusMode')} (${formatShortcut(['Mod', '\\'])})`}
+          >
+            <IconButton
+              data-testid="editor-focus-toggle"
+              aria-label={t(focusMode ? 'Editor.ExitFocusMode' : 'Editor.FocusMode')}
+              aria-pressed={focusMode}
+              size="small"
+              onClick={onToggleFocus}
+              color={focusMode ? 'primary' : 'default'}
+            >
+              <CenterFocusStrongIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {focusMode && hasUnsavedChanges && (
+            <span className={styles.unsavedDot} data-testid="editor-unsaved-dot" />
+          )}
+        </Box>
+        {isMobile && !focusMode && (
           <Tooltip title={t('Notes.Controls')}>
             <IconButton
               data-testid="editor-controls-toggle"
@@ -129,153 +156,176 @@ export const EditorHeader = ({
         )}
       </Box>
 
-      {/* Row 2: Actions — always on desktop, collapsible on mobile */}
-      <Box
-        className={`${styles.headerActions} ${isMobile ? (showMobileControls ? styles.controlsOpen : styles.controlsCollapsed) : ''}`}
-      >
-        <Tooltip title={t('Notes.MoveToFolder')}>
-          <Button
-            size="small"
-            variant="outlined"
-            color="inherit"
-            onClick={handleFolderMenuOpen}
-            startIcon={<FolderIcon fontSize="small" />}
-            className={styles.folderButton}
-            data-testid="editor-folder-button"
-          >
-            {currentFolder?.name || t('Notes.NoFolder')}
-          </Button>
-        </Tooltip>
-        <Menu
-          anchorEl={folderMenuAnchor}
-          open={Boolean(folderMenuAnchor)}
-          onClose={handleFolderMenuClose}
-          data-testid="editor-folder-menu"
+      {/* Row 2: Actions — hidden in focus mode; always on desktop, collapsible on mobile */}
+      {!focusMode && (
+        <Box
+          className={`${styles.headerActions} ${isMobile ? (showMobileControls ? styles.controlsOpen : styles.controlsCollapsed) : ''}`}
         >
-          <MenuItem onClick={() => handleFolderSelect(null)} selected={!note.folderId} data-testid="editor-folder-none">
-            <ListItemIcon>
-              <FolderOpenIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('Notes.NoFolder')}</ListItemText>
-          </MenuItem>
-          {folders.map((folder) => (
-            <MenuItem
-              key={folder.id}
-              onClick={() => handleFolderSelect(folder.id)}
-              selected={note.folderId === folder.id}
-              data-testid={`editor-folder-${folder.id}`}
-            >
-              <ListItemIcon>
-                <FolderIcon fontSize="small" sx={{ color: folder.color }} />
-              </ListItemIcon>
-              <ListItemText>{folder.name}</ListItemText>
-            </MenuItem>
-          ))}
-        </Menu>
-        <Tooltip title={t('Notes.SaveShortcut')}>
-          <span>
+          <Tooltip title={t('Notes.MoveToFolder')}>
             <Button
               size="small"
-              variant={hasUnsavedChanges ? 'contained' : 'outlined'}
-              color={hasUnsavedChanges ? 'primary' : 'inherit'}
-              onClick={onSave}
-              disabled={isSaving}
-              startIcon={
-                isSaving ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : (
-                  <SaveIcon fontSize="small" />
-                )
-              }
-              className={styles.saveButton}
-              data-testid="editor-save-button"
+              variant="outlined"
+              color="inherit"
+              onClick={handleFolderMenuOpen}
+              startIcon={<FolderIcon fontSize="small" />}
+              className={styles.folderButton}
+              data-testid="editor-folder-button"
             >
-              {isSaving
-                ? t('Common.Saving')
-                : hasUnsavedChanges
-                  ? t('Common.Save')
-                  : t('Common.Saved')}
+              {currentFolder?.name || t('Notes.NoFolder')}
             </Button>
-          </span>
-        </Tooltip>
-        <Tooltip title={note.isPinned ? t('Notes.Unpin') : t('Notes.Pin')}>
-          <IconButton size="small" aria-label={note.isPinned ? t('Notes.Unpin') : t('Notes.Pin')} data-testid="editor-pin-button" onClick={onTogglePin}>
-            {note.isPinned ? (
-              <PushPinIcon fontSize="small" color="primary" />
-            ) : (
-              <PushPinOutlinedIcon fontSize="small" />
-            )}
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('Export.Export')}>
-          <span>
+          </Tooltip>
+          <Menu
+            anchorEl={folderMenuAnchor}
+            open={Boolean(folderMenuAnchor)}
+            onClose={handleFolderMenuClose}
+            data-testid="editor-folder-menu"
+          >
+            <MenuItem
+              onClick={() => handleFolderSelect(null)}
+              selected={!note.folderId}
+              data-testid="editor-folder-none"
+            >
+              <ListItemIcon>
+                <FolderOpenIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('Notes.NoFolder')}</ListItemText>
+            </MenuItem>
+            {folders.map((folder) => (
+              <MenuItem
+                key={folder.id}
+                onClick={() => handleFolderSelect(folder.id)}
+                selected={note.folderId === folder.id}
+                data-testid={`editor-folder-${folder.id}`}
+              >
+                <ListItemIcon>
+                  <FolderIcon fontSize="small" sx={{ color: folder.color }} />
+                </ListItemIcon>
+                <ListItemText>{folder.name}</ListItemText>
+              </MenuItem>
+            ))}
+          </Menu>
+          <Tooltip title={t('Notes.SaveShortcut')}>
+            <span>
+              <Button
+                size="small"
+                variant={hasUnsavedChanges ? 'contained' : 'outlined'}
+                color={hasUnsavedChanges ? 'primary' : 'inherit'}
+                onClick={onSave}
+                disabled={isSaving}
+                startIcon={
+                  isSaving ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <SaveIcon fontSize="small" />
+                  )
+                }
+                className={styles.saveButton}
+                data-testid="editor-save-button"
+              >
+                {isSaving
+                  ? t('Common.Saving')
+                  : hasUnsavedChanges
+                    ? t('Common.Save')
+                    : t('Common.Saved')}
+              </Button>
+            </span>
+          </Tooltip>
+          <Tooltip title={note.isPinned ? t('Notes.Unpin') : t('Notes.Pin')}>
             <IconButton
               size="small"
-              aria-label={t('Export.Export')}
-              data-testid="editor-export-button"
-              onClick={(e) => setExportMenuAnchor(e.currentTarget)}
-              disabled={isExporting}
+              aria-label={note.isPinned ? t('Notes.Unpin') : t('Notes.Pin')}
+              data-testid="editor-pin-button"
+              onClick={onTogglePin}
             >
-              {isExporting ? (
-                <CircularProgress size={18} />
+              {note.isPinned ? (
+                <PushPinIcon fontSize="small" color="primary" />
               ) : (
-                <FileDownloadOutlinedIcon fontSize="small" />
+                <PushPinOutlinedIcon fontSize="small" />
               )}
             </IconButton>
-          </span>
-        </Tooltip>
-        <Menu
-          anchorEl={exportMenuAnchor}
-          open={Boolean(exportMenuAnchor)}
-          onClose={() => setExportMenuAnchor(null)}
-          data-testid="editor-export-menu"
-        >
-          <MenuItem onClick={() => handleExport('markdown')} data-testid="editor-export-markdown">
-            <ListItemIcon>
-              <CodeOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('Export.Markdown')}</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => handleExport('html')} data-testid="editor-export-html">
-            <ListItemIcon>
-              <HtmlOutlinedIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>{t('Export.HTML')}</ListItemText>
-          </MenuItem>
-        </Menu>
-        {isMobile ? (
-          <Tooltip title={t('Tags.Tags')}>
-            <IconButton
-              size="small"
-              aria-label={t('Tags.Tags')}
-              data-testid="editor-tags-toggle"
-              onClick={() => setShowMobileTags(!showMobileTags)}
-              color={showMobileTags || note.tags.length > 0 ? 'primary' : 'default'}
-            >
-              <LocalOfferOutlinedIcon fontSize="small" />
-            </IconButton>
           </Tooltip>
-        ) : (
-          <TagPicker selectedTagIds={note.tags} onTagsChange={onTagsChange} />
-        )}
-        <Box className={styles.actionSpacer} />
-        {note.isDeleted ? (
-          <Tooltip title={t('Notes.Restore')}>
-            <IconButton size="small" aria-label={t('Notes.Restore')} data-testid="editor-restore-button" onClick={onRestore} color="success">
-              <RestoreIcon fontSize="small" />
-            </IconButton>
+          <Tooltip title={t('Export.Export')}>
+            <span>
+              <IconButton
+                size="small"
+                aria-label={t('Export.Export')}
+                data-testid="editor-export-button"
+                onClick={(e) => setExportMenuAnchor(e.currentTarget)}
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <CircularProgress size={18} />
+                ) : (
+                  <FileDownloadOutlinedIcon fontSize="small" />
+                )}
+              </IconButton>
+            </span>
           </Tooltip>
-        ) : (
-          <Tooltip title={t('Common.Delete')}>
-            <IconButton size="small" aria-label={t('Common.Delete')} data-testid="editor-delete-button" onClick={onDelete} color="error">
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Box>
+          <Menu
+            anchorEl={exportMenuAnchor}
+            open={Boolean(exportMenuAnchor)}
+            onClose={() => setExportMenuAnchor(null)}
+            data-testid="editor-export-menu"
+          >
+            <MenuItem onClick={() => handleExport('markdown')} data-testid="editor-export-markdown">
+              <ListItemIcon>
+                <CodeOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('Export.Markdown')}</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => handleExport('html')} data-testid="editor-export-html">
+              <ListItemIcon>
+                <HtmlOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('Export.HTML')}</ListItemText>
+            </MenuItem>
+          </Menu>
+          {isMobile ? (
+            <Tooltip title={t('Tags.Tags')}>
+              <IconButton
+                size="small"
+                aria-label={t('Tags.Tags')}
+                data-testid="editor-tags-toggle"
+                onClick={() => setShowMobileTags(!showMobileTags)}
+                color={showMobileTags || note.tags.length > 0 ? 'primary' : 'default'}
+              >
+                <LocalOfferOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <TagPicker selectedTagIds={note.tags} onTagsChange={onTagsChange} />
+          )}
+          <Box className={styles.actionSpacer} />
+          {note.isDeleted ? (
+            <Tooltip title={t('Notes.Restore')}>
+              <IconButton
+                size="small"
+                aria-label={t('Notes.Restore')}
+                data-testid="editor-restore-button"
+                onClick={onRestore}
+                color="success"
+              >
+                <RestoreIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title={t('Common.Delete')}>
+              <IconButton
+                size="small"
+                aria-label={t('Common.Delete')}
+                data-testid="editor-delete-button"
+                onClick={onDelete}
+                color="error"
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      )}
 
       {/* Row 3: Tags (mobile only - toggleable) */}
-      {isMobile && showMobileTags && showMobileControls && (
+      {isMobile && !focusMode && showMobileTags && showMobileControls && (
         <Box className={styles.headerTags}>
           <TagPicker selectedTagIds={note.tags} onTagsChange={onTagsChange} />
         </Box>

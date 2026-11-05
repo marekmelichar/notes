@@ -24,6 +24,7 @@ import { EditorHeader } from './EditorHeader';
 import { EditorFooter } from './EditorFooter';
 import { EditorErrorFallback } from './EditorErrorFallback';
 import { migrateContent } from './contentMigration';
+import { readFocusMode, writeFocusMode } from './focusPreference';
 import type { EditorSaveHandle } from '../EditorPanel';
 import styles from './index.module.css';
 
@@ -45,11 +46,25 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
   const [stats, setStats] = useState<EditorStats>({ wordCount: 0, charCount: 0 });
+  const [focusMode, setFocusMode] = useState(readFocusMode);
 
   // Editor ref for content access and export
   const editorRef = useRef<TiptapEditorHandle>(null);
   const editorScrollRef = useRef<HTMLDivElement>(null);
   useScrollDirection(editorScrollRef);
+
+  const toggleFocusMode = useCallback(() => {
+    setFocusMode((current) => {
+      const next = !current;
+      writeFocusMode(next);
+      return next;
+    });
+    // The toggle lives in the header. Put the caret back in the note so
+    // typing continues without a second click.
+    requestAnimationFrame(() => {
+      editorScrollRef.current?.querySelector<HTMLElement>('[contenteditable="true"]')?.focus();
+    });
+  }, []);
 
   // Last-saved baselines. `null` means "not hydrated yet" — the editor hasn't
   // had server content applied, so any "current content" read is a stale
@@ -96,11 +111,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     // (c) Reject a save where the editor went from "baseline never non-empty"
     // to "still empty" — this is the ghost-tab wipe signature.
     const editorIsEmpty = editorRef.current?.isEmpty() ?? true;
-    if (
-      hasContentChanged &&
-      editorIsEmpty &&
-      !baselineEverNonEmptyRef.current
-    ) {
+    if (hasContentChanged && editorIsEmpty && !baselineEverNonEmptyRef.current) {
       return;
     }
 
@@ -207,10 +218,13 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     }
   }, [markDirty]);
 
-  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
-    markDirty();
-  }, [markDirty]);
+  const handleTitleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTitle(e.target.value);
+      markDirty();
+    },
+    [markDirty],
+  );
 
   // Keyboard shortcut for save (Ctrl/Cmd + S) — only when active
   useEffect(() => {
@@ -220,6 +234,12 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         saveNow();
+        return;
+      }
+      // Ctrl/Cmd+\ — hide chrome. Ignore key-repeat so holding the key doesn't flicker.
+      if (!e.repeat && (e.ctrlKey || e.metaKey) && e.key === '\\' && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        toggleFocusMode();
       }
     };
 
@@ -227,7 +247,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [saveNow, isActive]);
+  }, [saveNow, isActive, toggleFocusMode]);
 
   // Warn about unsaved changes on tab close; best-effort save on unmount.
   useEffect(() => {
@@ -311,7 +331,9 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
 
   return (
     <Box
-      className={`${styles.editorContainer} ${!isActive ? styles.editorHidden : ''}`}
+      className={`${styles.editorContainer} ${focusMode ? styles.focusMode : ''} ${!isActive ? styles.editorHidden : ''}`}
+      data-testid="note-editor"
+      data-focus-mode={focusMode ? 'true' : 'false'}
     >
       <EditorHeader
         note={note}
@@ -328,6 +350,8 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
         onFolderChange={handleFolderChange}
         onTagsChange={handleTagsChange}
         onExport={handleExport}
+        focusMode={focusMode}
+        onToggleFocus={toggleFocusMode}
       />
 
       {conflictMessage && (
@@ -336,10 +360,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
         </Alert>
       )}
 
-      <ErrorBoundary
-        key={note.id}
-        fallback={<EditorErrorFallback />}
-      >
+      <ErrorBoundary key={note.id} fallback={<EditorErrorFallback />}>
         <TiptapEditor
           ref={editorRef}
           initialContent={initialContent}

@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, IconButton, TextField, Button, Popper, Paper, Tooltip, ClickAwayListener } from '@mui/material';
+import {
+  Box,
+  IconButton,
+  TextField,
+  Button,
+  Popper,
+  Paper,
+  Tooltip,
+  ClickAwayListener,
+} from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import EditIcon from '@mui/icons-material/Edit';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
@@ -11,49 +20,77 @@ import styles from './index.module.css';
 
 interface LinkBubbleMenuProps {
   editor: Editor;
+  /** Hide while the keyboard link dialog is open so the two don't stack. */
+  suspended?: boolean;
 }
 
-export const LinkBubbleMenu = ({ editor }: LinkBubbleMenuProps) => {
+export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProps) => {
   const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [currentHref, setCurrentHref] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editUrl, setEditUrl] = useState('');
+  const [editError, setEditError] = useState(false);
   const [copied, setCopied] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
+  const visibleRef = useRef(false);
+  visibleRef.current = Boolean(anchorEl) && !suspended;
 
-  const updateBubble = useCallback(() => {
-    if (!editor.isActive('link')) {
-      setAnchorEl(null);
+  const dismiss = useCallback(() => {
+    setAnchorEl(null);
+    setIsEditing(false);
+    setEditError(false);
+  }, []);
+
+  // Show only after a plain click on a link. Arrowing through a sentence
+  // or typing inside a link should not pop a menu over the next line.
+  useEffect(() => {
+    const dom = editor.view.dom;
+    const onClick = (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const linkEl = target.closest('a');
+      if (!(linkEl instanceof HTMLElement) || !dom.contains(linkEl)) return;
+      if (!editor.isActive('link')) return;
+
+      const href =
+        (editor.getAttributes('link').href as string) || linkEl.getAttribute('href') || '';
+      setCurrentHref(href);
       setIsEditing(false);
-      return;
-    }
-
-    const href = (editor.getAttributes('link').href as string) || '';
-    setCurrentHref(href);
-
-    // Find the link DOM element at the current selection
-    const { from } = editor.state.selection;
-    const resolved = editor.state.doc.resolve(from);
-    const domAtPos = editor.view.domAtPos(resolved.pos);
-    const node = domAtPos.node instanceof HTMLElement ? domAtPos.node : domAtPos.node.parentElement;
-    const linkEl = node?.closest('a') ?? node?.querySelector('a');
-
-    if (linkEl instanceof HTMLElement) {
+      setEditError(false);
       setAnchorEl(linkEl);
-    } else {
-      setAnchorEl(null);
-    }
+    };
+    dom.addEventListener('click', onClick);
+    return () => dom.removeEventListener('click', onClick);
   }, [editor]);
 
   useEffect(() => {
-    editor.on('selectionUpdate', updateBubble);
-    editor.on('transaction', updateBubble);
-    return () => {
-      editor.off('selectionUpdate', updateBubble);
-      editor.off('transaction', updateBubble);
+    const hideIfLeft = () => {
+      if (!visibleRef.current || editor.isActive('link')) return;
+      dismiss();
     };
-  }, [editor, updateBubble]);
+    const hideOnType = () => {
+      if (!visibleRef.current || isEditing) return;
+      dismiss();
+    };
+    editor.on('selectionUpdate', hideIfLeft);
+    editor.on('update', hideOnType);
+    return () => {
+      editor.off('selectionUpdate', hideIfLeft);
+      editor.off('update', hideOnType);
+    };
+  }, [editor, dismiss, isEditing]);
+
+  useEffect(() => {
+    if (suspended) dismiss();
+  }, [suspended, dismiss]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const id = window.setTimeout(() => setCopied(false), 1500);
+    return () => window.clearTimeout(id);
+  }, [copied]);
 
   const handleOpen = useCallback(() => {
     if (currentHref) {
@@ -62,54 +99,46 @@ export const LinkBubbleMenu = ({ editor }: LinkBubbleMenuProps) => {
   }, [currentHref]);
 
   const handleCopy = useCallback(async () => {
-    if (currentHref) {
+    if (!currentHref) return;
+    try {
       await navigator.clipboard.writeText(currentHref);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard can be blocked; the URL stays visible in the bubble.
     }
   }, [currentHref]);
 
   const handleUnlink = useCallback(() => {
     editor.chain().focus().unsetLink().run();
-    setAnchorEl(null);
-    setIsEditing(false);
-  }, [editor]);
+    dismiss();
+  }, [editor, dismiss]);
 
   const handleEditStart = useCallback(() => {
     setEditUrl(currentHref);
+    setEditError(false);
     setIsEditing(true);
-    // Focus will be set after render via onTransitionEnd-like approach
     setTimeout(() => editInputRef.current?.focus(), 0);
   }, [currentHref]);
 
   const handleEditSubmit = useCallback(() => {
     const href = validateAndNormalizeUrl(editUrl);
     if (!href) {
-      setIsEditing(false);
+      setEditError(true);
+      editInputRef.current?.focus();
       return;
     }
 
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange('link')
-      .setLink({ href })
-      .run();
-    setIsEditing(false);
-  }, [editor, editUrl]);
+    editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+    dismiss();
+  }, [editor, editUrl, dismiss]);
 
   const handleEditCancel = useCallback(() => {
     setIsEditing(false);
+    setEditError(false);
     editor.chain().focus().run();
   }, [editor]);
 
-  const handleClickAway = useCallback(() => {
-    if (isEditing) {
-      setIsEditing(false);
-    }
-  }, [isEditing]);
-
-  if (!anchorEl) return null;
+  if (suspended || !anchorEl) return null;
 
   return (
     <Popper
@@ -119,7 +148,7 @@ export const LinkBubbleMenu = ({ editor }: LinkBubbleMenuProps) => {
       modifiers={[{ name: 'offset', options: { offset: [0, 4] } }]}
       style={{ zIndex: 1300 }}
     >
-      <ClickAwayListener onClickAway={handleClickAway}>
+      <ClickAwayListener onClickAway={dismiss}>
         <Paper elevation={4} className={styles.linkBubble}>
           {isEditing ? (
             <Box className={styles.linkBubbleEdit}>
@@ -128,7 +157,12 @@ export const LinkBubbleMenu = ({ editor }: LinkBubbleMenuProps) => {
                 size="small"
                 placeholder="https://"
                 value={editUrl}
-                onChange={(e) => setEditUrl(e.target.value)}
+                error={editError}
+                helperText={editError ? t('Editor.InvalidLink') : undefined}
+                onChange={(e) => {
+                  setEditUrl(e.target.value);
+                  if (editError) setEditError(false);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();

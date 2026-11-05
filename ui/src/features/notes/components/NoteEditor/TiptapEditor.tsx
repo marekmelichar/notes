@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { EditorContent } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
 import { useFileUpload, isImageFile, FILE_ACCEPT } from './useFileUpload';
+import { formatShortcut } from './shortcutLabel';
 import { useEditorExport, type ExportFormat, type ExportResult } from './useEditorExport';
 import { useTiptapEditor } from './useTiptapEditor';
 import { TiptapToolbar } from './TiptapToolbar';
@@ -46,7 +47,8 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     const editor = useTiptapEditor({
       initialContent,
-      placeholder: t('Editor.Placeholder') || 'Start writing...',
+      placeholder:
+        t('Editor.Placeholder', { shortcut: formatShortcut(['Mod', 'K']) }) || 'Start writing...',
       className: `tiptap-editor ${styles.prose}`,
       handlePaste,
       handleDrop,
@@ -126,10 +128,11 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         <TiptapToolbar
           editor={editor}
           onFilePicker={handleOpenFilePicker}
+          onLink={handleLinkShortcut}
         />
         <Box ref={scrollRef} className={styles.editorContent}>
           <EditorContent editor={editor} className={styles.tiptapContainer} />
-          <LinkBubbleMenu editor={editor} />
+          <LinkBubbleMenu editor={editor} suspended={linkDialogOpen} />
           <LinkDialog
             editor={editor}
             open={linkDialogOpen}

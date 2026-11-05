@@ -90,7 +90,8 @@ vi.mock('../../services/notesApi', () => ({
   },
 }));
 vi.mock('@/lib', async () => {
-  const { getApiErrorMessage } = await vi.importActual<typeof import('@/lib/apiError')>('@/lib/apiError');
+  const { getApiErrorMessage } =
+    await vi.importActual<typeof import('@/lib/apiError')>('@/lib/apiError');
   return { getApiErrorMessage, apiManager: {}, getAuthToken: vi.fn() };
 });
 vi.mock('@/i18n', () => ({ default: { t: (key: string) => key } }));
@@ -99,8 +100,12 @@ vi.mock('@/i18n', () => ({ default: { t: (key: string) => key } }));
 const storage: Record<string, string> = {};
 vi.stubGlobal('localStorage', {
   getItem: (k: string) => storage[k] ?? null,
-  setItem: (k: string, v: string) => { storage[k] = v; },
-  removeItem: (k: string) => { delete storage[k]; },
+  setItem: (k: string, v: string) => {
+    storage[k] = v;
+  },
+  removeItem: (k: string) => {
+    delete storage[k];
+  },
 });
 
 import { notesSlice } from '../../store/notesSlice';
@@ -109,6 +114,7 @@ import { tabsSlice } from '@/store/tabsSlice';
 import { foldersSlice } from '../../store/foldersSlice';
 import { notesApi } from '../../services/notesApi';
 import { SingleNoteEditor } from './SingleNoteEditor';
+import { FOCUS_MODE_STORAGE_KEY } from './focusPreference';
 import type { Note } from '../../types';
 
 const mockedApi = vi.mocked(notesApi);
@@ -219,8 +225,15 @@ describe('SingleNoteEditor save guards (ADR 0009)', () => {
     const store = buildStore(note);
     store.dispatch({
       type: 'notes/updateNote/rejected',
-      payload: { conflict: true, message: 'This note was changed elsewhere. Reload to see the newer version.' },
-      meta: { arg: { id: note.id, updates: { content: 'x' } }, requestId: 'r1', requestStatus: 'rejected' },
+      payload: {
+        conflict: true,
+        message: 'This note was changed elsewhere. Reload to see the newer version.',
+      },
+      meta: {
+        arg: { id: note.id, updates: { content: 'x' } },
+        requestId: 'r1',
+        requestStatus: 'rejected',
+      },
       error: { message: 'Rejected' },
     });
 
@@ -233,5 +246,28 @@ describe('SingleNoteEditor save guards (ADR 0009)', () => {
     expect(screen.getByTestId('note-conflict-banner')).toHaveTextContent(
       'This note was changed elsewhere. Reload to see the newer version.',
     );
+  });
+
+  it('toggles focus mode with Ctrl+\\ and stores the preference', () => {
+    localStorage.removeItem(FOCUS_MODE_STORAGE_KEY);
+    const note = sampleNote();
+    const store = buildStore(note);
+
+    render(
+      <Wrapper store={store}>
+        <SingleNoteEditor noteId={note.id} isActive />
+      </Wrapper>,
+    );
+
+    const editor = screen.getByTestId('note-editor');
+    expect(editor).toHaveAttribute('data-focus-mode', 'false');
+
+    fireEvent.keyDown(document, { key: '\\', ctrlKey: true });
+    expect(editor).toHaveAttribute('data-focus-mode', 'true');
+    expect(localStorage.getItem(FOCUS_MODE_STORAGE_KEY)).toBe('1');
+
+    fireEvent.keyDown(document, { key: '\\', ctrlKey: true });
+    expect(editor).toHaveAttribute('data-focus-mode', 'false');
+    expect(localStorage.getItem(FOCUS_MODE_STORAGE_KEY)).toBe('0');
   });
 });

@@ -35,6 +35,27 @@
   flex-shrink: 0;
 }
 
+.focusToggle {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+.unsavedDot {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background-color: var(--mui-palette-primary-main);
+  pointer-events: none;
+}
+
+.headerFocus {
+  border-bottom-color: transparent;
+}
+
 .titleInput::placeholder {
   color: var(--mui-palette-text-secondary);
 }
@@ -60,11 +81,19 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.375rem 0.5rem;
+  padding: 0.25rem 0.5rem;
   border-bottom: 1px solid var(--mui-palette-divider);
   flex-wrap: wrap;
   background-color: var(--mui-palette-background-paper);
   flex-shrink: 0;
+}
+
+.toolbar :global(.MuiIconButton-colorDefault) {
+  color: var(--mui-palette-text-secondary);
+}
+
+.toolbar :global(.MuiIconButton-colorPrimary) {
+  background-color: var(--mui-palette-action-selected);
 }
 
 @media (max-width: 48rem) {
@@ -89,6 +118,17 @@
   display: flex;
   align-items: center;
   gap: 0.125rem;
+}
+
+.toolbarGroup + .toolbarGroup {
+  margin-left: 0.125rem;
+  padding-left: 0.375rem;
+  border-left: 1px solid var(--mui-palette-divider);
+}
+
+.menuShortcut {
+  margin-left: 1.5rem;
+  color: var(--mui-palette-text-secondary);
 }
 
 .headingButton {
@@ -233,6 +273,23 @@
   color: var(--mui-palette-text-secondary);
   pointer-events: none;
   height: 0;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Focus mode: chrome steps back, the line length stays comfortable. */
+.focusMode .toolbar,
+.focusMode .footer {
+  display: none;
+}
+
+.focusMode .tiptapContainer :global(.ProseMirror) {
+  max-width: 68ch;
+  margin-inline: auto;
+  line-height: 1.75;
+  padding-top: 2.5rem;
 }
 
 /* Link popover */
@@ -246,6 +303,12 @@
   gap: 0.5rem;
   padding: 0.5rem;
   min-width: 18rem;
+}
+
+.linkDialogRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
 }
 
 /* Link bubble menu */
@@ -453,6 +516,24 @@
 
   .tiptapContainer :global(.ProseMirror) {
     padding: 1rem 1.5rem;
+  }
+
+  .toolbar :global(.MuiIconButton-sizeSmall) {
+    padding: 0.4rem;
+  }
+
+  .linkPopoverContent,
+  .linkBubbleEdit {
+    min-width: 0;
+    width: min(18rem, calc(100vw - 2rem));
+  }
+
+  .linkBubbleUrl {
+    max-width: 9rem;
+  }
+
+  .linkBubbleView {
+    flex-wrap: wrap;
   }
 }
 

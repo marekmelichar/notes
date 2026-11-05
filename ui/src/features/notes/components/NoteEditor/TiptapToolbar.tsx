@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { IconButton, Divider, Tooltip, Popover, TextField, Button, Box } from '@mui/material';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  IconButton,
+  Tooltip,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+} from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
@@ -13,21 +21,23 @@ import ChecklistIcon from '@mui/icons-material/Checklist';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import HorizontalRuleIcon from '@mui/icons-material/HorizontalRule';
 import LinkIcon from '@mui/icons-material/Link';
-import LinkOffIcon from '@mui/icons-material/LinkOff';
-import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined';
 import FormatIndentIncreaseIcon from '@mui/icons-material/FormatIndentIncrease';
 import FormatIndentDecreaseIcon from '@mui/icons-material/FormatIndentDecrease';
-import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import type { Editor } from '@tiptap/core';
-import { validateAndNormalizeUrl } from './linkUtils';
+import { formatShortcut } from './shortcutLabel';
 import styles from './index.module.css';
 
 interface TiptapToolbarProps {
   editor: Editor;
   onFilePicker: () => void;
+  onLink: () => void;
 }
 
-export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
+const HEADING_LEVELS = [1, 2, 3] as const;
+
+export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarProps) => {
   const { t } = useTranslation();
 
   // Re-render on any editor state change so toolbar buttons stay in sync.
@@ -47,71 +57,43 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
     };
   }, [editor]);
 
-  // Link popover state
-  const [linkAnchor, setLinkAnchor] = useState<HTMLElement | null>(null);
-  const [linkUrl, setLinkUrl] = useState('');
-  const [linkText, setLinkText] = useState('');
-  const [isInsertingNewLink, setIsInsertingNewLink] = useState(false);
-  const linkInputRef = useRef<HTMLInputElement>(null);
+  const [headingAnchor, setHeadingAnchor] = useState<HTMLElement | null>(null);
+  const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
 
-  const handleLinkClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => {
-      if (editor.isActive('link')) {
-        editor.chain().focus().unsetLink().run();
-        return;
-      }
+  const headingLevel = HEADING_LEVELS.find((level) => editor.isActive('heading', { level }));
+  const inTask = editor.isActive('taskItem');
+  const canIndent = inTask
+    ? editor.can().sinkListItem('taskItem')
+    : editor.can().sinkListItem('listItem');
+  const canOutdent = inTask
+    ? editor.can().liftListItem('taskItem')
+    : editor.can().liftListItem('listItem');
+  const moreActive =
+    editor.isActive('underline') ||
+    editor.isActive('strike') ||
+    editor.isActive('code') ||
+    editor.isActive('codeBlock');
 
-      const { from, to } = editor.state.selection;
-      const hasSelection = from !== to;
+  const run = (command: () => void) => {
+    setHeadingAnchor(null);
+    setMoreAnchor(null);
+    command();
+  };
 
-      setLinkUrl('');
-      setLinkText('');
-      setIsInsertingNewLink(!hasSelection);
-      setLinkAnchor(event.currentTarget);
-    },
-    [editor],
-  );
+  const indent = () => {
+    if (inTask) editor.chain().focus().sinkListItem('taskItem').run();
+    else editor.chain().focus().sinkListItem('listItem').run();
+  };
 
-  const handleLinkSubmit = useCallback(() => {
-    const href = validateAndNormalizeUrl(linkUrl);
-    if (!href) {
-      setLinkAnchor(null);
-      setLinkUrl('');
-      setLinkText('');
-      return;
-    }
-
-    if (isInsertingNewLink) {
-      // No selection — insert link text + URL as a new inline link
-      const text = linkText.trim() || href;
-      editor
-        .chain()
-        .focus()
-        .insertContent({
-          type: 'text',
-          text,
-          marks: [{ type: 'link', attrs: { href, target: '_blank' } }],
-        })
-        .run();
-    } else {
-      editor.chain().focus().setLink({ href }).run();
-    }
-
-    setLinkAnchor(null);
-    setLinkUrl('');
-    setLinkText('');
-  }, [editor, linkUrl, linkText, isInsertingNewLink]);
-
-  const handleLinkClose = useCallback(() => {
-    setLinkAnchor(null);
-    setLinkUrl('');
-    setLinkText('');
-    editor.chain().focus().run();
-  }, [editor]);
+  const outdent = () => {
+    if (inTask) editor.chain().focus().liftListItem('taskItem').run();
+    else editor.chain().focus().liftListItem('listItem').run();
+  };
 
   return (
     <div
       className={styles.toolbar}
+      data-testid="editor-toolbar"
       onMouseDown={(e) => {
         // Prevent toolbar clicks from stealing focus from the editor.
         // Without this, tapping a toolbar button on mobile blurs the editor
@@ -122,302 +104,236 @@ export const TiptapToolbar = ({ editor, onFilePicker }: TiptapToolbarProps) => {
       }}
     >
       <div className={styles.toolbarGroup}>
-        <Tooltip title={t('Editor.Heading1')}>
+        <Tooltip title={t('Editor.Heading')}>
           <IconButton
             size="small"
-            aria-label={t('Editor.Heading1')}
-            data-testid="toolbar-heading1"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            color={editor.isActive('heading', { level: 1 }) ? 'primary' : 'default'}
+            aria-label={t('Editor.Heading')}
+            aria-haspopup="menu"
+            aria-expanded={Boolean(headingAnchor)}
+            data-testid="toolbar-heading"
+            onClick={(e) => setHeadingAnchor(e.currentTarget)}
+            color={headingLevel ? 'primary' : 'default'}
           >
-            <span className={styles.headingButton}>H1</span>
+            <span className={styles.headingButton}>{headingLevel ? `H${headingLevel}` : 'H'}</span>
           </IconButton>
         </Tooltip>
-        <Tooltip title={t('Editor.Heading2')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.Heading2')}
-            data-testid="toolbar-heading2"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            color={editor.isActive('heading', { level: 2 }) ? 'primary' : 'default'}
-          >
-            <span className={styles.headingButton}>H2</span>
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('Editor.Heading3')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.Heading3')}
-            data-testid="toolbar-heading3"
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            color={editor.isActive('heading', { level: 3 }) ? 'primary' : 'default'}
-          >
-            <span className={styles.headingButton}>H3</span>
-          </IconButton>
-        </Tooltip>
-      </div>
-
-      <Divider orientation="vertical" flexItem />
-
-      <div className={styles.toolbarGroup}>
-        <Tooltip title={`${t('Editor.Bold')} (Ctrl+B)`}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.Bold')}
-            data-testid="toolbar-bold"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            color={editor.isActive('bold') ? 'primary' : 'default'}
-          >
-            <FormatBoldIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={`${t('Editor.Italic')} (Ctrl+I)`}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.Italic')}
-            data-testid="toolbar-italic"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            color={editor.isActive('italic') ? 'primary' : 'default'}
-          >
-            <FormatItalicIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={`${t('Editor.Underline')} (Ctrl+U)`}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.Underline')}
-            data-testid="toolbar-underline"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            color={editor.isActive('underline') ? 'primary' : 'default'}
-          >
-            <FormatUnderlinedIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('Editor.Strikethrough')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.Strikethrough')}
-            data-testid="toolbar-strikethrough"
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            color={editor.isActive('strike') ? 'primary' : 'default'}
-          >
-            <StrikethroughSIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('Editor.InlineCode')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.InlineCode')}
-            data-testid="toolbar-inline-code"
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            color={editor.isActive('code') ? 'primary' : 'default'}
-          >
-            <CodeIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </div>
-
-      <Divider orientation="vertical" flexItem />
-
-      <div className={styles.toolbarGroup}>
-        <Tooltip title={t('Editor.BulletList')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.BulletList')}
-            data-testid="toolbar-bullet-list"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            color={editor.isActive('bulletList') ? 'primary' : 'default'}
-          >
-            <FormatListBulletedIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('Editor.OrderedList')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.OrderedList')}
-            data-testid="toolbar-ordered-list"
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            color={editor.isActive('orderedList') ? 'primary' : 'default'}
-          >
-            <FormatListNumberedIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('Editor.TaskList')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.TaskList')}
-            data-testid="toolbar-task-list"
-            onClick={() => editor.chain().focus().toggleTaskList().run()}
-            color={editor.isActive('taskList') ? 'primary' : 'default'}
-          >
-            <ChecklistIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={`${t('Editor.Indent')} (Tab)`}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.Indent')}
-            data-testid="toolbar-indent"
-            onClick={() => {
-              if (editor.isActive('taskItem')) {
-                editor.chain().focus().sinkListItem('taskItem').run();
-              } else {
-                editor.chain().focus().sinkListItem('listItem').run();
-              }
-            }}
-          >
-            <FormatIndentIncreaseIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={`${t('Editor.Outdent')} (Shift+Tab)`}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.Outdent')}
-            data-testid="toolbar-outdent"
-            onClick={() => {
-              if (editor.isActive('taskItem')) {
-                editor.chain().focus().liftListItem('taskItem').run();
-              } else {
-                editor.chain().focus().liftListItem('listItem').run();
-              }
-            }}
-          >
-            <FormatIndentDecreaseIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('Editor.Blockquote')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.Blockquote')}
-            data-testid="toolbar-blockquote"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            color={editor.isActive('blockquote') ? 'primary' : 'default'}
-          >
-            <FormatQuoteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('Editor.CodeBlock')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.CodeBlock')}
-            data-testid="toolbar-code-block"
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            color={editor.isActive('codeBlock') ? 'primary' : 'default'}
-          >
-            <IntegrationInstructionsOutlinedIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={t('Editor.HorizontalRule')}>
-          <IconButton
-            size="small"
-            aria-label={t('Editor.HorizontalRule')}
-            data-testid="toolbar-horizontal-rule"
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          >
-            <HorizontalRuleIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </div>
-
-      <Divider orientation="vertical" flexItem />
-
-      <div className={styles.toolbarGroup}>
-        <Tooltip title={editor.isActive('link') ? t('Editor.Unlink') : `${t('Editor.Link')} (Ctrl+K)`}>
-          <IconButton
-            size="small"
-            aria-label={editor.isActive('link') ? t('Editor.Unlink') : t('Editor.Link')}
-            data-testid="toolbar-link"
-            onClick={handleLinkClick}
-            color={editor.isActive('link') ? 'primary' : 'default'}
-          >
-            {editor.isActive('link') ? <LinkOffIcon fontSize="small" /> : <LinkIcon fontSize="small" />}
-          </IconButton>
-        </Tooltip>
-        <Popover
-          open={Boolean(linkAnchor)}
-          anchorEl={linkAnchor}
-          onClose={handleLinkClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          slotProps={{
-            paper: { className: styles.linkPopover },
-          }}
-          onTransitionEnd={() => {
-            if (linkAnchor) {
-              if (isInsertingNewLink) {
-                // Focus the text field first when inserting a new link
-                const textInput = document.querySelector<HTMLInputElement>(
-                  '[data-testid="toolbar-link-text-input"] input',
-                );
-                textInput?.focus();
-              } else {
-                linkInputRef.current?.focus();
-              }
-            }
-          }}
+        <Menu
+          anchorEl={headingAnchor}
+          open={Boolean(headingAnchor)}
+          onClose={() => setHeadingAnchor(null)}
         >
-          <Box className={styles.linkPopoverContent} sx={{ flexDirection: 'column', alignItems: 'stretch' }}>
-            {isInsertingNewLink && (
-              <TextField
-                size="small"
-                placeholder={t('Editor.LinkText')}
-                value={linkText}
-                onChange={(e) => setLinkText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    linkInputRef.current?.focus();
-                  } else if (e.key === 'Escape') {
-                    handleLinkClose();
-                  }
-                }}
-                fullWidth
-                autoComplete="off"
-                data-testid="toolbar-link-text-input"
-              />
-            )}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <TextField
-                inputRef={linkInputRef}
-                size="small"
-                placeholder="https://"
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleLinkSubmit();
-                  } else if (e.key === 'Escape') {
-                    handleLinkClose();
-                  }
-                }}
-                fullWidth
-                autoComplete="off"
-                data-testid="toolbar-link-url-input"
-              />
-              <Button
-                size="small"
-                variant="contained"
-                onClick={handleLinkSubmit}
-                disabled={!linkUrl.trim()}
-                data-testid="toolbar-link-submit"
-              >
-                {t('Common.Ok')}
-              </Button>
-            </Box>
-          </Box>
-        </Popover>
-        <Tooltip title={t('Editor.Image')}>
-          <IconButton size="small" aria-label={t('Editor.Image')} data-testid="toolbar-image" onClick={onFilePicker}>
-            <ImageOutlinedIcon fontSize="small" />
+          <MenuItem
+            selected={!headingLevel}
+            data-testid="toolbar-paragraph"
+            onClick={() => run(() => editor.chain().focus().setParagraph().run())}
+          >
+            <ListItemText>{t('Editor.Paragraph')}</ListItemText>
+          </MenuItem>
+          {HEADING_LEVELS.map((level) => (
+            <MenuItem
+              key={level}
+              selected={headingLevel === level}
+              data-testid={`toolbar-heading${level}`}
+              onClick={() => run(() => editor.chain().focus().toggleHeading({ level }).run())}
+            >
+              <ListItemText>{t(`Editor.Heading${level}`)}</ListItemText>
+              <Typography variant="caption" className={styles.menuShortcut}>
+                {formatShortcut(['Mod', 'Alt', String(level)])}
+              </Typography>
+            </MenuItem>
+          ))}
+        </Menu>
+        <ToolButton
+          label={t('Editor.Bold')}
+          shortcut={formatShortcut(['Mod', 'B'])}
+          testId="toolbar-bold"
+          active={editor.isActive('bold')}
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
+          <FormatBoldIcon fontSize="small" />
+        </ToolButton>
+        <ToolButton
+          label={t('Editor.Italic')}
+          shortcut={formatShortcut(['Mod', 'I'])}
+          testId="toolbar-italic"
+          active={editor.isActive('italic')}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
+          <FormatItalicIcon fontSize="small" />
+        </ToolButton>
+      </div>
+
+      <div className={styles.toolbarGroup}>
+        <ToolButton
+          label={t('Editor.BulletList')}
+          shortcut={formatShortcut(['Mod', 'Shift', '8'])}
+          testId="toolbar-bullet-list"
+          active={editor.isActive('bulletList')}
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+        >
+          <FormatListBulletedIcon fontSize="small" />
+        </ToolButton>
+        <ToolButton
+          label={t('Editor.OrderedList')}
+          shortcut={formatShortcut(['Mod', 'Shift', '7'])}
+          testId="toolbar-ordered-list"
+          active={editor.isActive('orderedList')}
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        >
+          <FormatListNumberedIcon fontSize="small" />
+        </ToolButton>
+        <ToolButton
+          label={t('Editor.TaskList')}
+          shortcut={formatShortcut(['Mod', 'Shift', '9'])}
+          testId="toolbar-task-list"
+          active={editor.isActive('taskList')}
+          onClick={() => editor.chain().focus().toggleTaskList().run()}
+        >
+          <ChecklistIcon fontSize="small" />
+        </ToolButton>
+        <ToolButton
+          label={t('Editor.Blockquote')}
+          testId="toolbar-blockquote"
+          active={editor.isActive('blockquote')}
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        >
+          <FormatQuoteIcon fontSize="small" />
+        </ToolButton>
+      </div>
+
+      <div className={styles.toolbarGroup}>
+        <ToolButton
+          label={editor.isActive('link') ? t('Editor.EditLink') : t('Editor.Link')}
+          shortcut={formatShortcut(['Mod', 'K'])}
+          testId="toolbar-link"
+          active={editor.isActive('link')}
+          onClick={onLink}
+        >
+          <LinkIcon fontSize="small" />
+        </ToolButton>
+        <ToolButton label={t('Editor.InsertFile')} testId="toolbar-insert" onClick={onFilePicker}>
+          <AttachFileOutlinedIcon fontSize="small" />
+        </ToolButton>
+        <Tooltip title={t('Editor.MoreFormatting')}>
+          <IconButton
+            size="small"
+            aria-label={t('Editor.MoreFormatting')}
+            aria-haspopup="menu"
+            aria-expanded={Boolean(moreAnchor)}
+            data-testid="toolbar-more"
+            onClick={(e) => setMoreAnchor(e.currentTarget)}
+            color={moreActive ? 'primary' : 'default'}
+          >
+            <MoreHorizIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-        <Tooltip title={t('Editor.AttachFile')}>
-          <IconButton size="small" aria-label={t('Editor.AttachFile')} data-testid="toolbar-attach-file" onClick={onFilePicker}>
-            <AttachFileOutlinedIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
+          <MoreItem
+            testId="toolbar-underline"
+            label={t('Editor.Underline')}
+            shortcut={formatShortcut(['Mod', 'U'])}
+            selected={editor.isActive('underline')}
+            icon={<FormatUnderlinedIcon fontSize="small" />}
+            onClick={() => run(() => editor.chain().focus().toggleUnderline().run())}
+          />
+          <MoreItem
+            testId="toolbar-strikethrough"
+            label={t('Editor.Strikethrough')}
+            shortcut={formatShortcut(['Mod', 'Shift', 'S'])}
+            selected={editor.isActive('strike')}
+            icon={<StrikethroughSIcon fontSize="small" />}
+            onClick={() => run(() => editor.chain().focus().toggleStrike().run())}
+          />
+          <MoreItem
+            testId="toolbar-inline-code"
+            label={t('Editor.InlineCode')}
+            shortcut={formatShortcut(['Mod', 'E'])}
+            selected={editor.isActive('code')}
+            icon={<CodeIcon fontSize="small" />}
+            onClick={() => run(() => editor.chain().focus().toggleCode().run())}
+          />
+          <MoreItem
+            testId="toolbar-code-block"
+            label={t('Editor.CodeBlock')}
+            selected={editor.isActive('codeBlock')}
+            icon={<IntegrationInstructionsOutlinedIcon fontSize="small" />}
+            onClick={() => run(() => editor.chain().focus().toggleCodeBlock().run())}
+          />
+          <MoreItem
+            testId="toolbar-indent"
+            label={t('Editor.Indent')}
+            shortcut="Tab"
+            disabled={!canIndent}
+            icon={<FormatIndentIncreaseIcon fontSize="small" />}
+            onClick={() => run(indent)}
+          />
+          <MoreItem
+            testId="toolbar-outdent"
+            label={t('Editor.Outdent')}
+            shortcut="Shift+Tab"
+            disabled={!canOutdent}
+            icon={<FormatIndentDecreaseIcon fontSize="small" />}
+            onClick={() => run(outdent)}
+          />
+          <MoreItem
+            testId="toolbar-horizontal-rule"
+            label={t('Editor.HorizontalRule')}
+            icon={<HorizontalRuleIcon fontSize="small" />}
+            onClick={() => run(() => editor.chain().focus().setHorizontalRule().run())}
+          />
+        </Menu>
       </div>
     </div>
   );
 };
+
+interface ToolButtonProps {
+  label: string;
+  testId: string;
+  onClick: () => void;
+  active?: boolean;
+  shortcut?: string;
+  children: ReactNode;
+}
+
+function ToolButton({ label, testId, onClick, active, shortcut, children }: ToolButtonProps) {
+  const title = shortcut ? `${label} (${shortcut})` : label;
+  return (
+    <Tooltip title={title}>
+      <IconButton
+        size="small"
+        aria-label={label}
+        aria-pressed={active}
+        data-testid={testId}
+        onClick={onClick}
+        color={active ? 'primary' : 'default'}
+      >
+        {children}
+      </IconButton>
+    </Tooltip>
+  );
+}
+
+interface MoreItemProps {
+  testId: string;
+  label: string;
+  onClick: () => void;
+  icon: ReactNode;
+  shortcut?: string;
+  selected?: boolean;
+  disabled?: boolean;
+}
+
+function MoreItem({ testId, label, onClick, icon, shortcut, selected, disabled }: MoreItemProps) {
+  return (
+    <MenuItem data-testid={testId} selected={selected} disabled={disabled} onClick={onClick}>
+      <ListItemIcon>{icon}</ListItemIcon>
+      <ListItemText>{label}</ListItemText>
+      {shortcut && (
+        <Typography variant="caption" className={styles.menuShortcut}>
+          {shortcut}
+        </Typography>
+      )}
+    </MenuItem>
+  );
+}
