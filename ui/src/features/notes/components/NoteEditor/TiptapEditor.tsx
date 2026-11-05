@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { EditorContent } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
+import type { Node as PMNode } from '@tiptap/pm/model';
 import { useFileUpload, isImageFile, FILE_ACCEPT } from './useFileUpload';
 import { useEditorExport, type ExportFormat, type ExportResult } from './useEditorExport';
 import { useTiptapEditor } from './useTiptapEditor';
@@ -44,9 +45,17 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       setLinkDialogOpen(true);
     }, []);
 
+    const placeholder = useCallback(
+      (node: PMNode) =>
+        node.type.name === 'heading'
+          ? t(`Editor.Heading${node.attrs.level as number}`)
+          : t('Editor.Placeholder') || 'Start writing...',
+      [t],
+    );
+
     const editor = useTiptapEditor({
       initialContent,
-      placeholder: t('Editor.Placeholder') || 'Start writing...',
+      placeholder,
       className: `tiptap-editor ${styles.prose}`,
       handlePaste,
       handleDrop,
@@ -126,6 +135,7 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         <TiptapToolbar
           editor={editor}
           onFilePicker={handleOpenFilePicker}
+          onLinkClick={handleLinkShortcut}
         />
         <Box ref={scrollRef} className={styles.editorContent}>
           <EditorContent editor={editor} className={styles.tiptapContainer} />

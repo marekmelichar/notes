@@ -45,6 +45,8 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
   const [isSaving, setIsSaving] = useState(false);
   const isSavingRef = useRef(false);
   const [stats, setStats] = useState<EditorStats>({ wordCount: 0, charCount: 0 });
+  // Distraction-free writing: hides toolbar + note controls, editor covers the app.
+  const [focusMode, setFocusMode] = useState(false);
 
   // Editor ref for content access and export
   const editorRef = useRef<TiptapEditorHandle>(null);
@@ -212,14 +214,30 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     markDirty();
   }, [markDirty]);
 
-  // Keyboard shortcut for save (Ctrl/Cmd + S) — only when active
+  const toggleFocusMode = useCallback(() => setFocusMode((on) => !on), []);
+
+  // Leave focus mode when this editor is no longer the active tab.
+  useEffect(() => {
+    if (!isActive) setFocusMode(false);
+  }, [isActive]);
+
+  // Editor-wide shortcuts — only when active:
+  // Ctrl/Cmd+S saves, Ctrl/Cmd+Shift+Enter toggles focus mode, Esc leaves it.
   useEffect(() => {
     if (!isActive) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      const mod = e.ctrlKey || e.metaKey;
+      // Plain 's' only — Ctrl/Cmd+Shift+S is strikethrough.
+      if (mod && e.key === 's') {
         e.preventDefault();
         saveNow();
+      } else if (mod && e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        toggleFocusMode();
+      } else if (e.key === 'Escape' && !e.defaultPrevented) {
+        // Popovers (link dialog, menus) consume Escape first.
+        setFocusMode(false);
       }
     };
 
@@ -227,7 +245,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [saveNow, isActive]);
+  }, [saveNow, isActive, toggleFocusMode]);
 
   // Warn about unsaved changes on tab close; best-effort save on unmount.
   useEffect(() => {
@@ -311,13 +329,17 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
 
   return (
     <Box
-      className={`${styles.editorContainer} ${!isActive ? styles.editorHidden : ''}`}
+      className={`${styles.editorContainer} ${!isActive ? styles.editorHidden : ''} ${focusMode ? styles.focusMode : ''}`}
+      data-testid="note-editor"
+      data-focus-mode={focusMode || undefined}
     >
       <EditorHeader
         note={note}
         title={title}
         onTitleChange={handleTitleChange}
         isMobile={isMobile}
+        focusMode={focusMode}
+        onToggleFocusMode={toggleFocusMode}
         folders={folders}
         hasUnsavedChanges={hasUnsavedChanges}
         isSaving={isSaving}

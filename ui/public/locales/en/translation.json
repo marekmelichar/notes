@@ -172,7 +172,7 @@
     "UploadingFile": "Uploading {{name}}..."
   },
   "Editor": {
-    "Placeholder": "Start writing...",
+    "Placeholder": "Start writing… type # for a heading, - for a list",
     "Heading1": "Heading 1",
     "Heading2": "Heading 2",
     "Heading3": "Heading 3",
@@ -196,8 +196,12 @@
     "LinkText": "Link text",
     "Indent": "Indent",
     "Outdent": "Outdent",
-    "Image": "Insert image",
-    "AttachFile": "Attach file",
+    "InsertFile": "Insert image or file",
+    "LinkUrl": "Link URL",
+    "InvalidLink": "This link can't be used",
+    "Toolbar": "Formatting",
+    "FocusMode": "Focus mode",
+    "ExitFocusMode": "Exit focus mode",
     "EnterUrl": "Enter URL:",
     "FileOpen": "Open file",
     "FileDelete": "Delete file"

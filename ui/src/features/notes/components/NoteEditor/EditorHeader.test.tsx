@@ -241,4 +241,31 @@ describe('EditorHeader', () => {
       expect(screen.queryByTestId('editor-controls-toggle')).not.toBeInTheDocument();
     });
   });
+
+  describe('focus mode toggle', () => {
+    it('is not rendered without a handler', () => {
+      renderWithTheme();
+      expect(screen.queryByTestId('editor-focus-toggle')).not.toBeInTheDocument();
+    });
+
+    it('calls the handler and reflects the current state', async () => {
+      const user = userEvent.setup();
+      const onToggleFocusMode = vi.fn();
+      const { rerender } = renderWithTheme({ onToggleFocusMode });
+
+      const toggle = screen.getByTestId('editor-focus-toggle');
+      expect(toggle).toHaveAttribute('aria-pressed', 'false');
+      expect(toggle).toHaveAccessibleName('Editor.FocusMode');
+      await user.click(toggle);
+      expect(onToggleFocusMode).toHaveBeenCalledTimes(1);
+
+      rerender(
+        <ThemeProvider theme={theme}>
+          <EditorHeader {...defaultProps} onToggleFocusMode={onToggleFocusMode} focusMode />
+        </ThemeProvider>,
+      );
+      expect(screen.getByTestId('editor-focus-toggle')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('editor-focus-toggle')).toHaveAccessibleName('Editor.ExitFocusMode');
+    });
+  });
 });

@@ -15,6 +15,16 @@ export function validateAndNormalizeUrl(input: string): string | null {
 }
 
 /**
+ * Last-line check for hrefs reaching the Link mark from any path (autolink,
+ * paste, parsed HTML, commands). Whitespace and control characters are
+ * stripped first because browsers ignore them inside a scheme ("java\nscript:").
+ */
+export function isSafeLinkHref(href: string): boolean {
+  // eslint-disable-next-line no-control-regex
+  return !DANGEROUS_PROTOCOL.test(href.replace(/[\s\u0000-\u001F]/g, ''));
+}
+
+/**
  * Truncates a URL for display in the bubble menu.
  * Strips protocol prefix and truncates to maxLength.
  */

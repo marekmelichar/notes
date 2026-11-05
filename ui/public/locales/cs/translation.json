@@ -172,7 +172,7 @@
     "UploadingFile": "Nahrávám {{name}}..."
   },
   "Editor": {
-    "Placeholder": "Začněte psát...",
+    "Placeholder": "Začněte psát… # pro nadpis, - pro seznam",
     "Heading1": "Nadpis 1",
     "Heading2": "Nadpis 2",
     "Heading3": "Nadpis 3",
@@ -196,8 +196,12 @@
     "LinkText": "Text odkazu",
     "Indent": "Odsadit",
     "Outdent": "Zmenšit odsazení",
-    "Image": "Vložit obrázek",
-    "AttachFile": "Připojit soubor",
+    "InsertFile": "Vložit obrázek nebo soubor",
+    "LinkUrl": "URL odkazu",
+    "InvalidLink": "Tento odkaz nelze použít",
+    "Toolbar": "Formátování",
+    "FocusMode": "Režim soustředění",
+    "ExitFocusMode": "Ukončit režim soustředění",
     "EnterUrl": "Zadejte URL:",
     "FileOpen": "Otevřít soubor",
     "FileDelete": "Smazat soubor"

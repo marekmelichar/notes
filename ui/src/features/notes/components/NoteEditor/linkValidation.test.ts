@@ -1,5 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { validateAndNormalizeUrl, truncateUrl } from './linkUtils';
+import { validateAndNormalizeUrl, truncateUrl, isSafeLinkHref } from './linkUtils';
+
+describe('isSafeLinkHref', () => {
+  it('allows ordinary links', () => {
+    expect(isSafeLinkHref('https://example.com')).toBe(true);
+    expect(isSafeLinkHref('mailto:a@b.cz')).toBe(true);
+  });
+
+  it('rejects dangerous protocols, including whitespace-obfuscated ones', () => {
+    expect(isSafeLinkHref('javascript:alert(1)')).toBe(false);
+    expect(isSafeLinkHref(' DATA:text/html,x')).toBe(false);
+    expect(isSafeLinkHref('java\nscript:alert(1)')).toBe(false);
+    expect(isSafeLinkHref('vb\tscript:x')).toBe(false);
+  });
+});
 
 describe('Link URL validation', () => {
   describe('dangerous protocol blocking', () => {

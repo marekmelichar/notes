@@ -1,6 +1,6 @@
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
+import { SafeLink } from './LinkExtension';
 import { CustomImageExtension } from './CustomImageExtension';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -8,11 +8,13 @@ import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import { FileEmbedExtension } from './FileEmbedExtension';
 import type { JSONContent } from '@tiptap/core';
+import type { Node as PMNode } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
 
 interface UseTiptapEditorOptions {
   initialContent: JSONContent | undefined;
-  placeholder: string;
+  /** Placeholder for an empty node (the empty doc, or an empty heading under the cursor). */
+  placeholder: (node: PMNode) => string;
   className: string;
   handlePaste: (view: EditorView, event: ClipboardEvent) => boolean;
   handleDrop: (view: EditorView, event: Event) => boolean;
@@ -37,12 +39,7 @@ export function useTiptapEditor({
         link: false,
         underline: false,
       }),
-      Link.configure({
-        autolink: true,
-        linkOnPaste: true,
-        openOnClick: false,
-        HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
-      }),
+      SafeLink,
       CustomImageExtension.configure({
         allowBase64: false,
         HTMLAttributes: { class: 'editor-image' },
@@ -51,7 +48,7 @@ export function useTiptapEditor({
       TaskList,
       TaskItem.configure({ nested: true }),
       FileEmbedExtension,
-      Placeholder.configure({ placeholder }),
+      Placeholder.configure({ placeholder: ({ node }) => placeholder(node) }),
     ],
     content: initialContent,
     editorProps: {
@@ -79,7 +76,7 @@ export function useTiptapEditor({
       },
       handleKeyDown: (_view: EditorView, event: KeyboardEvent) => {
         // Ctrl+K / Cmd+K triggers link insertion
-        if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'k') {
           event.preventDefault();
           onLinkShortcut?.();
           return true;

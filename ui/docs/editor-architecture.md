@@ -6,12 +6,16 @@ The note editor uses [TipTap](https://tiptap.dev/) (ProseMirror-based) for rich 
 
 ```
 NoteEditor/
-├── SingleNoteEditor.tsx    # Orchestrator — save logic, auto-save, state, keyboard shortcuts
-├── EditorHeader.tsx        # Title input, folder/tag pickers, pin, delete, export, view toggle
-├── TiptapEditor.tsx        # Editor rendering — toolbar, ProseMirror, markdown preview
+├── SingleNoteEditor.tsx    # Orchestrator — save logic, auto-save, state, keyboard shortcuts, focus mode
+├── EditorHeader.tsx        # Title input, focus-mode toggle, folder/tag pickers, pin, delete, export
+├── TiptapEditor.tsx        # Editor rendering — toolbar, ProseMirror, link dialog/bubble
 ├── EditorFooter.tsx        # Word/char count, auto-save countdown, last saved time
-├── TiptapToolbar.tsx       # Formatting buttons, link popover with URL validation
-├── useTiptapEditor.ts      # Hook — configures TipTap extensions (StarterKit, Link, Image, etc.)
+├── TiptapToolbar.tsx       # Formatting buttons (data-driven), tooltips with shortcut hints
+├── LinkDialog.tsx          # Add/edit/remove link — shared by Ctrl/Cmd+K and the toolbar button
+├── LinkBubbleMenu.tsx      # Open/copy/edit/unlink when the cursor is on a link
+├── LinkExtension.ts        # SafeLink — Link mark config, `[text](url)` input rule, href guard
+├── shortcuts.ts            # Shortcut table + platform-aware labels (⌘ vs Ctrl)
+├── useTiptapEditor.ts      # Hook — configures TipTap extensions (StarterKit, SafeLink, Image, etc.)
 ├── useFileUpload.ts        # File upload — paste/drop handling, size validation, placeholder nodes
 ├── useEditorExport.ts      # Export to markdown (Turndown) and HTML, with title injection
 ├── contentMigration.ts     # BlockNote JSON → TipTap JSON migration (runs on content load)
@@ -25,7 +29,7 @@ SingleNoteEditor
 ├── EditorHeader        — title, actions, folder/tag pickers
 ├── ErrorBoundary
 │   └── TiptapEditor    — React.memo'd, only re-renders on viewMode/note change
-│       ├── TiptapToolbar  — formatting buttons, link input
+│       ├── TiptapToolbar  — formatting buttons (link button opens LinkDialog)
 │       ├── EditorContent  — ProseMirror (editor mode)
 │       └── Markdown       — react-markdown preview (markdown mode)
 └── EditorFooter        — word count + auto-save status
@@ -96,16 +100,59 @@ Configured in `useTiptapEditor.ts`:
 | Extension | Purpose | Config |
 |-----------|---------|--------|
 | StarterKit | Paragraph, headings, bold, italic, strike, code, lists, blockquote, code block, horizontal rule | defaults |
-| Link | Hyperlinks | `autolink: false`, `linkOnPaste: false`, `openOnClick: false` |
+| SafeLink (`LinkExtension.ts`) | Hyperlinks | `autolink: true`, `linkOnPaste: true`, `openOnClick: false`, **not inclusive** (typing after a link doesn't extend it), `[text](url)` input rule, `isAllowedUri` also runs `isSafeLinkHref` |
 | Image | Embedded images | `allowBase64: false` |
 | Underline | Underline formatting | defaults |
-| Placeholder | Empty editor placeholder text | i18n key `Editor.Placeholder` |
+| TaskList / TaskItem | Checklists | `nested: true` |
+| Placeholder | Empty-state hints | Empty doc → `Editor.Placeholder` (mentions `#` / `-`); empty heading under the cursor → `Editor.Heading1..3` |
+
+## Keyboard & Markdown Shortcuts
+
+Everything in the toolbar is reachable from the keyboard. Tooltips show the binding for the
+current platform plus the Markdown trigger (from `shortcuts.ts`, which mirrors StarterKit's bindings).
+
+| Action | Keys (`Mod` = Ctrl / ⌘) | Type instead |
+|--------|------------------------|--------------|
+| Heading 1 / 2 / 3 | `Mod+Alt+1` / `2` / `3` | `# ` / `## ` / `### ` |
+| Bold / Italic / Underline | `Mod+B` / `Mod+I` / `Mod+U` | `**text**` / `*text*` |
+| Strikethrough / Inline code | `Mod+Shift+S` / `Mod+E` | `~~text~~` / `` `code` `` |
+| Bullet / Numbered / Todo list | `Mod+Shift+8` / `7` / `9` | `- ` / `1. ` / `[ ] ` |
+| Indent / Outdent (in lists) | `Tab` / `Shift+Tab` | |
+| Quote / Code block | `Mod+Shift+B` / `Mod+Alt+C` | `> ` / ```` ``` ```` |
+| Divider | | `---` |
+| Link | `Mod+K` (add, edit, or clear the URL to remove) | `[text](url)` |
+| Save | `Mod+S` | |
+| Focus mode | `Mod+Shift+Enter` (Esc exits) | |
+
+## Focus Mode
+
+A distraction-free view owned by `SingleNoteEditor` (`focusMode` state, not persisted). Toggled by the
+button next to the title or `Mod+Shift+Enter`; `Esc` exits unless a popover already handled it, and it
+switches off when the tab becomes inactive. It is CSS-only (`.focusMode` in `index.module.css`): the
+editor container goes `position: fixed` over the app (z-index 1250 — above the drawer, below MUI
+popovers so link dialogs and menus still work), the toolbar and note controls are hidden, and the title,
+text and footer sit in a centered 46rem column. `TiptapEditor` doesn't re-render on toggle.
+On the mobile layout the container stays in flow (the editor already fills the screen and the app
+chrome auto-hides on scroll; ancestors there create stacking contexts), so only the toolbar and
+controls are dropped.
+
+## Toolbar
+
+- One row of four groups: headings · inline marks + link · lists + indent · blocks + insert.
+- Muted icons; the active state is a soft `action.selected` pill with `aria-pressed`.
+- Indent/outdent are **disabled** (not hidden) outside lists so nothing shifts under the pointer.
+- One "Insert image or file" button — the upload path decides image vs. file embed.
+- The link button always opens `LinkDialog` (same as `Mod+K`); unlinking lives in the dialog and the bubble menu.
+- Touch devices (`pointer: coarse`) get 40px targets; on narrow screens the row scrolls horizontally.
 
 ## Security
 
-**Link URL validation** (TiptapToolbar + contentMigration):
+**Link URL validation** (`linkUtils.ts`, used by LinkDialog, LinkBubbleMenu, SafeLink + contentMigration):
 - Blocks `javascript:`, `data:`, `vbscript:` protocols
 - Auto-prefixes `https://` when no protocol specified
+- Every href reaching the Link mark (autolink, paste, parsed HTML, `[text](url)`, commands) also passes
+  `isSafeLinkHref`, which strips whitespace/control characters before checking the protocol
+- An invalid URL in the link dialog shows an inline error instead of silently closing
 - All links render with `target="_blank" rel="noopener noreferrer"`
 
 **File uploads** (useFileUpload):
@@ -170,6 +217,12 @@ Toggled via `EditorHeader`:
 | `useAutoSave.test.ts` | 13 | Countdown, timer reset, save triggers, flush, cleanup |
 | `useFileUpload.test.ts` | 10 | Upload success/error, offline, size limit, noteId routing |
 | `useEditorExport.test.ts` | 11 | Markdown/HTML export, title escaping, XSS prevention |
-| `linkValidation.test.ts` | 15 | Protocol blocking, URL normalization, edge cases |
+| `linkValidation.test.ts` | 22 | Protocol blocking, URL normalization, `isSafeLinkHref`, edge cases |
+| `LinkExtension.test.ts` | 7 | `[text](url)` input rule, non-inclusive mark, dangerous hrefs rejected |
+| `LinkDialog.test.tsx` | 3 | Link selection, inline error on unsafe URL, clear-to-unlink |
+| `TiptapToolbar.test.tsx` | 5 | Link button → dialog, insert button, indent disabled outside lists, aria-pressed, tooltip hints |
+| `shortcuts.test.ts` | 4 | Platform-aware shortcut labels |
+| `SingleNoteEditor.test.tsx` | 7 | Save guards (ADR 0009), focus mode shortcuts, Ctrl+Shift+S doesn't save |
+| `EditorHeader.test.tsx` | 24 | Header actions, mobile controls, focus-mode toggle |
 | `EditorFooter.test.tsx` | 7 | Component rendering, all display states |
 | `editor.spec.ts` (E2E) | 3 | Save→reload persistence, title update, unsaved indicator |

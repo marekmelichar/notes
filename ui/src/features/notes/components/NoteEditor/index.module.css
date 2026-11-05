@@ -91,6 +91,85 @@
   gap: 0.125rem;
 }
 
+/* Calm by default: muted icons, the active state is a soft pill, not a color shout. */
+.toolbarButton {
+  color: var(--mui-palette-text-secondary);
+  border-radius: 0.375rem;
+}
+
+.toolbarButtonActive {
+  color: var(--mui-palette-primary-main);
+  background-color: var(--mui-palette-action-selected);
+}
+
+.toolbarDivider {
+  margin: 0.25rem 0.125rem;
+  opacity: 0.6;
+}
+
+/* Bigger touch targets where there's no mouse */
+@media (pointer: coarse) {
+  .toolbarButton {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+  }
+}
+
+/* Focus mode — the editor covers the app and only the title + text remain.
+   z-index sits above the app chrome (drawer 1200) but below MUI popovers and
+   modals (1300) so link dialogs and menus still open on top. */
+.focusMode {
+  position: fixed;
+  inset: 0;
+  z-index: 1250;
+  border-radius: 0;
+}
+
+/* Mobile layout (same query as NotesPage): the editor already fills the screen
+   and the app chrome auto-hides on scroll, while ancestors there create stacking
+   contexts (.editor z-index, main's translateY). Stay in flow and only drop
+   the toolbar/controls. */
+@media (max-width: 48rem), (max-height: 31.25rem) and (orientation: landscape) {
+  .focusMode {
+    position: static;
+    z-index: auto;
+  }
+}
+
+.focusMode .toolbar,
+.focusMode .headerActions,
+.focusMode .headerTags,
+.focusMode .controlsToggle {
+  display: none;
+}
+
+.focusMode .header,
+.focusMode .footer {
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
+  border-color: transparent;
+}
+
+.focusMode .header {
+  padding-top: 1.5rem;
+}
+
+.focusMode .footer {
+  opacity: 0.7;
+}
+
+.focusMode .tiptapContainer :global(.ProseMirror) {
+  max-width: 46rem;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+.focusToggle {
+  flex-shrink: 0;
+  color: var(--mui-palette-text-secondary);
+}
+
 .headingButton {
   font-size: 0.75rem;
   font-weight: 700;
@@ -221,13 +300,21 @@
 
 .tiptapContainer :global(.ProseMirror) {
   min-height: 100%;
+  /* Readable line length on wide screens; no effect in narrow panes. */
+  max-width: 50rem;
+  margin: 0 auto;
   font-size: 1rem;
+  line-height: 1.6;
   color: var(--mui-palette-text-primary);
   padding: 2rem 2.5rem;
   outline: none;
+  caret-color: var(--mui-palette-primary-main);
 }
 
-.tiptapContainer :global(.ProseMirror p.is-editor-empty:first-child::before) {
+/* Placeholders: a hint in the empty note, and the heading level in an empty
+   heading under the cursor. Empty paragraphs mid-note stay quiet. */
+.tiptapContainer :global(.ProseMirror p.is-editor-empty:first-child::before),
+.tiptapContainer :global(.ProseMirror :is(h1, h2, h3).is-empty::before) {
   content: attr(data-placeholder);
   float: left;
   color: var(--mui-palette-text-secondary);

@@ -23,9 +23,12 @@ import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
 import HtmlOutlinedIcon from '@mui/icons-material/HtmlOutlined';
 import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import type { Note, NoteListItem, Folder } from '../../types';
 import type { ExportFormat } from './TiptapEditor';
 import { TagPicker } from '../TagPicker';
+import { SHORTCUTS, shortcutLabel } from './shortcuts';
 import styles from './index.module.css';
 
 interface EditorHeaderProps {
@@ -33,6 +36,9 @@ interface EditorHeaderProps {
   title: string;
   onTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isMobile: boolean;
+  /** When true, only the title and the exit button are visible (CSS-driven). */
+  focusMode?: boolean;
+  onToggleFocusMode?: () => void;
   folders: Folder[];
   hasUnsavedChanges: boolean;
   isSaving: boolean;
@@ -50,6 +56,8 @@ export const EditorHeader = ({
   title,
   onTitleChange,
   isMobile,
+  focusMode = false,
+  onToggleFocusMode,
   folders,
   hasUnsavedChanges,
   isSaving,
@@ -113,6 +121,26 @@ export const EditorHeader = ({
           autoComplete="off"
           data-testid="editor-title-input"
         />
+        {onToggleFocusMode && (
+          <Tooltip
+            title={
+              focusMode
+                ? shortcutLabel(t('Editor.ExitFocusMode'), 'Esc')
+                : shortcutLabel(t('Editor.FocusMode'), SHORTCUTS.focusMode.keys)
+            }
+          >
+            <IconButton
+              data-testid="editor-focus-toggle"
+              aria-label={focusMode ? t('Editor.ExitFocusMode') : t('Editor.FocusMode')}
+              aria-pressed={focusMode}
+              size="small"
+              onClick={onToggleFocusMode}
+              className={styles.focusToggle}
+            >
+              {focusMode ? <CloseFullscreenIcon fontSize="small" /> : <OpenInFullIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
+        )}
         {isMobile && (
           <Tooltip title={t('Notes.Controls')}>
             <IconButton

@@ -235,3 +235,68 @@ describe('SingleNoteEditor save guards (ADR 0009)', () => {
     );
   });
 });
+
+describe('SingleNoteEditor focus mode', () => {
+  afterEach(() => cleanup());
+
+  const renderEditor = (isActive = true) => {
+    const note = sampleNote();
+    const store = buildStore(note);
+    const utils = render(
+      <Wrapper store={store}>
+        <SingleNoteEditor noteId={note.id} isActive={isActive} />
+      </Wrapper>,
+    );
+    return { ...utils, store, note };
+  };
+
+  const isFocused = () => screen.getByTestId('note-editor').hasAttribute('data-focus-mode');
+
+  it('toggles with Ctrl/Cmd+Shift+Enter and exits with Escape', () => {
+    renderEditor();
+    expect(isFocused()).toBe(false);
+
+    fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true, shiftKey: true });
+    expect(isFocused()).toBe(true);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(isFocused()).toBe(false);
+
+    fireEvent.keyDown(document, { key: 'Enter', metaKey: true, shiftKey: true });
+    expect(isFocused()).toBe(true);
+    fireEvent.keyDown(document, { key: 'Enter', metaKey: true, shiftKey: true });
+    expect(isFocused()).toBe(false);
+  });
+
+  it('ignores Escape already handled by a popover', () => {
+    renderEditor();
+    fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true, shiftKey: true });
+
+    const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    event.preventDefault();
+    document.dispatchEvent(event);
+
+    expect(isFocused()).toBe(true);
+  });
+
+  it('does not react to shortcuts when the editor tab is inactive', () => {
+    renderEditor(false);
+    fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true, shiftKey: true });
+    expect(isFocused()).toBe(false);
+  });
+
+  it('does not save on Ctrl+Shift+S (strikethrough)', () => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    tiptapState.content = '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"x"}]}]}';
+    tiptapState.isEmpty = false;
+    renderEditor();
+
+    fireEvent.keyDown(document, { key: 'S', ctrlKey: true, shiftKey: true });
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(mockedApi.update).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+});

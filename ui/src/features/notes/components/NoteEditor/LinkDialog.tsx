@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Box, TextField, Button, Popper, Paper, ClickAwayListener } from '@mui/material';
+import { Box, TextField, Button, Popper, Paper, ClickAwayListener, type PopperProps } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import type { Editor } from '@tiptap/core';
 import { validateAndNormalizeUrl } from './linkUtils';
@@ -16,18 +16,27 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
   const [showTextField, setShowTextField] = useState(false);
+  const [isEditingLink, setIsEditingLink] = useState(false);
+  const [invalid, setInvalid] = useState(false);
   const urlInputRef = useRef<HTMLInputElement>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
-  const anchorRef = useRef<HTMLElement | null>(null);
+  // State, not a ref: setting it must trigger the render that shows the popper,
+  // even when every other field already holds the value we reset it to.
+  const [anchor, setAnchor] = useState<PopperProps['anchorEl']>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setAnchor(null);
+      return;
+    }
 
     const { from, to } = editor.state.selection;
     const hasSelection = from !== to;
     const isOnLink = editor.isActive('link');
 
     let needsTextField = false;
+    setIsEditingLink(isOnLink);
+    setInvalid(false);
 
     if (isOnLink) {
       // Editing an existing link — pre-fill with current URL
@@ -50,19 +59,18 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
 
     // Anchor the popper to the editor's cursor position
     const coords = editor.view.coordsAtPos(from);
-    anchorRef.current = {
-      getBoundingClientRect: () => ({
-        top: coords.top,
-        bottom: coords.bottom,
-        left: coords.left,
-        right: coords.left,
-        width: 0,
-        height: coords.bottom - coords.top,
-        x: coords.left,
-        y: coords.top,
-        toJSON: () => ({}),
-      }),
-    } as HTMLElement;
+    const rect = {
+      top: coords.top,
+      bottom: coords.bottom,
+      left: coords.left,
+      right: coords.left,
+      width: 0,
+      height: coords.bottom - coords.top,
+      x: coords.left,
+      y: coords.top,
+      toJSON: () => ({}),
+    };
+    setAnchor({ getBoundingClientRect: () => rect });
 
     // Focus the appropriate input after mount
     setTimeout(() => {
@@ -75,15 +83,24 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
   }, [open, editor]);
 
   const handleSubmit = useCallback(() => {
-    const href = validateAndNormalizeUrl(url);
-    if (!href) {
+    const { from, to } = editor.state.selection;
+    const hasSelection = from !== to;
+    const isOnLink = editor.isActive('link');
+
+    // Clearing the URL of an existing link removes the link (keyboard-only unlink).
+    if (isOnLink && !url.trim()) {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
       onClose();
       return;
     }
 
-    const { from, to } = editor.state.selection;
-    const hasSelection = from !== to;
-    const isOnLink = editor.isActive('link');
+    const href = validateAndNormalizeUrl(url);
+    if (!href) {
+      // Keep the dialog open so the user can fix the URL instead of losing it.
+      setInvalid(true);
+      urlInputRef.current?.focus();
+      return;
+    }
 
     if (isOnLink) {
       // Update existing link's URL
@@ -108,12 +125,12 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
     onClose();
   }, [editor, url, text, onClose]);
 
-  if (!open || !anchorRef.current) return null;
+  if (!open || !anchor) return null;
 
   return (
     <Popper
       open
-      anchorEl={anchorRef.current}
+      anchorEl={anchor}
       placement="bottom-start"
       modifiers={[{ name: 'offset', options: { offset: [0, 8] } }]}
       style={{ zIndex: 1300 }}
@@ -142,13 +159,19 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
                 data-testid="link-dialog-text-input"
               />
             )}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
               <TextField
                 inputRef={urlInputRef}
                 size="small"
                 placeholder="https://"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setInvalid(false);
+                }}
+                error={invalid}
+                helperText={invalid ? t('Editor.InvalidLink') : undefined}
+                slotProps={{ htmlInput: { 'aria-label': t('Editor.LinkUrl') } }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -165,11 +188,12 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
               <Button
                 size="small"
                 variant="contained"
+                sx={{ mt: '0.25rem', flexShrink: 0 }}
                 onClick={handleSubmit}
-                disabled={!url.trim()}
+                disabled={!url.trim() && !isEditingLink}
                 data-testid="link-dialog-submit"
               >
-                {t('Common.Ok')}
+                {isEditingLink && !url.trim() ? t('Editor.Unlink') : t('Common.Ok')}
               </Button>
             </Box>
           </Box>
