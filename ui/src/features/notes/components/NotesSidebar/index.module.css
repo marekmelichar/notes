@@ -295,6 +295,18 @@
   }
 }
 
+.noteTreeItemRoot {
+  position: relative;
+}
+
+/* Out of flow so the hidden handle doesn't indent root notes; it shows in the gutter on hover. */
+.noteTreeItemRoot .dragHandle {
+  position: absolute;
+  left: 0.125rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .noteTreeItemActive {
   background-color: var(--mui-palette-action-selected);
 }

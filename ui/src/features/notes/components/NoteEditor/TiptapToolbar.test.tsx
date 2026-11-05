@@ -104,4 +104,25 @@ describe('TiptapToolbar', () => {
     await user.click(screen.getByTestId('toolbar-insert'));
     expect(onFilePicker).toHaveBeenCalledOnce();
   });
+
+  it('moves numbered list and quote into More on a phone-width screen', async () => {
+    const user = userEvent.setup();
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      ...original(query),
+      matches: query.includes('max-width: 48rem'),
+    })) as typeof window.matchMedia;
+    try {
+      const { editor } = renderToolbar();
+      expect(screen.queryByTestId('toolbar-ordered-list')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('toolbar-blockquote')).not.toBeInTheDocument();
+      expect(screen.getByTestId('toolbar-bullet-list')).toBeInTheDocument();
+
+      await user.click(screen.getByTestId('toolbar-more'));
+      await user.click(screen.getByTestId('toolbar-ordered-list'));
+      expect(editor.isActive('orderedList')).toBe(true);
+    } finally {
+      window.matchMedia = original;
+    }
+  });
 });

@@ -7,6 +7,8 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+  Divider,
+  useMediaQuery,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
@@ -57,6 +59,9 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
     };
   }, [editor]);
 
+  // Same breakpoint as the editor layout. On a phone, numbered list and quote move
+  // into More so the row fits without sideways scrolling (44px touch targets).
+  const compact = useMediaQuery('(max-width: 48rem)');
   const [headingAnchor, setHeadingAnchor] = useState<HTMLElement | null>(null);
   const [moreAnchor, setMoreAnchor] = useState<HTMLElement | null>(null);
 
@@ -72,7 +77,8 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
     editor.isActive('underline') ||
     editor.isActive('strike') ||
     editor.isActive('code') ||
-    editor.isActive('codeBlock');
+    editor.isActive('codeBlock') ||
+    (compact && (editor.isActive('orderedList') || editor.isActive('blockquote')));
 
   const run = (command: () => void) => {
     setHeadingAnchor(null);
@@ -176,16 +182,18 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
         >
           <FormatListBulletedIcon fontSize="small" />
         </ToolButton>
-        <ToolButton
-          label={t('Editor.OrderedList')}
-          shortcut={formatShortcut(['Mod', 'Shift', '7'])}
-          markdown="1."
-          testId="toolbar-ordered-list"
-          active={editor.isActive('orderedList')}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        >
-          <FormatListNumberedIcon fontSize="small" />
-        </ToolButton>
+        {!compact && (
+          <ToolButton
+            label={t('Editor.OrderedList')}
+            shortcut={formatShortcut(['Mod', 'Shift', '7'])}
+            markdown="1."
+            testId="toolbar-ordered-list"
+            active={editor.isActive('orderedList')}
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          >
+            <FormatListNumberedIcon fontSize="small" />
+          </ToolButton>
+        )}
         <ToolButton
           label={t('Editor.TaskList')}
           shortcut={formatShortcut(['Mod', 'Shift', '9'])}
@@ -196,16 +204,18 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
         >
           <ChecklistIcon fontSize="small" />
         </ToolButton>
-        <ToolButton
-          label={t('Editor.Blockquote')}
-          shortcut={formatShortcut(['Mod', 'Shift', 'B'])}
-          markdown=">"
-          testId="toolbar-blockquote"
-          active={editor.isActive('blockquote')}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        >
-          <FormatQuoteIcon fontSize="small" />
-        </ToolButton>
+        {!compact && (
+          <ToolButton
+            label={t('Editor.Blockquote')}
+            shortcut={formatShortcut(['Mod', 'Shift', 'B'])}
+            markdown=">"
+            testId="toolbar-blockquote"
+            active={editor.isActive('blockquote')}
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          >
+            <FormatQuoteIcon fontSize="small" />
+          </ToolButton>
+        )}
       </div>
 
       <div className={styles.toolbarGroup}>
@@ -236,6 +246,29 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
           </IconButton>
         </Tooltip>
         <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
+          {compact && (
+            <MoreItem
+              testId="toolbar-ordered-list"
+              label={t('Editor.OrderedList')}
+              shortcut={formatShortcut(['Mod', 'Shift', '7'])}
+              markdown="1."
+              selected={editor.isActive('orderedList')}
+              icon={<FormatListNumberedIcon fontSize="small" />}
+              onClick={() => run(() => editor.chain().focus().toggleOrderedList().run())}
+            />
+          )}
+          {compact && (
+            <MoreItem
+              testId="toolbar-blockquote"
+              label={t('Editor.Blockquote')}
+              shortcut={formatShortcut(['Mod', 'Shift', 'B'])}
+              markdown=">"
+              selected={editor.isActive('blockquote')}
+              icon={<FormatQuoteIcon fontSize="small" />}
+              onClick={() => run(() => editor.chain().focus().toggleBlockquote().run())}
+            />
+          )}
+          {compact && <Divider />}
           <MoreItem
             testId="toolbar-underline"
             label={t('Editor.Underline')}

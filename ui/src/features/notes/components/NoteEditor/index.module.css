@@ -96,21 +96,27 @@
   background-color: var(--mui-palette-action-selected);
 }
 
+/* Phone: one row that fits the screen. The toolbar shows 8 controls (numbered list and
+   quote live in More), spread edge to edge; buttons share the width up to a 44px target
+   and can shrink on very narrow screens instead of scrolling sideways. */
 @media (max-width: 48rem) {
   .toolbar {
     flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    justify-content: space-between;
+    gap: 0;
+    padding: 0.25rem;
+    overflow: hidden;
   }
 
-  .toolbar::-webkit-scrollbar {
-    height: 4px;
+  /* Scoped under .toolbar so it wins over the base .toolbarGroup rule below. */
+  .toolbar .toolbarGroup {
+    display: contents;
   }
 
-  .toolbarGroup {
-    flex-shrink: 0;
+  .toolbar :global(.MuiIconButton-root) {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 2.75rem;
   }
 }
 

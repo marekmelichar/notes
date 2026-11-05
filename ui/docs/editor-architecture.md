@@ -108,7 +108,7 @@ Configured in `useTiptapEditor.ts`:
 
 ## Writing
 
-The toolbar shows the controls you reach for while drafting: heading, bold, italic, lists, quote, link, and insert. Underline, strike, code, indent, and the horizontal rule sit in **More**, so the bar stays one short row and scrolls less on a phone. Image and file upload share one insert button — they open the same picker.
+The toolbar shows the controls you reach for while drafting: heading, bold, italic, lists, quote, link, and insert. Underline, strike, code, indent, and the horizontal rule sit in **More**, so the bar stays one short row. On a phone (`max-width: 48rem`) numbered list and quote move into More too, and the eight remaining controls spread across the row at up to 44px each, shrinking on very narrow screens instead of scrolling sideways. Image and file upload share one insert button — they open the same picker.
 
 **Focus mode** (`Ctrl/Cmd+Shift+Enter` toggles, `Esc` leaves; remembered in `notes.editor.focusMode`) hides the toolbar, the note actions, and the footer, and limits the line length to about 68 characters. The title and the focus button stay. `Ctrl/Cmd+S` still saves. The chord avoids `\`, which needs AltGr (reported as Ctrl+Alt) on Czech and German layouts. `Esc` that a popover (link dialog, bubble, menu) already handled does not leave focus mode. An unsaved note shows a dot on the focus button while chrome is hidden.
 
@@ -202,7 +202,7 @@ Toggled via `EditorHeader`:
 | `useEditorExport.test.ts` | 11 | Markdown/HTML export, title escaping, XSS prevention |
 | `linkValidation.test.ts` | 24 | Protocol blocking, URL normalization, edge cases |
 | `writingExtensions.test.ts` | 12 | Markdown shortcuts, empty-heading placeholder, stored tel:/ftp: links and null href render, validated `[label](url)`, autolink does not swallow the next word |
-| `TiptapToolbar.test.tsx` | 5 | Compact toolbar, markdown hints in More, heading menu (re-picking a level keeps it), link button does not unlink |
+| `TiptapToolbar.test.tsx` | 6 | Compact toolbar, phone layout moves numbered list and quote into More, markdown hints in More, heading menu (re-picking a level keeps it), link button does not unlink |
 | `LinkDialog.test.tsx` | 3 | Rejected URL stays open, https normalization, unlink |
 | `LinkBubbleMenu.test.tsx` | 5 | Opens on click (not on caret), before mount, shows the clicked link's URL, moves between links, Esc closes before focus mode hears it |
 | `focusPreference.test.ts` | 3 | Focus-mode localStorage round-trip |
