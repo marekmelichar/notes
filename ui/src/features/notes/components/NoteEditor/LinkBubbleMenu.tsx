@@ -78,6 +78,8 @@ export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProp
   // and the editor error boundary replaces the whole note.
   useEffect(() => {
     let dom: HTMLElement | null = null;
+    // Pending "show after the caret moves" ticks; cleared on detach and unmount.
+    const pending = new Set<number>();
 
     const show = (linkEl: HTMLElement) => {
       if (editor.isDestroyed || !dom?.contains(linkEl) || !editor.isActive('link')) return;
@@ -98,7 +100,11 @@ export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProp
       // Always wait a turn: the caret has not moved into the clicked link yet, so
       // isActive/getAttributes may still describe the previous link, and the
       // ClickAwayListener's dismiss for this same click must run before we show.
-      window.setTimeout(() => show(linkEl), 0);
+      const id = window.setTimeout(() => {
+        pending.delete(id);
+        show(linkEl);
+      }, 0);
+      pending.add(id);
     };
 
     const attach = () => {
@@ -111,6 +117,8 @@ export const LinkBubbleMenu = ({ editor, suspended = false }: LinkBubbleMenuProp
     };
 
     const detach = () => {
+      pending.forEach((id) => window.clearTimeout(id));
+      pending.clear();
       dom?.removeEventListener('click', onClick);
       dom = null;
     };

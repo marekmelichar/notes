@@ -143,4 +143,32 @@ describe('LinkBubbleMenu', () => {
     expect(screen.queryByTestId('link-bubble-open')).not.toBeInTheDocument();
     expect(pageHandler).not.toHaveBeenCalled();
   });
+
+  it('drops a pending show when the bubble unmounts before the next tick', async () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const editor = new Editor({
+      element: host,
+      extensions: buildEditorExtensions('Write'),
+      content: '<p><a href="https://example.com/docs">Docs</a> tail</p>',
+    });
+    mounts.push({ editor, host });
+    const view = render(
+      <ThemeProvider theme={theme}>
+        <LinkBubbleMenu editor={editor} />
+      </ThemeProvider>,
+    );
+    editor.commands.setTextSelection(2);
+    const clearSpy = vi.spyOn(window, 'clearTimeout');
+
+    host.querySelector('a')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    view.unmount();
+    expect(clearSpy).toHaveBeenCalled();
+    clearSpy.mockRestore();
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(screen.queryByTestId('link-bubble-open')).not.toBeInTheDocument();
+  });
 });

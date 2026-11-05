@@ -13,6 +13,7 @@ NoteEditor/
 ├── TiptapToolbar.tsx       # Compact formatting bar; secondary marks live in More
 ├── editorExtensions.ts     # TipTap extension list, safe links, markdown link input
 ├── useTiptapEditor.ts      # Hook — mounts the extension list and editor props
+├── placeholders.ts         # Empty-heading placeholder labels
 ├── shortcutLabel.ts        # Ctrl / ⌘ labels for toolbar tooltips
 ├── useFileUpload.ts        # File upload — paste/drop handling, size validation, placeholder nodes
 ├── useEditorExport.ts      # Export to markdown (Turndown) and HTML, with title injection
@@ -98,7 +99,7 @@ Configured in `useTiptapEditor.ts`:
 | Extension | Purpose | Config |
 |-----------|---------|--------|
 | StarterKit | Paragraph, headings, bold, italic, strike, code, lists, blockquote, code block, horizontal rule, and their markdown input rules | `link: false`, `underline: false` (registered separately below) |
-| SafeLink | Hyperlinks, autolink, `[label](url)` | `autolink: true`, `linkOnPaste: true`, `openOnClick: false`, `defaultProtocol: 'https'`, `inclusive: false`. `isAllowedUri` rejects empty and dangerous protocols |
+| SafeLink | Hyperlinks, autolink, `[label](url)` | `autolink: true`, `linkOnPaste: true`, `openOnClick: false`, `defaultProtocol: 'https'`, `inclusive: false`. `isAllowedUri` lets a missing href through and rejects dangerous protocols (TipTap's check + `isSafeLinkHref`) |
 | Image | Embedded images | `allowBase64: false` |
 | Underline | Underline formatting | defaults |
 | Task list / item | Checklists | task item `nested: true` |
@@ -131,7 +132,7 @@ An empty note's placeholder names the three shortcuts people forget (`#`, `-`, a
 ## Security
 
 **Link URL validation** has two levels:
-- **Typed links** (`validateAndNormalizeUrl`: link dialog, bubble edit, markdown `[label](url)` rule, content migration) allow only `http`, `https`, and `mailto`. Other explicit schemes (`ftp://`, `file://`) are rejected instead of being rewritten to `https://ftp://…`. A bare host gets `https://`, including `example.com:8080` and dot-free `localhost:3000`.
+- **Typed links** (`validateAndNormalizeUrl`: link dialog, bubble edit, markdown `[label](url)` rule, content migration) allow only `http`, `https`, and `mailto`. Other explicit schemes (`ftp://`, `file://`) are rejected instead of being rewritten to `https://ftp://…`. A bare host gets `https://`, including `example.com:8080` and dot-free `localhost:3000`; a protocol-relative `//example.com` gets `https:`; any other leading `/` (a path with no host) is rejected.
 - **Stored, pasted, and autolinked links** (`SafeLink.isAllowedUri`, which TipTap also runs on render and parse) use TipTap's own check plus `isSafeLinkHref`. Existing `tel:` or `ftp:` links keep their href, and a link mark with no href renders instead of throwing.
 - Both block `javascript:`, `data:`, `vbscript:`, including schemes split by whitespace or control characters (`java\nscript:`), via `isSafeLinkHref`.
 - All links render with `target="_blank" rel="noopener noreferrer"`
@@ -199,11 +200,12 @@ Toggled via `EditorHeader`:
 | `useAutoSave.test.ts` | 13 | Countdown, timer reset, save triggers, flush, cleanup |
 | `useFileUpload.test.ts` | 10 | Upload success/error, offline, size limit, noteId routing |
 | `useEditorExport.test.ts` | 11 | Markdown/HTML export, title escaping, XSS prevention |
-| `linkValidation.test.ts` | 24 | Protocol blocking, URL normalization, edge cases |
+| `linkValidation.test.ts` | 25 | Protocol blocking, URL normalization, edge cases |
 | `writingExtensions.test.ts` | 12 | Markdown shortcuts, empty-heading placeholder, stored tel:/ftp: links and null href render, validated `[label](url)`, autolink does not swallow the next word |
 | `TiptapToolbar.test.tsx` | 6 | Compact toolbar, phone layout moves numbered list and quote into More, markdown hints in More, heading menu (re-picking a level keeps it), link button does not unlink |
 | `LinkDialog.test.tsx` | 3 | Rejected URL stays open, https normalization, unlink |
-| `LinkBubbleMenu.test.tsx` | 5 | Opens on click (not on caret), before mount, shows the clicked link's URL, moves between links, Esc closes it before page-level handlers hear it |
+| `LinkBubbleMenu.test.tsx` | 6 | Opens on click (not on caret), before mount, pending show cleared on unmount, shows the clicked link's URL, moves between links, Esc closes it before page-level handlers hear it |
+| `placeholders.test.ts` | 2 | Heading placeholder labels, h4–h6 fallback |
 | `shortcutLabel.test.ts` | 4 | Ctrl vs ⌘ shortcut labels, tooltip hint formatting |
 | `EditorFooter.test.tsx` | 7 | Component rendering, all display states |
 | `editor.spec.ts` (E2E) | 3 | Save→reload persistence, title update, unsaved indicator |

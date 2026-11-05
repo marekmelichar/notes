@@ -31,6 +31,12 @@ export function validateAndNormalizeUrl(input: string): string | null {
 
   if (!isSafeLinkHref(trimmed)) return null;
 
+  // Protocol-relative (`//example.com/x`) is a host: give it https, not "https:////…".
+  // Any other leading slash is a path with no host, which can't be a link here.
+  if (trimmed.startsWith('/')) {
+    return /^\/\/[^/\s]/.test(trimmed) ? `https:${trimmed}` : null;
+  }
+
   const scheme = explicitScheme(trimmed);
   if (scheme) {
     return ALLOWED_SCHEMES.has(scheme) ? trimmed : null;

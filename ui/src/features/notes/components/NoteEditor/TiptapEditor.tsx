@@ -6,6 +6,7 @@ import type { JSONContent } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import { useFileUpload, isImageFile, FILE_ACCEPT } from './useFileUpload';
 import { formatShortcut } from './shortcutLabel';
+import { headingPlaceholder } from './placeholders';
 import { useEditorExport, type ExportFormat, type ExportResult } from './useEditorExport';
 import { useTiptapEditor } from './useTiptapEditor';
 import { TiptapToolbar } from './TiptapToolbar';
@@ -50,7 +51,7 @@ const TiptapEditorInner = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const placeholder = useCallback(
       (node: PMNode) =>
         node.type.name === 'heading'
-          ? t(`Editor.Heading${node.attrs.level as number}`)
+          ? headingPlaceholder(t, node.attrs.level)
           : t('Editor.Placeholder', { shortcut: formatShortcut(['Mod', 'K']) }) || 'Start writing...',
       [t],
     );

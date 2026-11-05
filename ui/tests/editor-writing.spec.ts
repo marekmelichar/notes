@@ -82,6 +82,9 @@ function watchErrors(page: Page) {
 
 test.describe.configure({ mode: 'serial' });
 
+/** Title of the note the writing test created, so the phone test opens that exact note. */
+let writingNoteTitle: string | null = null;
+
 test('editor writing, save, and persistence on the real stack', async ({ page }) => {
   test.setTimeout(180_000);
   writeFileSync(ATTACHMENT, 'local e2e attachment\n');
@@ -91,6 +94,7 @@ test('editor writing, save, and persistence on the real stack', async ({ page })
 
   await login(page);
   const title = `E2E editor ${Date.now()}`;
+  writingNoteTitle = title;
   await createNote(page, title);
 
   const editor = page.locator('.ProseMirror').first();
@@ -261,7 +265,16 @@ test('editor chrome fits a phone viewport', async ({ page }) => {
   watchErrors(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);
-  await page.getByRole('button', { name: /E2E editor/ }).first().click();
+  if (writingNoteTitle) {
+    // Exact title from this run, not the first leftover "E2E editor" note.
+    await page.getByRole('button', { name: writingNoteTitle }).first().click();
+    await expect(page.getByTestId('editor-title-input')).toHaveValue(writingNoteTitle, {
+      timeout: 15000,
+    });
+  } else {
+    // Run on its own (e.g. --grep): make a fresh note instead.
+    await createNote(page, `E2E phone ${Date.now()}`);
+  }
   const editor = page.locator('.ProseMirror').first();
   await expect(editor).toBeVisible({ timeout: 15000 });
 
