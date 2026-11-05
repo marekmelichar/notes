@@ -79,6 +79,7 @@ npm run test:coverage  # with coverage
 | `tests/notes.spec.ts` | Create/edit/delete/restore note flows |
 | `tests/editor.spec.ts` | Rich text formatting, save, autosave |
 | `tests/folders.spec.ts` | Folder create, rename, drag-into, delete cascade |
+| `tests/editor-writing.spec.ts` | Markdown shortcuts, links and the link bubble, file attachment, save/autosave/reload persistence, readable text column, phone layout (toolbar fits, footer above bottom nav). Needs the full stack (`docker compose up -d` + `npm run dev`). Optional env: `E2E_USER` / `E2E_PASSWORD` (default `testuser`), `E2E_ARTIFACTS` (directory for screenshots; none taken when unset). |
 
 ### Run
 

@@ -1,14 +1,20 @@
 import { test, expect, type Page } from '@playwright/test';
 import { accessSync, constants, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 /**
  * Editor flows against the real Vite dev server, Keycloak, API, and Postgres.
  * Credentials are the documented synthetic dev user from notes-dev-realm.json.
+ * Screenshots are opt-in: set E2E_ARTIFACTS to a writable directory.
  */
 const DEV_USER = process.env.E2E_USER ?? 'testuser';
 const DEV_PASSWORD = process.env.E2E_PASSWORD ?? 'testuser';
+const ATTACHMENT = join(tmpdir(), 'e2e-note.txt');
+
 function artifactDir(): string | null {
-  const dir = process.env.E2E_ARTIFACTS ?? '/opt/cursor/artifacts';
+  const dir = process.env.E2E_ARTIFACTS;
+  if (!dir) return null;
   try {
     mkdirSync(dir, { recursive: true });
     accessSync(dir, constants.W_OK);
@@ -78,7 +84,7 @@ test.describe.configure({ mode: 'serial' });
 
 test('editor writing, save, and persistence on the real stack', async ({ page }) => {
   test.setTimeout(180_000);
-  writeFileSync('/tmp/e2e-note.txt', 'local e2e attachment\n');
+  writeFileSync(ATTACHMENT, 'local e2e attachment\n');
   resetErrors();
   watchErrors(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -200,7 +206,7 @@ test('editor writing, save, and persistence on the real stack', async ({ page })
   await page.evaluate(() => {
     document.querySelector('.ProseMirror')?.editor?.chain().focus('end').run();
   });
-  await page.locator('input[type="file"]').setInputFiles('/tmp/e2e-note.txt');
+  await page.locator('input[type="file"]').setInputFiles(ATTACHMENT);
   await expect(editor).toContainText('e2e-note.txt', { timeout: 15000 });
 
   await page.getByTestId('toolbar-more').click();
