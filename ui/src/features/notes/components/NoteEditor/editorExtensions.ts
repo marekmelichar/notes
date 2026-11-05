@@ -1,5 +1,5 @@
 import { InputRule } from '@tiptap/core';
-import { Fragment } from '@tiptap/pm/model';
+import { Fragment, type Node as PMNode } from '@tiptap/pm/model';
 import StarterKit from '@tiptap/starter-kit';
 import Link, { isAllowedUri as tiptapIsAllowedUri } from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
@@ -53,7 +53,10 @@ export const SafeLink = Link.extend({
   },
 });
 
-export function buildEditorExtensions(placeholder: string) {
+/** A fixed string, or one per empty node (e.g. "Heading 2" in an empty heading). */
+export type EditorPlaceholder = string | ((node: PMNode) => string);
+
+export function buildEditorExtensions(placeholder: EditorPlaceholder) {
   return [
     StarterKit.configure({
       link: false,
@@ -77,6 +80,9 @@ export function buildEditorExtensions(placeholder: string) {
     TaskList,
     TaskItem.configure({ nested: true }),
     FileEmbedExtension,
-    Placeholder.configure({ placeholder }),
+    Placeholder.configure({
+      placeholder:
+        typeof placeholder === 'function' ? ({ node }) => placeholder(node) : placeholder,
+    }),
   ];
 }

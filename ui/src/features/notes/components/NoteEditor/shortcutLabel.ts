@@ -14,3 +14,19 @@ export function formatShortcut(parts: readonly string[]): string {
     })
     .join('+');
 }
+
+/** Joins the hints that are present, e.g. ["Ctrl+B", "**text**"] → "Ctrl+B · **text**". */
+export function joinHints(...hints: (string | undefined)[]): string {
+  return hints.filter((hint): hint is string => Boolean(hint)).join(' · ');
+}
+
+/**
+ * Tooltip text with optional hints, e.g. "Bold (Ctrl+B · **text**)".
+ * A markdown hint is what the user can type instead (an input rule), shown as-is.
+ */
+export function withHints(label: string, ...hints: (string | undefined)[]): string {
+  const joined = joinHints(...hints);
+  return joined ? `${label} (${joined})` : label;
+}
+
+export const FOCUS_MODE_SHORTCUT = ['Mod', 'Shift', 'Enter'] as const;

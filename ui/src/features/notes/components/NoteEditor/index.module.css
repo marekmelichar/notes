@@ -267,7 +267,10 @@
   outline: none;
 }
 
-.tiptapContainer :global(.ProseMirror p.is-editor-empty:first-child::before) {
+/* The empty-note hint, and the level of an empty heading under the caret.
+   Empty paragraphs mid-note stay quiet. */
+.tiptapContainer :global(.ProseMirror p.is-editor-empty:first-child::before),
+.tiptapContainer :global(.ProseMirror :is(h1, h2, h3).is-empty::before) {
   content: attr(data-placeholder);
   float: left;
   color: var(--mui-palette-text-secondary);

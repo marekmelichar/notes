@@ -226,7 +226,15 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     [markDirty],
   );
 
-  // Keyboard shortcut for save (Ctrl/Cmd + S) — only when active
+  const exitFocusMode = useCallback(() => {
+    setFocusMode((current) => {
+      if (current) writeFocusMode(false);
+      return false;
+    });
+  }, []);
+
+  // Editor-wide shortcuts — only when active:
+  // Ctrl/Cmd+S saves, Ctrl/Cmd+Shift+Enter toggles focus mode, Esc leaves it.
   useEffect(() => {
     if (!isActive) return;
 
@@ -236,10 +244,16 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
         saveNow();
         return;
       }
-      // Ctrl/Cmd+\ — hide chrome. Ignore key-repeat so holding the key doesn't flicker.
-      if (!e.repeat && (e.ctrlKey || e.metaKey) && e.key === '\\' && !e.altKey && !e.shiftKey) {
+      // Layout-neutral chord: on Czech/German layouts `\` needs AltGr (= Ctrl+Alt),
+      // so Ctrl+\ would be unreachable. Ignore key-repeat so holding it doesn't flicker.
+      if (!e.repeat && (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && e.key === 'Enter') {
         e.preventDefault();
         toggleFocusMode();
+        return;
+      }
+      // Popovers (link dialog, bubble, menus) consume Escape first.
+      if (e.key === 'Escape' && !e.defaultPrevented && !e.isComposing) {
+        exitFocusMode();
       }
     };
 
@@ -247,7 +261,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [saveNow, isActive, toggleFocusMode]);
+  }, [saveNow, isActive, toggleFocusMode, exitFocusMode]);
 
   // Warn about unsaved changes on tab close; best-effort save on unmount.
   useEffect(() => {

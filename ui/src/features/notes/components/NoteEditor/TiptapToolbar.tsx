@@ -26,7 +26,7 @@ import FormatIndentIncreaseIcon from '@mui/icons-material/FormatIndentIncrease';
 import FormatIndentDecreaseIcon from '@mui/icons-material/FormatIndentDecrease';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import type { Editor } from '@tiptap/core';
-import { formatShortcut } from './shortcutLabel';
+import { formatShortcut, joinHints, withHints } from './shortcutLabel';
 import styles from './index.module.css';
 
 interface TiptapToolbarProps {
@@ -138,7 +138,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
             >
               <ListItemText>{t(`Editor.Heading${level}`)}</ListItemText>
               <Typography variant="caption" className={styles.menuShortcut}>
-                {formatShortcut(['Mod', 'Alt', String(level)])}
+                {joinHints(formatShortcut(['Mod', 'Alt', String(level)]), '#'.repeat(level))}
               </Typography>
             </MenuItem>
           ))}
@@ -146,6 +146,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
         <ToolButton
           label={t('Editor.Bold')}
           shortcut={formatShortcut(['Mod', 'B'])}
+          markdown="**text**"
           testId="toolbar-bold"
           active={editor.isActive('bold')}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -155,6 +156,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
         <ToolButton
           label={t('Editor.Italic')}
           shortcut={formatShortcut(['Mod', 'I'])}
+          markdown="*text*"
           testId="toolbar-italic"
           active={editor.isActive('italic')}
           onClick={() => editor.chain().focus().toggleItalic().run()}
@@ -167,6 +169,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
         <ToolButton
           label={t('Editor.BulletList')}
           shortcut={formatShortcut(['Mod', 'Shift', '8'])}
+          markdown="-"
           testId="toolbar-bullet-list"
           active={editor.isActive('bulletList')}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -176,6 +179,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
         <ToolButton
           label={t('Editor.OrderedList')}
           shortcut={formatShortcut(['Mod', 'Shift', '7'])}
+          markdown="1."
           testId="toolbar-ordered-list"
           active={editor.isActive('orderedList')}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -185,6 +189,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
         <ToolButton
           label={t('Editor.TaskList')}
           shortcut={formatShortcut(['Mod', 'Shift', '9'])}
+          markdown="[ ]"
           testId="toolbar-task-list"
           active={editor.isActive('taskList')}
           onClick={() => editor.chain().focus().toggleTaskList().run()}
@@ -193,6 +198,8 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
         </ToolButton>
         <ToolButton
           label={t('Editor.Blockquote')}
+          shortcut={formatShortcut(['Mod', 'Shift', 'B'])}
+          markdown=">"
           testId="toolbar-blockquote"
           active={editor.isActive('blockquote')}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -205,6 +212,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
         <ToolButton
           label={editor.isActive('link') ? t('Editor.EditLink') : t('Editor.Link')}
           shortcut={formatShortcut(['Mod', 'K'])}
+          markdown="[text](url)"
           testId="toolbar-link"
           active={editor.isActive('link')}
           onClick={onLink}
@@ -240,6 +248,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
             testId="toolbar-strikethrough"
             label={t('Editor.Strikethrough')}
             shortcut={formatShortcut(['Mod', 'Shift', 'S'])}
+            markdown="~~text~~"
             selected={editor.isActive('strike')}
             icon={<StrikethroughSIcon fontSize="small" />}
             onClick={() => run(() => editor.chain().focus().toggleStrike().run())}
@@ -248,6 +257,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
             testId="toolbar-inline-code"
             label={t('Editor.InlineCode')}
             shortcut={formatShortcut(['Mod', 'E'])}
+            markdown="`code`"
             selected={editor.isActive('code')}
             icon={<CodeIcon fontSize="small" />}
             onClick={() => run(() => editor.chain().focus().toggleCode().run())}
@@ -255,6 +265,8 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
           <MoreItem
             testId="toolbar-code-block"
             label={t('Editor.CodeBlock')}
+            shortcut={formatShortcut(['Mod', 'Alt', 'C'])}
+            markdown="```"
             selected={editor.isActive('codeBlock')}
             icon={<IntegrationInstructionsOutlinedIcon fontSize="small" />}
             onClick={() => run(() => editor.chain().focus().toggleCodeBlock().run())}
@@ -278,6 +290,7 @@ export const TiptapToolbar = ({ editor, onFilePicker, onLink }: TiptapToolbarPro
           <MoreItem
             testId="toolbar-horizontal-rule"
             label={t('Editor.HorizontalRule')}
+            markdown="---"
             icon={<HorizontalRuleIcon fontSize="small" />}
             onClick={() => run(() => editor.chain().focus().setHorizontalRule().run())}
           />
@@ -293,13 +306,14 @@ interface ToolButtonProps {
   onClick: () => void;
   active?: boolean;
   shortcut?: string;
+  /** What to type instead, e.g. `**text**`. */
+  markdown?: string;
   children: ReactNode;
 }
 
-function ToolButton({ label, testId, onClick, active, shortcut, children }: ToolButtonProps) {
-  const title = shortcut ? `${label} (${shortcut})` : label;
+function ToolButton({ label, testId, onClick, active, shortcut, markdown, children }: ToolButtonProps) {
   return (
-    <Tooltip title={title}>
+    <Tooltip title={withHints(label, shortcut, markdown)}>
       <IconButton
         size="small"
         aria-label={label}
@@ -320,18 +334,20 @@ interface MoreItemProps {
   onClick: () => void;
   icon: ReactNode;
   shortcut?: string;
+  markdown?: string;
   selected?: boolean;
   disabled?: boolean;
 }
 
-function MoreItem({ testId, label, onClick, icon, shortcut, selected, disabled }: MoreItemProps) {
+function MoreItem({ testId, label, onClick, icon, shortcut, markdown, selected, disabled }: MoreItemProps) {
+  const hints = joinHints(shortcut, markdown);
   return (
     <MenuItem data-testid={testId} selected={selected} disabled={disabled} onClick={onClick}>
       <ListItemIcon>{icon}</ListItemIcon>
       <ListItemText>{label}</ListItemText>
-      {shortcut && (
+      {hints && (
         <Typography variant="caption" className={styles.menuShortcut}>
-          {shortcut}
+          {hints}
         </Typography>
       )}
     </MenuItem>

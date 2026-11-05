@@ -9,9 +9,20 @@ export function validateAndNormalizeUrl(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
 
-  if (DANGEROUS_PROTOCOL.test(trimmed)) return null;
+  if (!isSafeLinkHref(trimmed)) return null;
 
   return HAS_SAFE_PROTOCOL.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+/**
+ * Rejects dangerous schemes even when split by whitespace or control
+ * characters, which browsers ignore inside a scheme ("java\nscript:").
+ * Every link path (dialog, bubble, markdown rule, autolink, paste) goes
+ * through validateAndNormalizeUrl, so this is the one place to check.
+ */
+export function isSafeLinkHref(href: string): boolean {
+  // eslint-disable-next-line no-control-regex
+  return !DANGEROUS_PROTOCOL.test(href.replace(/[\s\u0000-\u001F]/g, ''));
 }
 
 /**

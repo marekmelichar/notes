@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateAndNormalizeUrl, truncateUrl } from './linkUtils';
+import { validateAndNormalizeUrl, truncateUrl, isSafeLinkHref } from './linkUtils';
 
 describe('Link URL validation', () => {
   describe('dangerous protocol blocking', () => {
@@ -22,6 +22,14 @@ describe('Link URL validation', () => {
 
     it('should block protocols with leading whitespace after trim', () => {
       expect(validateAndNormalizeUrl('  javascript:alert(1)  ')).toBeNull();
+    });
+
+    it('should block schemes split by whitespace or control characters', () => {
+      expect(validateAndNormalizeUrl('java\nscript:alert(1)')).toBeNull();
+      expect(validateAndNormalizeUrl('java\tscript:alert(1)')).toBeNull();
+      expect(validateAndNormalizeUrl('\u0001javascript:alert(1)')).toBeNull();
+      expect(isSafeLinkHref('jav\u0000ascript:alert(1)')).toBe(false);
+      expect(isSafeLinkHref('https://example.com/javascript:')).toBe(true);
     });
   });
 

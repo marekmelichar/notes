@@ -1,11 +1,11 @@
 import { useEditor } from '@tiptap/react';
 import type { JSONContent } from '@tiptap/core';
 import type { EditorView } from '@tiptap/pm/view';
-import { buildEditorExtensions } from './editorExtensions';
+import { buildEditorExtensions, type EditorPlaceholder } from './editorExtensions';
 
 interface UseTiptapEditorOptions {
   initialContent: JSONContent | undefined;
-  placeholder: string;
+  placeholder: EditorPlaceholder;
   className: string;
   handlePaste: (view: EditorView, event: ClipboardEvent) => boolean;
   handleDrop: (view: EditorView, event: Event) => boolean;

@@ -25,7 +25,7 @@ import LocalOfferOutlinedIcon from '@mui/icons-material/LocalOfferOutlined';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import type { Note, NoteListItem, Folder } from '../../types';
-import { formatShortcut } from './shortcutLabel';
+import { FOCUS_MODE_SHORTCUT, formatShortcut, withHints } from './shortcutLabel';
 import type { ExportFormat } from './TiptapEditor';
 import { TagPicker } from '../TagPicker';
 import styles from './index.module.css';
@@ -123,7 +123,11 @@ export const EditorHeader = ({
         />
         <Box className={styles.focusToggle}>
           <Tooltip
-            title={`${t(focusMode ? 'Editor.ExitFocusMode' : 'Editor.FocusMode')} (${formatShortcut(['Mod', '\\'])})`}
+            title={
+              focusMode
+                ? withHints(t('Editor.ExitFocusMode'), 'Esc', formatShortcut(FOCUS_MODE_SHORTCUT))
+                : withHints(t('Editor.FocusMode'), formatShortcut(FOCUS_MODE_SHORTCUT))
+            }
           >
             <IconButton
               data-testid="editor-focus-toggle"

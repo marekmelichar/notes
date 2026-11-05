@@ -248,7 +248,7 @@ describe('SingleNoteEditor save guards (ADR 0009)', () => {
     );
   });
 
-  it('toggles focus mode with Ctrl+\\ and stores the preference', () => {
+  it('toggles focus mode with Ctrl+Shift+Enter and stores the preference', () => {
     localStorage.removeItem(FOCUS_MODE_STORAGE_KEY);
     const note = sampleNote();
     const store = buildStore(note);
@@ -262,11 +262,53 @@ describe('SingleNoteEditor save guards (ADR 0009)', () => {
     const editor = screen.getByTestId('note-editor');
     expect(editor).toHaveAttribute('data-focus-mode', 'false');
 
-    fireEvent.keyDown(document, { key: '\\', ctrlKey: true });
+    fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true, shiftKey: true });
     expect(editor).toHaveAttribute('data-focus-mode', 'true');
     expect(localStorage.getItem(FOCUS_MODE_STORAGE_KEY)).toBe('1');
 
-    fireEvent.keyDown(document, { key: '\\', ctrlKey: true });
+    fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true, shiftKey: true });
+    expect(editor).toHaveAttribute('data-focus-mode', 'false');
+    expect(localStorage.getItem(FOCUS_MODE_STORAGE_KEY)).toBe('0');
+  });
+
+  it('ignores Ctrl+Enter and AltGr chords for focus mode', () => {
+    localStorage.removeItem(FOCUS_MODE_STORAGE_KEY);
+    const note = sampleNote();
+    const store = buildStore(note);
+
+    render(
+      <Wrapper store={store}>
+        <SingleNoteEditor noteId={note.id} isActive />
+      </Wrapper>,
+    );
+
+    const editor = screen.getByTestId('note-editor');
+    fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true });
+    fireEvent.keyDown(document, { key: 'Enter', ctrlKey: true, shiftKey: true, altKey: true });
+    expect(editor).toHaveAttribute('data-focus-mode', 'false');
+  });
+
+  it('leaves focus mode on Escape unless a popover already handled it', () => {
+    localStorage.setItem(FOCUS_MODE_STORAGE_KEY, '1');
+    const note = sampleNote();
+    const store = buildStore(note);
+
+    render(
+      <Wrapper store={store}>
+        <SingleNoteEditor noteId={note.id} isActive />
+      </Wrapper>,
+    );
+
+    const editor = screen.getByTestId('note-editor');
+    expect(editor).toHaveAttribute('data-focus-mode', 'true');
+
+    // A popover (link dialog, menu) consumed this Escape — stay focused.
+    const handled = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    handled.preventDefault();
+    fireEvent(document, handled);
+    expect(editor).toHaveAttribute('data-focus-mode', 'true');
+
+    fireEvent.keyDown(document, { key: 'Escape' });
     expect(editor).toHaveAttribute('data-focus-mode', 'false');
     expect(localStorage.getItem(FOCUS_MODE_STORAGE_KEY)).toBe('0');
   });

@@ -90,6 +90,24 @@ describe('editor writing shortcuts', () => {
     ]);
   });
 
+  it('shows the heading level as the placeholder of an empty heading', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const editor = new Editor({
+      element: host,
+      extensions: buildEditorExtensions((node) =>
+        node.type.name === 'heading' ? `Heading ${node.attrs.level as number}` : 'Write',
+      ),
+      content: '<p></p>',
+    });
+    mounts.push({ editor, host });
+
+    expect(host.querySelector('p')).toHaveAttribute('data-placeholder', 'Write');
+    editor.commands.focus();
+    typeText(editor, '## ');
+    expect(host.querySelector('h2')).toHaveAttribute('data-placeholder', 'Heading 2');
+  });
+
   it('converts [label](url) into a validated link and leaves the next word alone', () => {
     const editor = editorWith();
     typeText(editor, 'See [Docs](example.com) next');

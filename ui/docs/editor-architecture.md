@@ -110,9 +110,9 @@ Configured in `useTiptapEditor.ts`:
 
 The toolbar shows the controls you reach for while drafting: heading, bold, italic, lists, quote, link, and insert. Underline, strike, code, indent, and the horizontal rule sit in **More**, so the bar stays one short row and scrolls less on a phone. Image and file upload share one insert button — they open the same picker.
 
-**Focus mode** (`Ctrl/Cmd+\`, remembered in `notes.editor.focusMode`) hides the toolbar, the note actions, and the footer, and limits the line length to about 68 characters. The title and the focus button stay. `Ctrl/Cmd+S` still saves. An unsaved note shows a dot on the focus button while chrome is hidden.
+**Focus mode** (`Ctrl/Cmd+Shift+Enter` toggles, `Esc` leaves; remembered in `notes.editor.focusMode`) hides the toolbar, the note actions, and the footer, and limits the line length to about 68 characters. The title and the focus button stay. `Ctrl/Cmd+S` still saves. The chord avoids `\`, which needs AltGr (reported as Ctrl+Alt) on Czech and German layouts. `Esc` that a popover (link dialog, bubble, menu) already handled does not leave focus mode. An unsaved note shows a dot on the focus button while chrome is hidden.
 
-Markdown-style input and the matching shortcuts come from StarterKit (and are covered by `writingExtensions.test.ts`):
+Markdown-style input and the matching shortcuts come from StarterKit (and are covered by `writingExtensions.test.ts`). Toolbar tooltips and More-menu items show both, e.g. "Bold (Ctrl+B · \*\*text\*\*)":
 
 | Type this | Or press | Result |
 |-----------|----------|--------|
@@ -125,14 +125,14 @@ Markdown-style input and the matching shortcuts come from StarterKit (and are co
 
 `[label](url)` runs through the same `validateAndNormalizeUrl` check as the dialog. A `javascript:`, `data:`, or `vbscript:` target is left as typed text. Link marks are not inclusive, so the word you type after a finished link is not swallowed by it.
 
-An empty note's placeholder names the three shortcuts people forget (`#`, `-`, and the link shortcut). It only shows while the document is empty.
+An empty note's placeholder names the three shortcuts people forget (`#`, `-`, and the link shortcut). It only shows while the document is empty. An empty heading under the caret shows its level ("Heading 2") as a placeholder; empty paragraphs mid-note stay quiet.
 
 **Links.** The toolbar button and `Ctrl/Cmd+K` open one dialog: apply to the selection, edit the link under the caret, or insert text plus a URL. A rejected URL stays in the field with an error instead of closing the dialog. Editing an existing link offers Remove. The bubble (open, copy, edit, remove) appears when you click a link and goes away when you type or move the caret off it — it does not follow the caret through a sentence.
 
 ## Security
 
 **Link URL validation** (`linkUtils`, used by the link dialog, the bubble, the markdown `[label](url)` rule, and `SafeLink.isAllowedUri`, plus content migration):
-- Blocks `javascript:`, `data:`, `vbscript:` protocols
+- Blocks `javascript:`, `data:`, `vbscript:` protocols, including schemes split by whitespace or control characters (`java\nscript:`), via `isSafeLinkHref`
 - Auto-prefixes `https://` when no protocol specified
 - All links render with `target="_blank" rel="noopener noreferrer"`
 - `allowBase64: false` on images is unchanged; autolink uses `defaultProtocol: 'https'`
@@ -199,12 +199,12 @@ Toggled via `EditorHeader`:
 | `useAutoSave.test.ts` | 13 | Countdown, timer reset, save triggers, flush, cleanup |
 | `useFileUpload.test.ts` | 10 | Upload success/error, offline, size limit, noteId routing |
 | `useEditorExport.test.ts` | 11 | Markdown/HTML export, title escaping, XSS prevention |
-| `linkValidation.test.ts` | 15 | Protocol blocking, URL normalization, edge cases |
-| `writingExtensions.test.ts` | 8 | Markdown shortcuts, validated `[label](url)`, autolink does not swallow the next word |
-| `TiptapToolbar.test.tsx` | 4 | Compact toolbar, heading menu, link button does not unlink |
+| `linkValidation.test.ts` | 16 | Protocol blocking, URL normalization, edge cases |
+| `writingExtensions.test.ts` | 9 | Markdown shortcuts, empty-heading placeholder, validated `[label](url)`, autolink does not swallow the next word |
+| `TiptapToolbar.test.tsx` | 4 | Compact toolbar, markdown hints in More, heading menu, link button does not unlink |
 | `LinkDialog.test.tsx` | 3 | Rejected URL stays open, https normalization, unlink |
 | `LinkBubbleMenu.test.tsx` | 2 | Bubble opens on click, not while the caret merely sits in a link |
 | `focusPreference.test.ts` | 3 | Focus-mode localStorage round-trip |
-| `shortcutLabel.test.ts` | 2 | Ctrl vs ⌘ shortcut labels |
+| `shortcutLabel.test.ts` | 4 | Ctrl vs ⌘ shortcut labels, tooltip hint formatting |
 | `EditorFooter.test.tsx` | 7 | Component rendering, all display states |
 | `editor.spec.ts` (E2E) | 3 | Save→reload persistence, title update, unsaved indicator |

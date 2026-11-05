@@ -58,6 +58,9 @@ describe('TiptapToolbar', () => {
     await user.click(screen.getByTestId('toolbar-more'));
     expect(screen.getByTestId('toolbar-underline')).toBeInTheDocument();
     expect(screen.getByTestId('toolbar-code-block')).toBeInTheDocument();
+    // Menu items show the key chord and the markdown you can type instead.
+    expect(screen.getByTestId('toolbar-strikethrough')).toHaveTextContent('~~text~~');
+    expect(screen.getByTestId('toolbar-horizontal-rule')).toHaveTextContent('---');
   });
 
   it('opens the link dialog instead of removing an existing link', async () => {
