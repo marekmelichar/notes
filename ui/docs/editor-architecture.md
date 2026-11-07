@@ -10,8 +10,11 @@ NoteEditor/
 ├── EditorHeader.tsx        # Title input, folder/tag pickers, pin, delete, export, view toggle
 ├── TiptapEditor.tsx        # Editor rendering — toolbar, ProseMirror, markdown preview
 ├── EditorFooter.tsx        # Word/char count, auto-save countdown, last saved time
-├── TiptapToolbar.tsx       # Formatting buttons, link popover with URL validation
-├── useTiptapEditor.ts      # Hook — configures TipTap extensions (StarterKit, Link, Image, etc.)
+├── TiptapToolbar.tsx       # Compact formatting bar; secondary marks live in More
+├── editorExtensions.ts     # TipTap extension list, safe links, markdown link input
+├── useTiptapEditor.ts      # Hook — mounts the extension list and editor props
+├── placeholders.ts         # Empty-heading placeholder labels
+├── shortcutLabel.ts        # Ctrl / ⌘ labels for toolbar tooltips
 ├── useFileUpload.ts        # File upload — paste/drop handling, size validation, placeholder nodes
 ├── useEditorExport.ts      # Export to markdown (Turndown) and HTML, with title injection
 ├── contentMigration.ts     # BlockNote JSON → TipTap JSON migration (runs on content load)
@@ -25,7 +28,7 @@ SingleNoteEditor
 ├── EditorHeader        — title, actions, folder/tag pickers
 ├── ErrorBoundary
 │   └── TiptapEditor    — React.memo'd, only re-renders on viewMode/note change
-│       ├── TiptapToolbar  — formatting buttons, link input
+│       ├── TiptapToolbar  — primary formatting; More menu for the rest
 │       ├── EditorContent  — ProseMirror (editor mode)
 │       └── Markdown       — react-markdown preview (markdown mode)
 └── EditorFooter        — word count + auto-save status
@@ -95,18 +98,45 @@ Configured in `useTiptapEditor.ts`:
 
 | Extension | Purpose | Config |
 |-----------|---------|--------|
-| StarterKit | Paragraph, headings, bold, italic, strike, code, lists, blockquote, code block, horizontal rule | defaults |
-| Link | Hyperlinks | `autolink: false`, `linkOnPaste: false`, `openOnClick: false` |
+| StarterKit | Paragraph, headings, bold, italic, strike, code, lists, blockquote, code block, horizontal rule, and their markdown input rules | `link: false`, `underline: false` (registered separately below) |
+| SafeLink | Hyperlinks, autolink, `[label](url)` | `autolink: true`, `linkOnPaste: true`, `openOnClick: false`, `defaultProtocol: 'https'`, `inclusive: false`. `isAllowedUri` lets a missing href through and rejects dangerous protocols (TipTap's check + `isSafeLinkHref`) |
 | Image | Embedded images | `allowBase64: false` |
 | Underline | Underline formatting | defaults |
+| Task list / item | Checklists | task item `nested: true` |
+| File embed | Non-image uploads | custom node |
 | Placeholder | Empty editor placeholder text | i18n key `Editor.Placeholder` |
+
+## Writing
+
+The toolbar shows the controls you reach for while drafting: heading, bold, italic, lists, quote, link, and insert. Underline, strike, code, indent, and the horizontal rule sit in **More**, so the bar stays one short row. On a phone (`max-width: 48rem`) numbered list and quote move into More too, and the eight remaining controls spread across the row at up to 44px each, shrinking on very narrow screens instead of scrolling sideways. Image and file upload share one insert button — they open the same picker.
+
+**Line length.** On a wide pane the text column is capped at about 72 characters (`max-width: calc(72ch + 5rem)` on `.ProseMirror`, padding included) and centred; narrower panes are unaffected. There is no separate focus mode — the toolbar is already one short row and the sidebar and note list have their own collapse buttons.
+
+Markdown-style input and the matching shortcuts come from StarterKit (and are covered by `writingExtensions.test.ts`). Toolbar tooltips and More-menu items show both, e.g. "Bold (Ctrl+B · \*\*text\*\*)":
+
+| Type this | Or press | Result |
+|-----------|----------|--------|
+| `# `, `## `, `### ` | `Ctrl/Cmd+Alt+1/2/3` | Heading |
+| `- ` or `* ` | `Ctrl/Cmd+Shift+8` | Bullet list |
+| `1. ` | `Ctrl/Cmd+Shift+7` | Numbered list |
+| `[ ] ` | `Ctrl/Cmd+Shift+9` | Todo list |
+| `**bold**`, `*italic*` | `Ctrl/Cmd+B`, `Ctrl/Cmd+I` | Bold, italic |
+| `[label](url)` | `Ctrl/Cmd+K` | Link |
+
+`[label](url)` runs through the same `validateAndNormalizeUrl` check as the dialog. A `javascript:`, `data:`, or `vbscript:` target is left as typed text. Link marks are not inclusive, so the word you type after a finished link is not swallowed by it.
+
+An empty note's placeholder names the three shortcuts people forget (`#`, `-`, and the link shortcut). It only shows while the document is empty. An empty heading under the caret shows its level ("Heading 2") as a placeholder; empty paragraphs mid-note stay quiet.
+
+**Links.** The toolbar button and `Ctrl/Cmd+K` open one dialog: apply to the selection, edit the link under the caret, or insert text plus a URL. A rejected URL stays in the field with an error instead of closing the dialog. Editing an existing link offers Remove. The bubble (open, copy, edit, remove) appears when you click a link and goes away when you type, move the caret off it, or press `Esc` — it does not follow the caret through a sentence. It reads the URL from the clicked link, not the selection, and clicking another link moves it there.
 
 ## Security
 
-**Link URL validation** (TiptapToolbar + contentMigration):
-- Blocks `javascript:`, `data:`, `vbscript:` protocols
-- Auto-prefixes `https://` when no protocol specified
+**Link URL validation** has two levels:
+- **Typed links** (`validateAndNormalizeUrl`: link dialog, bubble edit, markdown `[label](url)` rule, content migration) allow only `http`, `https`, and `mailto`. Other explicit schemes (`ftp://`, `file://`) are rejected instead of being rewritten to `https://ftp://…`. A bare host gets `https://`, including `example.com:8080` and dot-free `localhost:3000`; a protocol-relative `//example.com` gets `https:`; any other leading `/` (a path with no host) is rejected.
+- **Stored, pasted, and autolinked links** (`SafeLink.isAllowedUri`, which TipTap also runs on render and parse) use TipTap's own check plus `isSafeLinkHref`. Existing `tel:` or `ftp:` links keep their href, and a link mark with no href renders instead of throwing.
+- Both block `javascript:`, `data:`, `vbscript:`, including schemes split by whitespace or control characters (`java\nscript:`), via `isSafeLinkHref`.
 - All links render with `target="_blank" rel="noopener noreferrer"`
+- `allowBase64: false` on images is unchanged; autolink uses `defaultProtocol: 'https'`
 
 **File uploads** (useFileUpload):
 - 100 MB size limit (client-side)
@@ -170,6 +200,12 @@ Toggled via `EditorHeader`:
 | `useAutoSave.test.ts` | 13 | Countdown, timer reset, save triggers, flush, cleanup |
 | `useFileUpload.test.ts` | 10 | Upload success/error, offline, size limit, noteId routing |
 | `useEditorExport.test.ts` | 11 | Markdown/HTML export, title escaping, XSS prevention |
-| `linkValidation.test.ts` | 15 | Protocol blocking, URL normalization, edge cases |
+| `linkValidation.test.ts` | 25 | Protocol blocking, URL normalization, edge cases |
+| `writingExtensions.test.ts` | 12 | Markdown shortcuts, empty-heading placeholder, stored tel:/ftp: links and null href render, validated `[label](url)`, autolink does not swallow the next word |
+| `TiptapToolbar.test.tsx` | 6 | Compact toolbar, phone layout moves numbered list and quote into More, markdown hints in More, heading menu (re-picking a level keeps it), link button does not unlink |
+| `LinkDialog.test.tsx` | 3 | Rejected URL stays open, https normalization, unlink |
+| `LinkBubbleMenu.test.tsx` | 6 | Opens on click (not on caret), before mount, pending show cleared on unmount, shows the clicked link's URL, moves between links, Esc closes it before page-level handlers hear it |
+| `placeholders.test.ts` | 2 | Heading placeholder labels, h4–h6 fallback |
+| `shortcutLabel.test.ts` | 4 | Ctrl vs ⌘ shortcut labels, tooltip hint formatting |
 | `EditorFooter.test.tsx` | 7 | Component rendering, all display states |
 | `editor.spec.ts` (E2E) | 3 | Save→reload persistence, title update, unsaved indicator |

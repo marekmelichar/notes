@@ -63,7 +63,8 @@ export const Header = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      // The note editor uses the same chord for links and preventDefaults it.
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k' && !e.defaultPrevented) {
         e.preventDefault();
         handleOpenSearch();
       }
@@ -109,9 +110,21 @@ export const Header = () => {
       <SearchInput onClick={handleOpenSearch} />
       <SearchDialog open={isSearchOpen} onClose={handleCloseSearch} />
 
-      <Stack direction={'row'} gap={1} alignItems="center">
-        <Button variant="contained" size="small" startIcon={isCreating ? <CircularProgress size={16} color="inherit" /> : <AddIcon />} onClick={handleCreateNote} disabled={isCreating} data-testid="header-new-note-button" className={styles.newNoteButton}>
-          {t('Notes.NewNote')}
+      <Stack direction={'row'} gap={1} alignItems="center" className={styles.actions}>
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={isCreating ? <CircularProgress size={16} color="inherit" /> : <AddIcon />}
+          onClick={handleCreateNote}
+          disabled={isCreating}
+          // Short label on a phone ("+ Note"); the accessible name stays "New Note".
+          aria-label={t('Notes.NewNote')}
+          data-testid="header-new-note-button"
+          className={styles.newNoteButton}
+        >
+          <span className={styles.newNoteLabel}>
+            {isMobile ? t('Notes.NewNoteShort') : t('Notes.NewNote')}
+          </span>
         </Button>
         <IconButton
           onClick={() => navigate(`/${ROUTE_CALENDAR}`)}

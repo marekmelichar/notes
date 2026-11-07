@@ -1,18 +1,11 @@
 import { useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import { CustomImageExtension } from './CustomImageExtension';
-import Underline from '@tiptap/extension-underline';
-import Placeholder from '@tiptap/extension-placeholder';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-import { FileEmbedExtension } from './FileEmbedExtension';
 import type { JSONContent } from '@tiptap/core';
 import type { EditorView } from '@tiptap/pm/view';
+import { buildEditorExtensions, type EditorPlaceholder } from './editorExtensions';
 
 interface UseTiptapEditorOptions {
   initialContent: JSONContent | undefined;
-  placeholder: string;
+  placeholder: EditorPlaceholder;
   className: string;
   handlePaste: (view: EditorView, event: ClipboardEvent) => boolean;
   handleDrop: (view: EditorView, event: Event) => boolean;
@@ -32,27 +25,7 @@ export function useTiptapEditor({
   onLinkShortcut,
 }: UseTiptapEditorOptions) {
   return useEditor({
-    extensions: [
-      StarterKit.configure({
-        link: false,
-        underline: false,
-      }),
-      Link.configure({
-        autolink: true,
-        linkOnPaste: true,
-        openOnClick: false,
-        HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
-      }),
-      CustomImageExtension.configure({
-        allowBase64: false,
-        HTMLAttributes: { class: 'editor-image' },
-      }),
-      Underline,
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      FileEmbedExtension,
-      Placeholder.configure({ placeholder }),
-    ],
+    extensions: buildEditorExtensions(placeholder),
     content: initialContent,
     editorProps: {
       attributes: {

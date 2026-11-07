@@ -166,8 +166,9 @@ export const FoldersSection = ({
                 <span className={styles.navItemCount}>{unfiledNotes.length}</span>
               </Box>
               <SortableContext items={unfiledNoteIds} strategy={verticalListSortingStrategy}>
+                {/* Unfiled notes sit at the root, not inside a folder: no tree indent. */}
                 {unfiledNotes.map((note) => (
-                  <SortableNote key={note.id} note={note} level={1} />
+                  <SortableNote key={note.id} note={note} level={0} />
                 ))}
               </SortableContext>
             </>
