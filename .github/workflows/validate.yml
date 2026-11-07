@@ -17,3 +17,9 @@ jobs:
           node-version: '22'
       - name: Validate documentation references
         run: node scripts/validate-docs.mjs
+
+  tests:
+    name: Tests
+    # On main, deploy.yml runs the tests before it builds images.
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/tests.yml

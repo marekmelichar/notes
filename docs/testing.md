@@ -130,10 +130,19 @@ The first run pulls the Postgres image (~150 MB).
 
 ## CI
 
-Today **CI does not run tests** — only image builds. This is a known gap.
+Tests run in GitHub Actions through the reusable workflow [`tests.yml`](../.github/workflows/tests.yml):
 
-- Adding `npm run test:run` and `dotnet test` to `.github/workflows/deploy.yml` (gated before the image build) is on the to-do list.
-- Pre-commit hook in this repo already runs `npm run lint && npm run build` — it does **not** run tests, to keep commits fast.
+- **Frontend:** `npm ci`, `npm run lint`, `npm run test:run` on Node 25, the same major as `ui/Dockerfile`.
+- **API:** `dotnet test` on the integration tests. Testcontainers starts a throwaway Postgres in the runner's Docker.
+
+When they run:
+
+- **Pull requests:** both suites, from [`validate.yml`](../.github/workflows/validate.yml).
+- **Push to `main`:** [`deploy.yml`](../.github/workflows/deploy.yml) runs the suite for the part that changed (`ui/` or `api/`) before it builds images. A failing test stops the build and the deploy. Docs-only changes run no tests and deploy nothing.
+
+Not in CI yet: the Playwright E2E specs (they need Keycloak, the API and Postgres running). The pre-commit hook runs `npm run lint && npm run build` but not tests, to keep commits fast.
+
+Node 25 turns on its own Web Storage, which hides jsdom's `localStorage` and crashes any test that imports the store. `vitest.config.ts` starts the test workers with `--no-experimental-webstorage`, so the suite runs on Node 22 and 25.
 
 ## Adding a test for a bug fix
 
