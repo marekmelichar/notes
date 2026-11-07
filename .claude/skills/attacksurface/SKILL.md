@@ -37,7 +37,7 @@ Don't guess from memory — read the ground truth, in roughly this order:
 1. **Compose files** (`docker-compose.prod.yml`, `docker-compose.yml`) — every service, image,
    published port (`ports:` = internet-facing), env/secret, volume, and mount (watch for
    `docker.sock`).
-2. **Edge config** (`deploy/nginx.conf`) — vhosts, TLS, which paths route to which upstream, what
+2. **Edge config** (the nettio-platform repo's `nginx/sites/*.conf`) — vhosts, TLS, which paths route to which upstream, what
    is public vs internal.
 3. **Frontend nginx** (`ui/nginx.conf`) and **API startup** (`api/EpoznamkyApi/Program.cs`) —
    headers, CORS, rate limits, auth wiring.

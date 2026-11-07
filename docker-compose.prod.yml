@@ -1,40 +1,8 @@
-name: nettio
+# Notes app. The edge proxy (nginx, certbot, TLS) lives in the nettio-platform repo;
+# this project only joins its external 'edge' network.
+name: notes
 
 services:
-  # Nginx Reverse Proxy with SSL
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: nettio-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./deploy/certbot/conf:/etc/letsencrypt:ro
-      - ./deploy/certbot/www:/var/www/certbot:ro
-      - /home/deploy/nettio/landing:/var/www/nettio:ro
-      - /home/deploy/itrackfood/web:/var/www/itrackfood:ro
-    # "always", not "unless-stopped": nginx was once left stopped by hand, and Docker
-    # then skipped it on every reboot (all sites down 18 Oct - 6 Nov 2026).
-    restart: always
-
-  # Certbot for SSL certificates.
-  # certbot-renew.sh runs `certbot renew --deploy-hook reload-nginx.sh`, so
-  # nginx gets a SIGHUP exactly when (and only when) a cert is actually
-  # renewed. docker.sock is mounted so the hook can signal the nginx
-  # container — see deploy/reload-nginx.sh for the security note.
-  certbot:
-    image: certbot/certbot
-    container_name: nettio-certbot
-    volumes:
-      - ./deploy/certbot/conf:/etc/letsencrypt
-      - ./deploy/certbot/www:/var/www/certbot
-      - ./deploy/certbot-renew.sh:/usr/local/bin/certbot-renew.sh:ro
-      - ./deploy/reload-nginx.sh:/usr/local/bin/reload-nginx.sh:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    entrypoint: ["/usr/local/bin/certbot-renew.sh"]
-    restart: unless-stopped
-
   # PostgreSQL Database
   postgres:
     image: postgres:16
@@ -124,8 +92,15 @@ services:
         aliases: [notes-frontend]
 
 volumes:
+  # Pinned to the existing volumes (created when the project was called "nettio").
+  # external: compose never creates or deletes them. Do NOT rename: an old, unused
+  # "notes_postgres_data" volume exists and must never be attached by accident.
   postgres_data:
+    name: nettio_postgres_data
+    external: true
   uploads_data:
+    name: nettio_uploads_data
+    external: true
 
 networks:
   # Created once on the VPS (docker network create edge); owned by nettio-platform.

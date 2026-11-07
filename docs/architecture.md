@@ -187,7 +187,7 @@ notes/
 | Add a translation | `ui/public/locales/{en,cs}/translation.json` |
 | Configure auth | `notes-{dev,prod}-realm.json` + reload Keycloak |
 | Change CI | `.github/workflows/deploy.yml` |
-| Change deploy stack | `docker-compose.prod.yml` + `deploy/nginx.conf` |
+| Change deploy stack | `docker-compose.prod.yml` (routing/TLS: nettio-platform repo, `nginx/sites/notes.conf`) |
 
 ## See also
 
