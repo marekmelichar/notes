@@ -91,7 +91,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Authority = keycloakAuthority;
-        options.Audience = "account";
         // Container-to-container communication uses HTTP — HTTPS is enforced at the Nginx edge
         options.RequireHttpsMetadata = false;
         options.TokenValidationParameters = new TokenValidationParameters
@@ -101,7 +100,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ValidIssuer = keycloakIssuer,
-            ValidAudience = "account",
+            // "notes-api" comes from an audience mapper on the notes-frontend client.
+            // "account" is accepted only while tokens issued before that mapper are still
+            // around; remove it once every live token carries "notes-api" (see ADR 0010).
+            ValidAudiences = ["notes-api", "account"],
             NameClaimType = "preferred_username",
             RoleClaimType = "realm_access"
         };
