@@ -16,11 +16,11 @@ flowchart TB
         subgraph Edge[nettio-platform repo — /opt/nettio-platform]
             Nginx[edge-nginx<br/>:80, :443]
             Certbot[edge-certbot<br/>renew loop]
+            KC[auth-keycloak 26.0.8<br/>realm nettio, own DB]
         end
         subgraph Compose[docker-compose.prod.yml — /opt/notes]
             UI[frontend:latest<br/>:3000 internal]
             API[api:latest<br/>:8080 internal]
-            KC[keycloak:26.0<br/>:8080 internal]
             DB[(postgres:16)]
         end
         EnvFile[.env<br/>secrets]
@@ -38,6 +38,7 @@ flowchart TB
     Nginx -->|edge network| UI
     Nginx -->|edge network| API
     Nginx -->|edge network| KC
+    API -->|edge network: keys| KC
 ```
 
 ## CI/CD pipeline
@@ -66,12 +67,11 @@ If a change touches **only docs** (or another non-deploying path), the workflow 
 
 ## Production stack
 
-`docker-compose.prod.yml` (compose project `notes`) defines four services. TLS, the reverse proxy and the landing page belong to the separate **nettio-platform** repo; `frontend`, `api` and `keycloak` also join its external `edge` network as `notes-frontend`, `notes-api` and `notes-keycloak`.
+`docker-compose.prod.yml` (compose project `notes`) defines three services. TLS, the reverse proxy, the landing page and the **shared login** (Keycloak, realm `nettio`, at `https://auth.nettio.eu`) belong to the separate **nettio-platform** repo; `frontend` and `api` also join its external `edge` network as `notes-frontend` and `notes-api`, and the API reaches Keycloak there as `auth-keycloak`.
 
 | Service | Image | Purpose | Notes |
 |---|---|---|---|
-| `postgres` | `postgres:16` | Both `notes` and `keycloak` DBs | External volume `nettio_postgres_data` (pinned name; never rename), init `init-db.sql` |
-| `keycloak` | `quay.io/keycloak/keycloak:26.0` | Auth | `start --import-realm` from `notes-prod-realm.json`; `KC_HOSTNAME=https://notes.nettio.eu`, admin host `https://auth.nettio.eu`, `--proxy-headers xforwarded` |
+| `postgres` | `postgres:16` | `notes` DB (its old `keycloak` DB is unused since the move to the shared login) | External volume `nettio_postgres_data` (pinned name; never rename), init `init-db.sql` |
 | `api` | `ghcr.io/<repo>/api:latest` | .NET API | External volume `nettio_uploads_data:/app/uploads` |
 | `frontend` | `ghcr.io/<repo>/frontend:latest` | React SPA via internal Nginx | `docker-entrypoint.sh` rewrites `env.js` from `${API_URL}`, `${KEYCLOAK_URL}`, `${KEYCLOAK_REALM}`, `${KEYCLOAK_CLIENT_ID}` |
 
@@ -83,8 +83,6 @@ Production reads from `/opt/notes/.env` on the host. Template at the repo root: 
 |---|---|---|
 | `POSTGRES_USER` | yes | Postgres superuser |
 | `POSTGRES_PASSWORD` | **yes** | `:?` syntax in compose — fails fast if missing |
-| `KEYCLOAK_ADMIN` | yes | Keycloak admin username |
-| `KEYCLOAK_ADMIN_PASSWORD` | **yes** | `:?` syntax — fails fast if missing |
 | `GITHUB_REPOSITORY` | yes | For GHCR image URI (e.g. `marekmelichar/notes`) |
 
 The `:?` syntax means the deploy will refuse to start if those secrets are absent — this is intentional. Put them in `.env`, never in compose or git.
@@ -97,9 +95,9 @@ Lives in the **nettio-platform** repo (`nginx/sites/notes.conf` and `auth.conf`)
 - TLSv1.2+, HSTS, secure ciphers
 - `notes.nettio.eu`:
   - `/api/` → `notes-api:8080`
-  - `/realms/`, `/resources/`, `/js/` → `notes-keycloak:8080` (with proxy buffer tuning)
+  - `/realms/notes/*` → 301 to `https://auth.nettio.eu/realms/nettio/*`; other `/realms/`, `/resources/`, `/js/` → 301 to `auth.nettio.eu` (old links)
   - everything else → `notes-frontend:80` (which itself does SPA fallback)
-- `auth.nettio.eu` → Keycloak admin
+- `auth.nettio.eu` → the shared Keycloak (login for every project, admin console under `/admin/`)
 - `client_max_body_size 101m` for the API location (matches the 100 MB upload cap + headers)
 
 ## Deploy procedures
@@ -191,7 +189,7 @@ curl -I https://notes.nettio.eu/               # 200
 curl -I https://notes.nettio.eu/env.js         # 200, no-store
 
 # Keycloak well-known
-curl https://notes.nettio.eu/realms/notes/.well-known/openid-configuration | jq .issuer
+curl https://auth.nettio.eu/realms/nettio/.well-known/openid-configuration | jq .issuer
 ```
 
 If anything 5xx's, head straight to [operations.md → troubleshooting](./operations.md#troubleshooting).

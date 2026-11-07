@@ -117,7 +117,7 @@ Anonymous requests share a single bucket. The 401 silent-refresh on the frontend
 - **Repo**: only `.env.example` (no real values).
 - **Production**: `/opt/notes/.env`, owned by the deploy user, mode `600`.
 - **CI**: GitHub Actions secrets (`VPS_*`, `GITHUB_TOKEN`).
-- **Keycloak admin password**: required via `${KEYCLOAK_ADMIN_PASSWORD:?}` — compose refuses to start if missing. Rotate by `kcadm.sh` inside the container.
+- **Keycloak admin password**: production Keycloak is the shared login in the nettio-platform repo (`auth-keycloak`); its master-realm admin was migrated with the database. Rotate with `kcadm.sh` inside that container. (`KEYCLOAK_ADMIN_PASSWORD` is only used by the local dev compose.)
 - **Database password**: same `:?` enforcement.
 
 If a secret leaks:

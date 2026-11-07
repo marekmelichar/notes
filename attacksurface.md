@@ -139,17 +139,17 @@ Each system is one `## System` block with a fixed set of fields so entries stay 
 ## System: Keycloak (identity provider)
 
 - **Type:** auth / IdP (OIDC) — both a web property (login + admin console) and a token API
-- **Hosting:** self-hosted (container `nettio-auth`, `quay.io/keycloak/keycloak:26.0`)
-- **Tech:** Keycloak 26, realm `notes`, Postgres-backed (`keycloak` DB). Realm export `notes-prod-realm.json`.
+- **Hosting:** self-hosted in the nettio-platform repo (container `auth-keycloak`, `quay.io/keycloak/keycloak:26.0.8`), shared by every nettio.eu project
+- **Tech:** Keycloak 26, realm `nettio` (renamed from `notes` in Nov 2026; user IDs unchanged), own Postgres `auth-db`. `notes-prod-realm.json` is the historical realm export.
 - **Authentication:**
-  - End users: username/password → realm `notes` (Keycloak owns all credentials; the app never sees them)
-  - Admin: `KEYCLOAK_ADMIN` / `KEYCLOAK_ADMIN_PASSWORD` bootstrap creds (from host `.env`), console on `auth.nettio.eu`
+  - End users: username/password → realm `nettio` (Keycloak owns all credentials; the app never sees them)
+  - Admin: master-realm admin (migrated with the database), console on `auth.nettio.eu`
   - Clients: `notes-frontend` is a **public** client, standard flow + PKCE S256
 - **Exposure:**
-  - `public` — user-facing OIDC endpoints via `notes.nettio.eu/realms/`
+  - `public` — user-facing OIDC endpoints via `auth.nettio.eu/realms/nettio/` (old `notes.nettio.eu/realms/` paths redirect)
   - `public` — **admin console at `auth.nettio.eu`** (guarded only by admin credentials; not IP/VPN-restricted)
   - `internal-only` — container listens on `:8080`, reached only through the edge
-- **Deployed here:** realm `notes` (roles `user` default, `admin`), client `notes-frontend`, all user identities/sessions.
+- **Deployed here:** realm `nettio` (roles `user` default, `admin`), client `notes-frontend`, all user identities/sessions.
 - **Defenses:**
   - Brute-force protection enabled (`bruteForceProtected: true`)
   - Access-token TTL 300s; SSO idle 30d / max 365d

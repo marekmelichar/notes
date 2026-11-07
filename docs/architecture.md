@@ -172,7 +172,7 @@ notes/
 |---|---|---|---|---|
 | **Local dev (Vite)** | `http://localhost:5173` | `http://localhost:5001` | `http://localhost:8080` | `localhost:5432` |
 | **Local dev (Docker)** | `http://localhost:3000` | `http://localhost:5001` | `http://localhost:8080` | `localhost:5432` |
-| **Production** | `https://notes.nettio.eu` | `https://notes.nettio.eu/api/` | `https://auth.nettio.eu` (admin) / `https://notes.nettio.eu/realms/` (clients) | internal Docker network |
+| **Production** | `https://notes.nettio.eu` | `https://notes.nettio.eu/api/` | `https://auth.nettio.eu` (shared login, realm `nettio`; nettio-platform repo) | internal Docker network |
 
 ## What lives where (cheat sheet)
 
