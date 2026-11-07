@@ -1,6 +1,6 @@
 # Contributing
 
-This is a private project, but the same rules apply as if it weren't: small atomic commits, descriptive messages, working code on `main`. The point of this file is to make those defaults explicit so future you (or an AI assistant) doesn't have to guess.
+This is a one-person project, open source under the [MIT license](./LICENSE), run with team rules: small atomic commits, descriptive messages, working code on `main`. The point of this file is to make those defaults explicit so future you (or an AI assistant) doesn't have to guess.
 
 ## Workflow
 
