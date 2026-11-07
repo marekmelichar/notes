@@ -85,7 +85,7 @@ Set in middleware (`Program.cs`) and `ui/nginx.conf`:
 | `X-Content-Type-Options` | `nosniff` | API (`Program.cs`) + UI Nginx |
 | `X-Frame-Options` | `DENY` (API responses) / `SAMEORIGIN` (UI responses) | API sets `DENY`; UI Nginx sets `SAMEORIGIN`. Each origin response carries its own value. |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | API |
-| `Strict-Transport-Security` | `max-age=…` | Edge Nginx (`deploy/nginx.conf`) |
+| `Strict-Transport-Security` | `max-age=…` | Edge Nginx (nettio-platform `nginx/snippets/tls.conf`) |
 | `X-XSS-Protection` | `1; mode=block` | UI Nginx (legacy header, harmless) |
 
 There's an integration test in `api/EpoznamkyApi.IntegrationTests/Tests/CrossCutting/SecurityHeadersTests.cs` that locks the API's `X-Frame-Options: DENY`. If you change the value, update the test.
@@ -115,7 +115,7 @@ Anonymous requests share a single bucket. The 401 silent-refresh on the frontend
 ## Secrets handling
 
 - **Repo**: only `.env.example` (no real values).
-- **Production**: `/opt/nettio/.env`, owned by the deploy user, mode `600`.
+- **Production**: `/opt/notes/.env`, owned by the deploy user, mode `600`.
 - **CI**: GitHub Actions secrets (`VPS_*`, `GITHUB_TOKEN`).
 - **Keycloak admin password**: required via `${KEYCLOAK_ADMIN_PASSWORD:?}` — compose refuses to start if missing. Rotate by `kcadm.sh` inside the container.
 - **Database password**: same `:?` enforcement.

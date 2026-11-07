@@ -12,31 +12,32 @@ flowchart TB
         GHCR[(ghcr.io<br/>frontend:latest<br/>api:latest)]
     end
 
-    subgraph VPS[Production VPS — /opt/nettio]
-        subgraph Compose[docker-compose.prod.yml]
-            Nginx[nginx:1.27-alpine<br/>:80, :443]
-            Certbot[certbot<br/>renew loop]
+    subgraph VPS[Production VPS]
+        subgraph Edge[nettio-platform repo — /opt/nettio-platform]
+            Nginx[edge-nginx<br/>:80, :443]
+            Certbot[edge-certbot<br/>renew loop]
+        end
+        subgraph Compose[docker-compose.prod.yml — /opt/notes]
             UI[frontend:latest<br/>:3000 internal]
             API[api:latest<br/>:8080 internal]
             KC[keycloak:26.0<br/>:8080 internal]
             DB[(postgres:16)]
         end
         EnvFile[.env<br/>secrets]
-        Landing[/landing/]
     end
 
     Repo -->|push to main| Actions
     Actions -->|build + push| GHCR
-    Actions -->|scp compose + nginx| VPS
+    Actions -->|scp compose| VPS
     Actions -->|ssh: pull + up -d| Compose
     GHCR -.->|pull on deploy| UI
     GHCR -.->|pull on deploy| API
     EnvFile -.->|env_file| Compose
 
     User((User)) -->|HTTPS| Nginx
-    Nginx --> UI
-    Nginx --> API
-    Nginx --> KC
+    Nginx -->|edge network| UI
+    Nginx -->|edge network| API
+    Nginx -->|edge network| KC
 ```
 
 ## CI/CD pipeline
@@ -50,7 +51,7 @@ Jobs (path-filtered via `dorny/paths-filter`):
 | `changes` | always | Determines which paths changed |
 | `build-api` | `api/**` changed | Docker build → push `ghcr.io/<repo>/api:{latest, sha}` |
 | `build-ui` | `ui/**` changed | Docker build → push `ghcr.io/<repo>/frontend:{latest, sha}` |
-| `deploy` | any of above succeeded **or** `docker-compose.prod.yml`/`deploy/**`/`init-db.sql`/`notes-prod-realm.json` changed | scp configs to `/opt/nettio`; ssh `docker compose pull && up -d && image prune` |
+| `deploy` | any of above succeeded **or** `docker-compose.prod.yml`/`init-db.sql`/`notes-prod-realm.json` changed | scp configs to `/opt/notes`; ssh `docker compose pull && up -d && image prune` |
 
 If a change touches **only docs** (or another non-deploying path), the workflow runs but every build skips and `deploy` is gated off — the system is left untouched.
 
@@ -65,20 +66,18 @@ If a change touches **only docs** (or another non-deploying path), the workflow 
 
 ## Production stack
 
-`docker-compose.prod.yml` defines six services:
+`docker-compose.prod.yml` (compose project `notes`) defines four services. TLS, the reverse proxy and the landing page belong to the separate **nettio-platform** repo; `frontend`, `api` and `keycloak` also join its external `edge` network as `notes-frontend`, `notes-api` and `notes-keycloak`.
 
 | Service | Image | Purpose | Notes |
 |---|---|---|---|
-| `nginx` | `nginx:1.27-alpine` | TLS edge, reverse proxy, landing page | Mounts `deploy/nginx.conf`, `deploy/certbot/conf` |
-| `certbot` | `certbot/certbot` | Renew Let's Encrypt every 12h | Writes into shared volume |
-| `postgres` | `postgres:16` | Both `notes` and `keycloak` DBs | Volume `postgres_data`, init `init-db.sql` |
+| `postgres` | `postgres:16` | Both `notes` and `keycloak` DBs | External volume `nettio_postgres_data` (pinned name; never rename), init `init-db.sql` |
 | `keycloak` | `quay.io/keycloak/keycloak:26.0` | Auth | `start --import-realm` from `notes-prod-realm.json`; `KC_HOSTNAME=https://notes.nettio.eu`, admin host `https://auth.nettio.eu`, `--proxy-headers xforwarded` |
-| `api` | `ghcr.io/<repo>/api:latest` | .NET API | Volume `uploads_data:/app/uploads` |
+| `api` | `ghcr.io/<repo>/api:latest` | .NET API | External volume `nettio_uploads_data:/app/uploads` |
 | `frontend` | `ghcr.io/<repo>/frontend:latest` | React SPA via internal Nginx | `docker-entrypoint.sh` rewrites `env.js` from `${API_URL}`, `${KEYCLOAK_URL}`, `${KEYCLOAK_REALM}`, `${KEYCLOAK_CLIENT_ID}` |
 
 ### Required environment variables
 
-Production reads from `/opt/nettio/.env` on the host. Template at the repo root: `.env.example`.
+Production reads from `/opt/notes/.env` on the host. Template at the repo root: `.env.example`.
 
 | Variable | Required | Notes |
 |---|---|---|
@@ -92,14 +91,14 @@ The `:?` syntax means the deploy will refuse to start if those secrets are absen
 
 ## Edge Nginx config
 
-`deploy/nginx.conf` (mounted into the `nginx` container):
+Lives in the **nettio-platform** repo (`nginx/sites/notes.conf` and `auth.conf`), served by `edge-nginx`:
 
 - HTTP → HTTPS redirect (with ACME challenge passthrough)
 - TLSv1.2+, HSTS, secure ciphers
 - `notes.nettio.eu`:
-  - `/api/` → `api:8080`
-  - `/realms/`, `/resources/`, `/js/` → `keycloak:8080` (with proxy buffer tuning)
-  - everything else → `frontend:3000` (which itself does SPA fallback)
+  - `/api/` → `notes-api:8080`
+  - `/realms/`, `/resources/`, `/js/` → `notes-keycloak:8080` (with proxy buffer tuning)
+  - everything else → `notes-frontend:80` (which itself does SPA fallback)
 - `auth.nettio.eu` → Keycloak admin
 - `client_max_body_size 101m` for the API location (matches the 100 MB upload cap + headers)
 
@@ -139,7 +138,7 @@ docker build -t ghcr.io/<repo>/api:latest ./api/EpoznamkyApi && docker push !$
 docker build -t ghcr.io/<repo>/frontend:latest ./ui && docker push !$
 
 # Deploy
-ssh deploy@<vps> 'cd /opt/nettio \
+ssh deploy@<vps> 'cd /opt/notes \
   && docker compose -f docker-compose.prod.yml pull \
   && docker compose -f docker-compose.prod.yml up -d \
   && docker image prune -f'
@@ -151,7 +150,7 @@ Every build is also tagged with the commit SHA. To roll back:
 
 ```bash
 ssh deploy@<vps>
-cd /opt/nettio
+cd /opt/notes
 # Find the SHA you want
 docker images | grep -E '(api|frontend)'
 # Edit docker-compose.prod.yml to pin :{sha} for the affected service
@@ -168,7 +167,7 @@ Migrations are **not** auto-applied in production (only Development). After a de
 
 ```bash
 ssh deploy@<vps>
-cd /opt/nettio
+cd /opt/notes
 docker compose -f docker-compose.prod.yml exec api dotnet ef database update
 ```
 
@@ -203,7 +202,7 @@ If anything 5xx's, head straight to [operations.md → troubleshooting](./operat
 |---|---|
 | CI workflow | `.github/workflows/deploy.yml` |
 | Prod compose | `docker-compose.prod.yml` |
-| Edge Nginx | `deploy/nginx.conf` |
+| Edge Nginx | nettio-platform repo: `nginx/sites/notes.conf`, `auth.conf` |
 | Frontend Nginx (in-container) | `ui/nginx.conf` |
 | Frontend runtime config injection | `ui/docker-entrypoint.sh` |
 | Env template | `.env.example` |

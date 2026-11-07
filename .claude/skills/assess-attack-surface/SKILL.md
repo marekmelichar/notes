@@ -20,7 +20,7 @@ DoS/destructive tests against production.
 ## Inputs
 
 - The target system's `## System` block in `attacksurface.md` (start there — it says what to expect).
-- The ground-truth config for that system (compose, `deploy/nginx.conf`, `Program.cs`, realm JSON,
+- The ground-truth config for that system (compose, the nettio-platform repo's `nginx/sites/*.conf`, `Program.cs`, realm JSON,
   workflows — see the discovery list in the `attacksurface` skill).
 
 ## Procedure

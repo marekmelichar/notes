@@ -46,8 +46,8 @@ Each system is one `## System` block with a fixed set of fields so entries stay 
 ## System: Edge Nginx reverse proxy
 
 - **Type:** reverse proxy / TLS edge (also serves the static landing site)
-- **Hosting:** self-hosted (Docker container `nettio-nginx` on the VPS)
-- **Tech:** `nginx:1.27-alpine`, config in `deploy/nginx.conf`
+- **Hosting:** self-hosted (Docker container `edge-nginx` on the VPS, repo `nettio-platform`)
+- **Tech:** `nginx:1.27-alpine`, config in `nettio-platform`: `nginx/sites/notes.conf` + `auth.conf`
 - **Authentication:** none at the proxy itself — it is the unauthenticated front door; auth is
   delegated downstream to Keycloak/JWT. Publishes host ports `80` and `443`.
 - **Exposure:** `public` (the only component with published ports; everything else sits behind it)
@@ -71,7 +71,7 @@ Each system is one `## System` block with a fixed set of fields so entries stay 
   - Overly-broad `server_name`/default-vhost fallthrough → SNI cert mismatch (see [operations.md](docs/operations.md#retiring-a-domain))
   - TLS misconfig (protocol downgrade, weak ciphers, OCSP stapling absent)
 - **Our gaps:** no CSP; no `Server` token suppression; no rate limiting at the edge (only in the API layer). See [docs/security.md](docs/security.md#open-security-to-do).
-- **Assess:** **Quarterly** external TLS + header scan (cheap, automatable). Ad-hoc after any `deploy/nginx.conf` change.
+- **Assess:** **Quarterly** external TLS + header scan (cheap, automatable). Ad-hoc after any change to the nettio-platform nginx config.
 
 ---
 
@@ -212,14 +212,14 @@ Each system is one `## System` block with a fixed set of fields so entries stay 
 ## System: VPS host
 
 - **Type:** host / infrastructure
-- **Hosting:** self-hosted single VPS (`/opt/nettio`), fronted by its cloud provider's network
-- **Tech:** Linux host running Docker + Docker Compose; deploy user home holds `landing/`; secrets in `/opt/nettio/.env` (mode 600).
+- **Hosting:** self-hosted single VPS (Notes in `/opt/notes`, edge in `/opt/nettio-platform`), fronted by its cloud provider's network
+- **Tech:** Linux host running Docker + Docker Compose; deploy user home holds `landing/`; secrets in `/opt/notes/.env` (mode 600).
 - **Authentication:** SSH with `VPS_SSH_KEY` private key (used by CI and operators). Host user `VPS_USER`.
 - **Exposure:** `SSH-key` for management; `public` for whatever ports Docker publishes (only 80/443 via nginx). The Docker daemon socket is mounted into the certbot sidecar.
-- **Deployed here:** the entire Compose stack, `.env` secrets, TLS material under `deploy/certbot/conf/live/`, Postgres + uploads volumes, the static landing site.
+- **Deployed here:** the entire Compose stack, `.env` secrets, TLS material under `/opt/nettio-platform/certbot/conf/live/`, Postgres + uploads volumes, the static landing site.
 - **Defenses:** `.env` chmod 600 owned by deploy user; secrets never in git (only `.env.example`); only 80/443 exposed; SSH key-based auth.
 - **Common issues (host / Docker):**
-  - **`docker.sock` mounted into the certbot container** = root-equivalent escape if that container is compromised (deliberate, for the reload hook — see the security note in `deploy/reload-nginx.sh`; keep the sidecar minimal/pinned)
+  - **`docker.sock` mounted into the certbot container** = root-equivalent escape if that container is compromised (deliberate, for the reload hook — see the security note in nettio-platform `certbot/reload-nginx.sh`; keep the sidecar minimal/pinned)
   - Exposed/weak SSH (password auth, root login, no fail2ban)
   - Unpatched host packages / kernel
   - Docker misconfig (privileged containers, exposed daemon, `latest` tags — images are pinned by SHA too)
@@ -233,8 +233,8 @@ Each system is one `## System` block with a fixed set of fields so entries stay 
 ## System: TLS / certificates (Let's Encrypt + certbot)
 
 - **Type:** vendor (public CA) + self-hosted renewal sidecar
-- **Hosting:** third-party CA (Let's Encrypt) + self-hosted `certbot/certbot` container (`nettio-certbot`)
-- **Tech:** certbot HTTP-01 challenge; renew loop `deploy/certbot-renew.sh`; reload hook `deploy/reload-nginx.sh` (SIGHUPs nginx via `docker.sock`); bootstrap `deploy/bootstrap-certs.sh`; monitor `deploy/check-certs.sh`.
+- **Hosting:** third-party CA (Let's Encrypt) + self-hosted `certbot/certbot` container (`edge-certbot`, repo `nettio-platform`)
+- **Tech:** certbot HTTP-01 challenge; renew loop `certbot/certbot-renew.sh`; reload hook `certbot/reload-nginx.sh` (both in nettio-platform) (SIGHUPs nginx via `docker.sock`); bootstrap `deploy/bootstrap-certs.sh`; monitor `deploy/check-certs.sh`.
 - **Authentication:** ACME account key (managed by certbot). No inbound auth surface.
 - **Exposure:** `public` only via the `/.well-known/acme-challenge/` path during issuance/renewal.
 - **Deployed here:** certs for `nettio.eu`, `notes.nettio.eu`, `auth.nettio.eu` under the shared certbot volume.
