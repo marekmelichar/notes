@@ -126,4 +126,4 @@ See [`CONTRIBUTING.md`](./CONTRIBUTING.md). TL;DR: branch from `main`, atomic co
 
 ## License
 
-Private — all rights reserved.
+[MIT](./LICENSE) © 2025-2026 Marek Melichar.
