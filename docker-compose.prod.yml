@@ -1,5 +1,7 @@
 # Notes app. The edge proxy (nginx, certbot, TLS) lives in the nettio-platform repo;
 # this project only joins its external 'edge' network.
+# Deployed by CI through a restricted VPS hook: it fetches this file for the current head of
+# main from GitHub itself (VPS-manager repo, remote/notes-deploy-hook.sh).
 name: notes
 
 services:
