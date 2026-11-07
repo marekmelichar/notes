@@ -20,42 +20,15 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # Keycloak Authentication
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.0
-    container_name: nettio-auth
-    environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?KEYCLOAK_ADMIN_PASSWORD required}
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
-      KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
-      KC_HOSTNAME: https://notes.nettio.eu
-      KC_HOSTNAME_ADMIN: https://auth.nettio.eu
-      KC_PROXY_HEADERS: xforwarded
-      KC_HTTP_ENABLED: "true"
-    command: start --import-realm
-    volumes:
-      - ./notes-prod-realm.json:/opt/keycloak/data/import/notes-realm.json:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    # Also on the shared 'edge' network so the nettio-platform proxy can reach it.
-    networks:
-      default:
-      edge:
-        aliases: [notes-keycloak]
-
   # .NET API
   api:
     image: ghcr.io/${GITHUB_REPOSITORY:-local}/api:latest
     container_name: nettio-notes-api
     environment:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=notes;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}"
-      Keycloak__Authority: "http://keycloak:8080/realms/notes"
-      Keycloak__Issuer: "https://notes.nettio.eu/realms/notes"
+      # Shared login in the nettio-platform repo (realm "nettio"), reached over the edge network.
+      Keycloak__Authority: "http://auth-keycloak:8080/realms/nettio"
+      Keycloak__Issuer: "https://auth.nettio.eu/realms/nettio"
       ASPNETCORE_ENVIRONMENT: Production
       FileStorage__UploadDirectory: "/app/uploads"
     volumes:
@@ -63,8 +36,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      keycloak:
-        condition: service_started
     restart: unless-stopped
     # Also on the shared 'edge' network so the nettio-platform proxy can reach it.
     networks:
@@ -78,12 +49,11 @@ services:
     container_name: nettio-notes-frontend
     environment:
       API_URL: "https://notes.nettio.eu"
-      KEYCLOAK_URL: "https://notes.nettio.eu"
-      KEYCLOAK_REALM: "notes"
+      KEYCLOAK_URL: "https://auth.nettio.eu"
+      KEYCLOAK_REALM: "nettio"
       KEYCLOAK_CLIENT_ID: "notes-frontend"
     depends_on:
       - api
-      - keycloak
     restart: unless-stopped
     # Also on the shared 'edge' network so the nettio-platform proxy can reach it.
     networks:
