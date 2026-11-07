@@ -1,0 +1,200 @@
+import { describe, it, expect, afterEach } from 'vitest';
+import { Editor } from '@tiptap/core';
+import { buildEditorExtensions } from './editorExtensions';
+
+function mountEditor(content = '<p></p>') {
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const editor = new Editor({
+    element: host,
+    extensions: buildEditorExtensions('Write'),
+    content,
+  });
+  return { editor, host };
+}
+
+function typeText(editor: Editor, value: string) {
+  for (const char of value) {
+    const { view } = editor;
+    const { from, to } = view.state.selection;
+    const handled = view.someProp('handleTextInput', (fn) =>
+      fn(view, from, to, char, () => view.state.tr) ? true : null,
+    );
+    if (!handled) {
+      view.dispatch(view.state.tr.insertText(char, from, to));
+    }
+  }
+}
+
+function textRuns(editor: Editor) {
+  const runs: { text: string; marks: { type: string; href?: string }[] }[] = [];
+  editor.state.doc.descendants((node) => {
+    if (!node.isText || !node.text) return;
+    runs.push({
+      text: node.text,
+      marks: node.marks.map((mark) => ({
+        type: mark.type.name,
+        href: typeof mark.attrs.href === 'string' ? mark.attrs.href : undefined,
+      })),
+    });
+  });
+  return runs;
+}
+
+describe('editor writing shortcuts', () => {
+  const mounts: { editor: Editor; host: HTMLDivElement }[] = [];
+
+  afterEach(() => {
+    for (const { editor, host } of mounts) {
+      editor.destroy();
+      host.remove();
+    }
+    mounts.length = 0;
+  });
+
+  function editorWith(content?: string) {
+    const mounted = mountEditor(content);
+    mounts.push(mounted);
+    return mounted.editor;
+  }
+
+  it('turns "# " into a heading and Ctrl+Alt+1 toggles it', () => {
+    const editor = editorWith();
+    typeText(editor, '# ');
+    expect(editor.state.doc.firstChild?.type.name).toBe('heading');
+    expect(editor.state.doc.firstChild?.attrs.level).toBe(1);
+
+    editor.commands.setContent('<p>Hello</p>');
+    editor.commands.keyboardShortcut('Mod-Alt-2');
+    expect(editor.state.doc.firstChild?.type.name).toBe('heading');
+    expect(editor.state.doc.firstChild?.attrs.level).toBe(2);
+  });
+
+  it('turns "- " and "1. " into lists', () => {
+    const bullets = editorWith();
+    typeText(bullets, '- ');
+    expect(bullets.isActive('bulletList')).toBe(true);
+
+    const numbered = editorWith();
+    typeText(numbered, '1. ');
+    expect(numbered.isActive('orderedList')).toBe(true);
+  });
+
+  it('applies bold and italic from markdown markers', () => {
+    const editor = editorWith();
+    typeText(editor, '**bold** and *italic*');
+    expect(textRuns(editor)).toEqual([
+      { text: 'bold', marks: [{ type: 'bold', href: undefined }] },
+      { text: ' and ', marks: [] },
+      { text: 'italic', marks: [{ type: 'italic', href: undefined }] },
+    ]);
+  });
+
+  it('shows the heading level as the placeholder of an empty heading', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const editor = new Editor({
+      element: host,
+      extensions: buildEditorExtensions((node) =>
+        node.type.name === 'heading' ? `Heading ${node.attrs.level as number}` : 'Write',
+      ),
+      content: '<p></p>',
+    });
+    mounts.push({ editor, host });
+
+    expect(host.querySelector('p')).toHaveAttribute('data-placeholder', 'Write');
+    editor.commands.focus();
+    typeText(editor, '## ');
+    expect(host.querySelector('h2')).toHaveAttribute('data-placeholder', 'Heading 2');
+  });
+
+  it('converts [label](url) into a validated link and leaves the next word alone', () => {
+    const editor = editorWith();
+    typeText(editor, 'See [Docs](example.com) next');
+
+    expect(textRuns(editor)).toEqual([
+      { text: 'See ', marks: [] },
+      { text: 'Docs', marks: [{ type: 'link', href: 'https://example.com' }] },
+      { text: ' next', marks: [] },
+    ]);
+  });
+
+  it('does not link a dangerous markdown url or an autolinked javascript: url', () => {
+    const markdown = editorWith();
+    typeText(markdown, '[Nope](javascript:alert(1))');
+    expect(textRuns(markdown).some((run) => run.marks.some((mark) => mark.type === 'link'))).toBe(
+      false,
+    );
+    expect(markdown.getText()).toContain('javascript:alert(1)');
+
+    const typed = editorWith();
+    typeText(typed, 'javascript:alert(1) ');
+    expect(textRuns(typed).some((run) => run.marks.some((mark) => mark.type === 'link'))).toBe(
+      false,
+    );
+  });
+
+  it('keeps stored tel: and ftp: links, and still blanks javascript: on render', () => {
+    const editor = editorWith(
+      '<p><a href="tel:+420123456">Call</a> <a href="ftp://files.example.com/a">Files</a> ' +
+        '<a href="javascript:alert(1)">Bad</a></p>',
+    );
+    const hrefs = Array.from(editor.view.dom.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    expect(hrefs).toEqual(['tel:+420123456', 'ftp://files.example.com/a']);
+    expect(editor.getText()).toContain('Bad');
+  });
+
+  it('renders a link mark without an href instead of throwing', () => {
+    const editor = editorWith();
+    expect(() =>
+      editor.commands.setContent({
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [{ type: 'text', text: 'orphan', marks: [{ type: 'link', attrs: { href: null } }] }],
+          },
+        ],
+      }),
+    ).not.toThrow();
+    expect(editor.view.dom.querySelector('a')).not.toBeNull();
+  });
+
+  it('does not link an unsupported scheme such as ftp://', () => {
+    const editor = editorWith();
+    typeText(editor, '[Files](ftp://files.example.com/readme.txt) ');
+    expect(textRuns(editor).some((run) => run.marks.some((mark) => mark.type === 'link'))).toBe(
+      false,
+    );
+    expect(editor.getText()).toContain('ftp://files.example.com/readme.txt');
+  });
+
+  it('autolinks a url on space and does not swallow the following word', () => {
+    const editor = editorWith();
+    typeText(editor, 'https://example.com tail');
+    expect(textRuns(editor)).toEqual([
+      { text: 'https://example.com', marks: [{ type: 'link', href: 'https://example.com' }] },
+      { text: ' tail', marks: [] },
+    ]);
+  });
+
+  it('toggles lists from the keyboard', () => {
+    const bullets = editorWith('<p>Item</p>');
+    expect(bullets.commands.keyboardShortcut('Mod-Shift-8')).toBe(true);
+    expect(bullets.isActive('bulletList')).toBe(true);
+
+    const numbered = editorWith('<p>Item</p>');
+    expect(numbered.commands.keyboardShortcut('Mod-Shift-7')).toBe(true);
+    expect(numbered.isActive('orderedList')).toBe(true);
+
+    const tasks = editorWith('<p>Item</p>');
+    expect(tasks.commands.keyboardShortcut('Mod-Shift-9')).toBe(true);
+    expect(tasks.isActive('taskList')).toBe(true);
+  });
+
+  it('turns "[ ] " into a task list', () => {
+    const editor = editorWith();
+    typeText(editor, '[ ] ');
+    expect(editor.isActive('taskList')).toBe(true);
+  });
+});

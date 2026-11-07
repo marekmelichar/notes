@@ -11,92 +11,84 @@ interface LinkDialogProps {
   onClose: () => void;
 }
 
+type LinkMode = 'edit' | 'apply' | 'insert';
+
 export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
   const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
-  const [showTextField, setShowTextField] = useState(false);
+  const [mode, setMode] = useState<LinkMode>('apply');
+  const [urlError, setUrlError] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
-  const anchorRef = useRef<HTMLElement | null>(null);
+  const selectionRef = useRef<{ from: number; to: number } | null>(null);
 
   useEffect(() => {
-    if (!open) return;
-
-    const { from, to } = editor.state.selection;
-    const hasSelection = from !== to;
-    const isOnLink = editor.isActive('link');
-
-    let needsTextField = false;
-
-    if (isOnLink) {
-      // Editing an existing link — pre-fill with current URL
-      const currentHref = (editor.getAttributes('link').href as string) || '';
-      setUrl(currentHref);
-      setText('');
-      setShowTextField(false);
-    } else if (hasSelection) {
-      // Text selected — just ask for URL
-      setUrl('');
-      setText('');
-      setShowTextField(false);
-    } else {
-      // No selection, no link — ask for both text and URL
-      setUrl('');
-      setText('');
-      setShowTextField(true);
-      needsTextField = true;
-    }
-
-    // Anchor the popper to the editor's cursor position
-    const coords = editor.view.coordsAtPos(from);
-    anchorRef.current = {
-      getBoundingClientRect: () => ({
-        top: coords.top,
-        bottom: coords.bottom,
-        left: coords.left,
-        right: coords.left,
-        width: 0,
-        height: coords.bottom - coords.top,
-        x: coords.left,
-        y: coords.top,
-        toJSON: () => ({}),
-      }),
-    } as HTMLElement;
-
-    // Focus the appropriate input after mount
-    setTimeout(() => {
-      if (needsTextField) {
-        textInputRef.current?.focus();
-      } else {
-        urlInputRef.current?.focus();
-      }
-    }, 0);
-  }, [open, editor]);
-
-  const handleSubmit = useCallback(() => {
-    const href = validateAndNormalizeUrl(url);
-    if (!href) {
-      onClose();
+    if (!open) {
+      setAnchorEl(null);
       return;
     }
 
     const { from, to } = editor.state.selection;
     const hasSelection = from !== to;
     const isOnLink = editor.isActive('link');
+    selectionRef.current = { from, to };
+    setUrlError(false);
 
+    let nextMode: LinkMode = 'insert';
     if (isOnLink) {
-      // Update existing link's URL
-      editor.chain().focus().extendMarkRange('link').setLink({ href }).run();
+      const currentHref = (editor.getAttributes('link').href as string) || '';
+      setUrl(currentHref);
+      setText('');
+      nextMode = 'edit';
     } else if (hasSelection) {
-      // Apply link to selected text
-      editor.chain().focus().setLink({ href }).run();
+      setUrl('');
+      setText('');
+      nextMode = 'apply';
     } else {
-      // Insert new link with text
+      setUrl('');
+      setText('');
+      nextMode = 'insert';
+    }
+    setMode(nextMode);
+
+    // New object every open so React re-renders even when the field values
+    // happen to match the previous ones (otherwise the popper never mounts).
+    setAnchorEl(anchorAtCursor(editor, from));
+
+    // Focus the appropriate input after mount
+    const focusTimer = window.setTimeout(() => {
+      if (nextMode === 'insert') {
+        textInputRef.current?.focus();
+      } else {
+        urlInputRef.current?.focus();
+      }
+    }, 0);
+    return () => window.clearTimeout(focusTimer);
+  }, [open, editor]);
+
+  const handleSubmit = useCallback(() => {
+    const href = validateAndNormalizeUrl(url);
+    if (!href) {
+      setUrlError(true);
+      urlInputRef.current?.focus();
+      return;
+    }
+
+    const saved = selectionRef.current;
+    let chain = editor.chain().focus();
+    if (saved) {
+      chain = chain.setTextSelection(saved);
+    }
+
+    if (mode === 'edit') {
+      chain.extendMarkRange('link').setLink({ href }).run();
+    } else if (mode === 'apply') {
+      chain.setLink({ href }).run();
+    } else {
       const linkText = text.trim() || href;
-      editor
-        .chain()
-        .focus()
+      chain
         .insertContent({
           type: 'text',
           text: linkText,
@@ -106,22 +98,35 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
     }
 
     onClose();
-  }, [editor, url, text, onClose]);
+  }, [editor, url, text, mode, onClose]);
 
-  if (!open || !anchorRef.current) return null;
+  const handleUnlink = useCallback(() => {
+    const saved = selectionRef.current;
+    let chain = editor.chain().focus();
+    if (saved) {
+      chain = chain.setTextSelection(saved);
+    }
+    chain.extendMarkRange('link').unsetLink().run();
+    onClose();
+  }, [editor, onClose]);
+
+  if (!open || !anchorEl) return null;
 
   return (
     <Popper
       open
-      anchorEl={anchorRef.current}
+      anchorEl={anchorEl}
       placement="bottom-start"
       modifiers={[{ name: 'offset', options: { offset: [0, 8] } }]}
       style={{ zIndex: 1300 }}
     >
       <ClickAwayListener onClickAway={onClose}>
         <Paper elevation={4} className={styles.linkPopover}>
-          <Box className={styles.linkPopoverContent} sx={{ flexDirection: 'column', alignItems: 'stretch' }}>
-            {showTextField && (
+          <Box
+            className={styles.linkPopoverContent}
+            sx={{ flexDirection: 'column', alignItems: 'stretch' }}
+          >
+            {mode === 'insert' && (
               <TextField
                 inputRef={textInputRef}
                 size="small"
@@ -142,13 +147,18 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
                 data-testid="link-dialog-text-input"
               />
             )}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Box className={styles.linkDialogRow}>
               <TextField
                 inputRef={urlInputRef}
                 size="small"
                 placeholder="https://"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                error={urlError}
+                helperText={urlError ? t('Editor.InvalidLink') : undefined}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  if (urlError) setUrlError(false);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -162,6 +172,16 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
                 autoComplete="off"
                 data-testid="link-dialog-url-input"
               />
+              {mode === 'edit' && (
+                <Button
+                  size="small"
+                  color="inherit"
+                  onClick={handleUnlink}
+                  data-testid="link-dialog-unlink"
+                >
+                  {t('Editor.Unlink')}
+                </Button>
+              )}
               <Button
                 size="small"
                 variant="contained"
@@ -178,3 +198,24 @@ export const LinkDialog = ({ editor, open, onClose }: LinkDialogProps) => {
     </Popper>
   );
 };
+
+function anchorAtCursor(editor: Editor, from: number): HTMLElement {
+  try {
+    const coords = editor.view.coordsAtPos(from);
+    return {
+      getBoundingClientRect: () => ({
+        top: coords.top,
+        bottom: coords.bottom,
+        left: coords.left,
+        right: coords.left,
+        width: 0,
+        height: coords.bottom - coords.top,
+        x: coords.left,
+        y: coords.top,
+        toJSON: () => ({}),
+      }),
+    } as HTMLElement;
+  } catch {
+    return editor.view.dom;
+  }
+}

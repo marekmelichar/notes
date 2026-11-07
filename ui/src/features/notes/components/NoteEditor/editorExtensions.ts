@@ -1,0 +1,91 @@
+import { InputRule } from '@tiptap/core';
+import { Fragment, type Node as PMNode } from '@tiptap/pm/model';
+import StarterKit from '@tiptap/starter-kit';
+import Link, { isAllowedUri as tiptapIsAllowedUri } from '@tiptap/extension-link';
+import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
+import { CustomImageExtension } from './CustomImageExtension';
+import { FileEmbedExtension } from './FileEmbedExtension';
+import { isSafeLinkHref, validateAndNormalizeUrl } from './linkUtils';
+
+/**
+ * Markdown link at the cursor: `[label](url)`.
+ * The leading whitespace (when present) is part of the match so it isn't eaten,
+ * and `$` anchors the match to the character just typed.
+ */
+const MARKDOWN_LINK_INPUT = /(?:^|\s)\[([^[\]]+)\]\(([^)\s]+)\)$/;
+
+/**
+ * Link mark that keeps the editor's URL rules and adds `[label](url)`.
+ *
+ * `inclusive: false` matters: with autolink on, TipTap's default link mark is
+ * inclusive, so the next characters you type after a finished link stay linked.
+ */
+export const SafeLink = Link.extend({
+  inclusive: false,
+
+  addInputRules() {
+    const type = this.type;
+    const protocols = this.options.protocols;
+
+    return [
+      new InputRule({
+        find: MARKDOWN_LINK_INPUT,
+        handler: ({ state, range, match }) => {
+          const label = match[1];
+          const href = validateAndNormalizeUrl(match[2] ?? '');
+          if (!label || !href || !tiptapIsAllowedUri(href, protocols)) {
+            return null;
+          }
+
+          const lead = /^\s/.test(match[0]) ? match[0][0] : '';
+          const linkText = state.schema.text(label, [type.create({ href })]);
+          const nodes = lead ? [state.schema.text(lead), linkText] : [linkText];
+
+          const { tr } = state;
+          tr.replaceWith(range.from, range.to, Fragment.from(nodes));
+          tr.removeStoredMark(type);
+        },
+      }),
+    ];
+  },
+});
+
+/** A fixed string, or one per empty node (e.g. "Heading 2" in an empty heading). */
+export type EditorPlaceholder = string | ((node: PMNode) => string);
+
+export function buildEditorExtensions(placeholder: EditorPlaceholder) {
+  return [
+    StarterKit.configure({
+      link: false,
+      underline: false,
+    }),
+    SafeLink.configure({
+      autolink: true,
+      linkOnPaste: true,
+      openOnClick: false,
+      // Match validateAndNormalizeUrl, which prefixes https — not TipTap's http default.
+      defaultProtocol: 'https',
+      HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' },
+      // Runs when links are rendered, parsed, pasted, and autolinked — so it must accept
+      // what is already stored (tel:, ftp:) and a missing href, which TipTap passes as
+      // null. Typed links get the stricter http/https/mailto rule in validateAndNormalizeUrl.
+      isAllowedUri: (url, { defaultValidate }) =>
+        !url || (isSafeLinkHref(url) && defaultValidate(url)),
+    }),
+    CustomImageExtension.configure({
+      allowBase64: false,
+      HTMLAttributes: { class: 'editor-image' },
+    }),
+    Underline,
+    TaskList,
+    TaskItem.configure({ nested: true }),
+    FileEmbedExtension,
+    Placeholder.configure({
+      placeholder:
+        typeof placeholder === 'function' ? ({ node }) => placeholder(node) : placeholder,
+    }),
+  ];
+}

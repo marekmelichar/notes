@@ -55,6 +55,7 @@
     "Trash": "Trash",
     "Unfiled": "Unfiled",
     "NewNote": "New Note",
+    "NewNoteShort": "Note",
     "CreateNote": "Create Note",
     "SelectNote": "Select a note or create a new one",
     "SelectNoteHint": "Your notes will appear here when you select them from the list",
@@ -172,7 +173,9 @@
     "UploadingFile": "Uploading {{name}}..."
   },
   "Editor": {
-    "Placeholder": "Start writing...",
+    "Placeholder": "Start writing... # heading, - list, {{shortcut}} link",
+    "Paragraph": "Paragraph",
+    "Heading": "Heading",
     "Heading1": "Heading 1",
     "Heading2": "Heading 2",
     "Heading3": "Heading 3",
@@ -196,8 +199,9 @@
     "LinkText": "Link text",
     "Indent": "Indent",
     "Outdent": "Outdent",
-    "Image": "Insert image",
-    "AttachFile": "Attach file",
+    "InsertFile": "Insert image or file",
+    "MoreFormatting": "More formatting",
+    "InvalidLink": "Use an http, https, or mailto link",
     "EnterUrl": "Enter URL:",
     "FileOpen": "Open file",
     "FileDelete": "Delete file"

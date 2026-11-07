@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateAndNormalizeUrl, truncateUrl } from './linkUtils';
+import { validateAndNormalizeUrl, truncateUrl, isSafeLinkHref } from './linkUtils';
 
 describe('Link URL validation', () => {
   describe('dangerous protocol blocking', () => {
@@ -23,6 +23,14 @@ describe('Link URL validation', () => {
     it('should block protocols with leading whitespace after trim', () => {
       expect(validateAndNormalizeUrl('  javascript:alert(1)  ')).toBeNull();
     });
+
+    it('should block schemes split by whitespace or control characters', () => {
+      expect(validateAndNormalizeUrl('java\nscript:alert(1)')).toBeNull();
+      expect(validateAndNormalizeUrl('java\tscript:alert(1)')).toBeNull();
+      expect(validateAndNormalizeUrl('\u0001javascript:alert(1)')).toBeNull();
+      expect(isSafeLinkHref('jav\u0000ascript:alert(1)')).toBe(false);
+      expect(isSafeLinkHref('https://example.com/javascript:')).toBe(true);
+    });
   });
 
   describe('safe URL handling', () => {
@@ -44,6 +52,29 @@ describe('Link URL validation', () => {
 
     it('should auto-prefix https:// for bare domains with paths', () => {
       expect(validateAndNormalizeUrl('example.com/page?q=1')).toBe('https://example.com/page?q=1');
+    });
+
+    it('should auto-prefix https:// for a host and port', () => {
+      expect(validateAndNormalizeUrl('example.com:8080/path')).toBe('https://example.com:8080/path');
+    });
+
+    it('should give protocol-relative URLs https and reject bare paths', () => {
+      expect(validateAndNormalizeUrl('//example.com/docs')).toBe('https://example.com/docs');
+      expect(validateAndNormalizeUrl('///example.com')).toBeNull();
+      expect(validateAndNormalizeUrl('/notes/123')).toBeNull();
+    });
+
+    it('should treat a dot-free name followed by a port as a host', () => {
+      expect(validateAndNormalizeUrl('localhost:3000')).toBe('https://localhost:3000');
+      expect(validateAndNormalizeUrl('intranet:8080/wiki?q=1')).toBe('https://intranet:8080/wiki?q=1');
+      expect(validateAndNormalizeUrl('tel:123456')).toBeNull();
+      expect(validateAndNormalizeUrl('mailto:me@example.com')).toBe('mailto:me@example.com');
+    });
+
+    it('should reject unsupported schemes instead of prefixing https://', () => {
+      expect(validateAndNormalizeUrl('ftp://files.example.com/readme.txt')).toBeNull();
+      expect(validateAndNormalizeUrl('file:///tmp/secret.txt')).toBeNull();
+      expect(validateAndNormalizeUrl('blob:https://example.com/uuid')).toBeNull();
     });
 
     it('should return null for empty input', () => {

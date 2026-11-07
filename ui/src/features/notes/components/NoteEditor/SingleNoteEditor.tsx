@@ -96,11 +96,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     // (c) Reject a save where the editor went from "baseline never non-empty"
     // to "still empty" — this is the ghost-tab wipe signature.
     const editorIsEmpty = editorRef.current?.isEmpty() ?? true;
-    if (
-      hasContentChanged &&
-      editorIsEmpty &&
-      !baselineEverNonEmptyRef.current
-    ) {
+    if (hasContentChanged && editorIsEmpty && !baselineEverNonEmptyRef.current) {
       return;
     }
 
@@ -207,10 +203,13 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
     }
   }, [markDirty]);
 
-  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setTitle(e.target.value);
-    markDirty();
-  }, [markDirty]);
+  const handleTitleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setTitle(e.target.value);
+      markDirty();
+    },
+    [markDirty],
+  );
 
   // Keyboard shortcut for save (Ctrl/Cmd + S) — only when active
   useEffect(() => {
@@ -312,6 +311,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
   return (
     <Box
       className={`${styles.editorContainer} ${!isActive ? styles.editorHidden : ''}`}
+      data-testid="note-editor"
     >
       <EditorHeader
         note={note}
@@ -336,10 +336,7 @@ export const SingleNoteEditor = ({ noteId, isActive, saveRef }: SingleNoteEditor
         </Alert>
       )}
 
-      <ErrorBoundary
-        key={note.id}
-        fallback={<EditorErrorFallback />}
-      >
+      <ErrorBoundary key={note.id} fallback={<EditorErrorFallback />}>
         <TiptapEditor
           ref={editorRef}
           initialContent={initialContent}

@@ -90,7 +90,8 @@ vi.mock('../../services/notesApi', () => ({
   },
 }));
 vi.mock('@/lib', async () => {
-  const { getApiErrorMessage } = await vi.importActual<typeof import('@/lib/apiError')>('@/lib/apiError');
+  const { getApiErrorMessage } =
+    await vi.importActual<typeof import('@/lib/apiError')>('@/lib/apiError');
   return { getApiErrorMessage, apiManager: {}, getAuthToken: vi.fn() };
 });
 vi.mock('@/i18n', () => ({ default: { t: (key: string) => key } }));
@@ -99,8 +100,12 @@ vi.mock('@/i18n', () => ({ default: { t: (key: string) => key } }));
 const storage: Record<string, string> = {};
 vi.stubGlobal('localStorage', {
   getItem: (k: string) => storage[k] ?? null,
-  setItem: (k: string, v: string) => { storage[k] = v; },
-  removeItem: (k: string) => { delete storage[k]; },
+  setItem: (k: string, v: string) => {
+    storage[k] = v;
+  },
+  removeItem: (k: string) => {
+    delete storage[k];
+  },
 });
 
 import { notesSlice } from '../../store/notesSlice';
@@ -219,8 +224,15 @@ describe('SingleNoteEditor save guards (ADR 0009)', () => {
     const store = buildStore(note);
     store.dispatch({
       type: 'notes/updateNote/rejected',
-      payload: { conflict: true, message: 'This note was changed elsewhere. Reload to see the newer version.' },
-      meta: { arg: { id: note.id, updates: { content: 'x' } }, requestId: 'r1', requestStatus: 'rejected' },
+      payload: {
+        conflict: true,
+        message: 'This note was changed elsewhere. Reload to see the newer version.',
+      },
+      meta: {
+        arg: { id: note.id, updates: { content: 'x' } },
+        requestId: 'r1',
+        requestStatus: 'rejected',
+      },
       error: { message: 'Rejected' },
     });
 

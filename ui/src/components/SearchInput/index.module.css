@@ -50,9 +50,23 @@
 @media (max-width: 48rem) {
   .searchContainer {
     max-width: 100%;
+    margin: 0 0.5rem;
   }
 
   .shortcutHint {
     display: none;
+  }
+
+  /* Phone: icon only. A sliver of placeholder text ("S…") reads as a glitch. */
+  .searchContainer {
+    justify-content: center;
+  }
+
+  .placeholder {
+    display: none;
+  }
+
+  .searchIcon {
+    margin-right: 0;
   }
 }

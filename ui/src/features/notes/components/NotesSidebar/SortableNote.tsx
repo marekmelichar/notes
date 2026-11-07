@@ -53,7 +53,9 @@ export const SortableNote = React.memo(({ note, level }: SortableNoteProps) => {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: level > 0 ? step + level * step : 12,
+    // Root (unfiled) notes: one small step under the "Unfiled" label; the drag
+    // handle floats in that gutter instead of pushing the row right.
+    paddingLeft: level > 0 ? step + level * step : 28,
     opacity: isDragging ? 0.5 : 1,
     "--indent-level": level,
   } as React.CSSProperties;
@@ -65,7 +67,7 @@ export const SortableNote = React.memo(({ note, level }: SortableNoteProps) => {
   return (
     <Box
       ref={combinedRef}
-      className={`${styles.noteTreeItem} ${isSelected ? styles.noteTreeItemActive : ""} ${isDragging ? styles.dragging : ""}`}
+      className={`${styles.noteTreeItem} ${level === 0 ? styles.noteTreeItemRoot : ""} ${isSelected ? styles.noteTreeItemActive : ""} ${isDragging ? styles.dragging : ""}`}
       style={style}
       onClick={handleClick}
       data-testid={`sidebar-note-${note.id}`}
