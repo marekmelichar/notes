@@ -5,7 +5,9 @@ name: notes
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16
+    # Exact version + digest (the image running since 6 Nov 2026): deploys never pull a newer
+    # Postgres by surprise ("postgres:16" did, recreating the DB). Upgrade deliberately.
+    image: postgres:16.15@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657
     container_name: nettio-notes-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}

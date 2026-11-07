@@ -71,7 +71,7 @@ If a change touches **only docs** (or another non-deploying path), the workflow 
 
 | Service | Image | Purpose | Notes |
 |---|---|---|---|
-| `postgres` | `postgres:16` | `notes` DB (its old `keycloak` DB is unused since the move to the shared login) | External volume `nettio_postgres_data` (pinned name; never rename), init `init-db.sql` |
+| `postgres` | `postgres:16.15` (pinned by digest) | `notes` DB (its old `keycloak` DB is unused since the move to the shared login) | External volume `nettio_postgres_data` (pinned name; never rename), init `init-db.sql` |
 | `api` | `ghcr.io/<repo>/api:latest` | .NET API | External volume `nettio_uploads_data:/app/uploads` |
 | `frontend` | `ghcr.io/<repo>/frontend:latest` | React SPA via internal Nginx | `docker-entrypoint.sh` rewrites `env.js` from `${API_URL}`, `${KEYCLOAK_URL}`, `${KEYCLOAK_REALM}`, `${KEYCLOAK_CLIENT_ID}` |
 
