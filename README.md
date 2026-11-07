@@ -2,6 +2,8 @@
 
 A server-backed, single-owner notes app. React + Vite frontend, .NET 10 API, PostgreSQL 16, Keycloak 26 auth, packaged as a PWA.
 
+Live at **https://notes.nettio.eu**. A pet project I build and run end to end, from the editor UI to the server it deploys to.
+
 ## What it is
 
 - **Single-tenant per user** — every entity has a `UserId`; ownership enforced server-side.
@@ -9,6 +11,14 @@ A server-backed, single-owner notes app. React + Vite frontend, .NET 10 API, Pos
 - **Folder + tag organization** with full-text search.
 - **Installable PWA** with ~1h offline read cache. Not offline-first — see [ADR 0005](./docs/adr/0005-no-offline-first-sync.md).
 - **OIDC auth** via self-hosted Keycloak (PKCE, JWT bearer).
+
+## In production
+
+- Runs on a single VPS under `nettio.eu`, next to other projects on their own subdomains.
+- The edge proxy (Nginx, Let's Encrypt) and the shared login (Keycloak, realm `nettio` at `auth.nettio.eu`) live in a separate platform repo. This app only joins its Docker network, so deploying Notes never restarts anything else.
+- Merging to `main` deploys: GitHub Actions builds the images, pushes them to GHCR and calls a restricted deploy hook. That key can only deploy the current head of `main`, never open a shell.
+- Every image and GitHub Action is pinned by digest or commit SHA.
+- Nightly database dumps, daily disk images, and an uptime check that alerts on Telegram.
 
 ## Quick start
 
@@ -37,10 +47,10 @@ Test user: `testuser / testuser`.
 |---|---|
 | Frontend | React 19, TypeScript, Vite 7, MUI v6, Redux Toolkit, TipTap |
 | Backend | .NET 10, ASP.NET Core, EF Core, Npgsql |
-| Database | PostgreSQL 16 (shared with Keycloak) |
-| Auth | Keycloak 26 (OIDC/JWT) |
-| Edge | Nginx 1.27 + Let's Encrypt |
-| CI/CD | GitHub Actions → GHCR → SSH deploy |
+| Database | PostgreSQL 16 (locally it also hosts Keycloak's DB; in production Keycloak has its own) |
+| Auth | Keycloak 26 (OIDC/JWT), the shared nettio login in production |
+| Edge | Nginx 1.27 + Let's Encrypt, in the platform repo |
+| CI/CD | GitHub Actions → GHCR → restricted deploy hook |
 
 ## Repository layout
 
@@ -48,7 +58,6 @@ Test user: `testuser / testuser`.
 notes/
 ├── api/              .NET API project + integration tests
 ├── ui/               React frontend (also contains its own docs/)
-├── deploy/           Production Nginx config
 ├── docs/             ← Documentation lives here
 ├── scripts/          One-off ops scripts
 ├── docker-compose.yml          Local dev stack
@@ -106,6 +115,10 @@ cd api/EpoznamkyApi
 dotnet ef migrations add <Name>
 dotnet ef database update           # dev only; prod is manual
 ```
+
+## How it's built
+
+Developed with AI coding assistants (Claude Code; see [`CLAUDE.md`](./CLAUDE.md)). The design choices and their trade-offs are written down as [ADRs](./docs/adr/), for example why there is [no offline-first sync](./docs/adr/0005-no-offline-first-sync.md) and why notes use [optimistic concurrency](./docs/adr/0009-optimistic-concurrency-on-note-put.md).
 
 ## Contributing
 
