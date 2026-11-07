@@ -11,6 +11,7 @@ REST API exposed by `api/EpoznamkyApi`. Single version: `v1`. Base path: `/api/v
 - **Error envelope**: RFC 7807 ProblemDetails with `traceId`. See [error-handling.md](./error-handling.md).
 - **Versioning**: hard-coded route prefix. No header/query negotiation. New version = new prefix (e.g. `/api/v2/...`).
 - **Rate limits**: 100 req/min/user globally, 10 req/min for file uploads.
+- **Note content**: `content` is a string holding a serialized TipTap document (`JSON.stringify(editor.getJSON())`), not HTML. The server stores it as given. The editor only loads a JSON object with `"type": "doc"` (or legacy BlockNote JSON, see [editor-architecture.md](../ui/docs/editor-architecture.md)); anything else, HTML included, opens as an empty note.
 
 ## Discovery
 
@@ -126,7 +127,7 @@ Authorization: Bearer …
 Content-Type: application/json
 
 {
-  "content": "<p>Updated note body</p>",
+  "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Updated note body\"}]}]}",
   "updatedAt": 1745020800000
 }
 ```
@@ -157,10 +158,22 @@ Content-Type: application/json
 
 {
   "title": "Architecture notes",
-  "content": "<p>System overview…</p>",
+  "content": "{\"type\":\"doc\",\"content\":[{\"type\":\"heading\",\"attrs\":{\"level\":2},\"content\":[{\"type\":\"text\",\"text\":\"System overview\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"API, database, auth.\"}]}]}",
   "folderId": null,
   "tags": ["a4d7…", "b2e9…"],
   "isPinned": false
+}
+```
+
+`tags` holds tag IDs, not names. Unescaped, that `content` is:
+
+```json
+{
+  "type": "doc",
+  "content": [
+    { "type": "heading", "attrs": { "level": 2 }, "content": [{ "type": "text", "text": "System overview" }] },
+    { "type": "paragraph", "content": [{ "type": "text", "text": "API, database, auth." }] }
+  ]
 }
 ```
 
@@ -171,7 +184,7 @@ Location: /api/v1/notes/c93f1c18-…
 {
   "id": "c93f1c18-…",
   "title": "Architecture notes",
-  "content": "<p>System overview…</p>",
+  "content": "{\"type\":\"doc\",\"content\":[…]}",
   "folderId": null,
   "isPinned": false,
   "isDeleted": false,
