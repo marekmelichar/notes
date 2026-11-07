@@ -74,6 +74,11 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    # Also on the shared 'edge' network so the nettio-platform proxy can reach it.
+    networks:
+      default:
+      edge:
+        aliases: [notes-keycloak]
 
   # .NET API
   api:
@@ -93,6 +98,11 @@ services:
       keycloak:
         condition: service_started
     restart: unless-stopped
+    # Also on the shared 'edge' network so the nettio-platform proxy can reach it.
+    networks:
+      default:
+      edge:
+        aliases: [notes-api]
 
   # Frontend
   frontend:
@@ -107,7 +117,17 @@ services:
       - api
       - keycloak
     restart: unless-stopped
+    # Also on the shared 'edge' network so the nettio-platform proxy can reach it.
+    networks:
+      default:
+      edge:
+        aliases: [notes-frontend]
 
 volumes:
   postgres_data:
   uploads_data:
+
+networks:
+  # Created once on the VPS (docker network create edge); owned by nettio-platform.
+  edge:
+    external: true
