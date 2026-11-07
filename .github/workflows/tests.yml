@@ -1,0 +1,49 @@
+name: Tests
+
+# Reusable: called by validate.yml (pull requests) and deploy.yml (before images are built).
+on:
+  workflow_call:
+    inputs:
+      ui:
+        description: Run frontend lint and unit tests
+        type: boolean
+        default: true
+      api:
+        description: Run API integration tests
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    name: Frontend (lint + unit tests)
+    if: inputs.ui
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          # Same major as ui/Dockerfile, so tests run on the Node that builds production.
+          node-version: '25'
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run test:run
+
+  api:
+    name: API (integration tests)
+    if: inputs.api
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.x'
+      # Testcontainers starts a throwaway Postgres in the runner's Docker.
+      - run: dotnet test api/EpoznamkyApi.IntegrationTests/EpoznamkyApi.IntegrationTests.csproj --nologo

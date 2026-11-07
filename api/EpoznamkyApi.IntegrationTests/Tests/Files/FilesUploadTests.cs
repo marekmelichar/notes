@@ -63,11 +63,25 @@ public class FilesUploadTests(DatabaseFixture db) : IntegrationTestBase(db)
     }
 
     [Fact]
-    public async Task Upload_should_reject_invalid_content_type()
+    public async Task Upload_should_take_the_type_from_the_extension_when_the_browser_type_is_not_allowed()
     {
+        // Browsers send generic or odd MIME types; the API ignores them and resolves the type
+        // from the allow-listed extension, so the stored and served type is always a safe one.
         var content = CreateFakeImage();
 
         var response = await Client.UploadFile("test.png", content, "application/x-executable");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var file = await response.ReadAs<FileUploadResponse>();
+        file.ContentType.Should().Be("image/png");
+    }
+
+    [Fact]
+    public async Task Upload_should_reject_a_disallowed_extension_even_with_an_allowed_type()
+    {
+        var content = CreateFakeImage();
+
+        var response = await Client.UploadFile("payload.exe", content, "image/png");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

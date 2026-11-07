@@ -8,6 +8,9 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
+    // Node 25 turned on its own Web Storage. Its global localStorage hides jsdom's, so any
+    // module that reads localStorage at import time (the store) crashes. Use jsdom's.
+    execArgv: ['--no-experimental-webstorage'],
     include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/tests/**'],
     coverage: {

@@ -36,8 +36,16 @@ jobs:
               - 'init-db.sql'
               - 'notes-prod-realm.json'
 
-  build-api:
+  tests:
     needs: changes
+    if: needs.changes.outputs.api == 'true' || needs.changes.outputs.ui == 'true' || github.event.inputs.force_build_all == 'true'
+    uses: ./.github/workflows/tests.yml
+    with:
+      ui: ${{ needs.changes.outputs.ui == 'true' || github.event.inputs.force_build_all == 'true' }}
+      api: ${{ needs.changes.outputs.api == 'true' || github.event.inputs.force_build_all == 'true' }}
+
+  build-api:
+    needs: [changes, tests]
     if: needs.changes.outputs.api == 'true' || github.event.inputs.force_build_all == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -69,7 +77,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=api
 
   build-ui:
-    needs: changes
+    needs: [changes, tests]
     if: needs.changes.outputs.ui == 'true' || github.event.inputs.force_build_all == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -101,9 +109,10 @@ jobs:
           cache-to: type=gha,mode=max,scope=ui
 
   deploy:
-    needs: [changes, build-api, build-ui]
+    needs: [changes, tests, build-api, build-ui]
     if: |
       always() &&
+      needs.tests.result != 'failure' && needs.tests.result != 'cancelled' &&
       (needs.build-api.result == 'success' || needs.build-api.result == 'skipped') &&
       (needs.build-ui.result == 'success' || needs.build-ui.result == 'skipped') &&
       (needs.build-api.result == 'success' || needs.build-ui.result == 'success' || needs.changes.outputs.deploy == 'true')

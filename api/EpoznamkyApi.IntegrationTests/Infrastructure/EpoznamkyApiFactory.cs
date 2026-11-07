@@ -25,6 +25,10 @@ public class EpoznamkyApiFactory : WebApplicationFactory<Program>
     {
         builder.UseEnvironment("Development");
 
+        // Program.cs reads this at startup for the Postgres health check. Without it the
+        // check pings localhost from appsettings.json and /health/ready answers 503.
+        builder.UseSetting("ConnectionStrings:DefaultConnection", _connectionString);
+
         builder.ConfigureServices(services =>
         {
             // Replace DbContext with Testcontainers connection
