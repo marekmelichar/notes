@@ -13,6 +13,7 @@ services:
       - ./deploy/certbot/conf:/etc/letsencrypt:ro
       - ./deploy/certbot/www:/var/www/certbot:ro
       - /home/deploy/nettio/landing:/var/www/nettio:ro
+      - /home/deploy/itrackfood/web:/var/www/itrackfood:ro
     # "always", not "unless-stopped": nginx was once left stopped by hand, and Docker
     # then skipped it on every reboot (all sites down 18 Oct - 6 Nov 2026).
     restart: always
