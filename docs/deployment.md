@@ -28,7 +28,7 @@ flowchart TB
 
     Repo -->|push to main| Actions
     Actions -->|build + push| GHCR
-    Actions -->|scp compose| VPS
+    Actions -->|ssh: deploy sha| VPS
     Actions -->|ssh: pull + up -d| Compose
     GHCR -.->|pull on deploy| UI
     GHCR -.->|pull on deploy| API
@@ -52,7 +52,7 @@ Jobs (path-filtered via `dorny/paths-filter`):
 | `changes` | always | Determines which paths changed |
 | `build-api` | `api/**` changed | Docker build → push `ghcr.io/<repo>/api:{latest, sha}` |
 | `build-ui` | `ui/**` changed | Docker build → push `ghcr.io/<repo>/frontend:{latest, sha}` |
-| `deploy` | any of above succeeded **or** `docker-compose.prod.yml`/`init-db.sql`/`notes-prod-realm.json` changed | scp configs to `/opt/notes`; ssh `docker compose pull && up -d && image prune` |
+| `deploy` | any of above succeeded **or** `docker-compose.prod.yml`/`init-db.sql`/`notes-prod-realm.json` changed | ssh `deploy <sha>` to a restricted hook on the VPS, which checks the sha is the head of `main`, fetches that commit's compose/init/realm files from GitHub, validates, then `docker compose pull && up -d` (hook source: VPS-manager `remote/notes-deploy-hook.sh`) |
 
 If a change touches **only docs** (or another non-deploying path), the workflow runs but every build skips and `deploy` is gated off — the system is left untouched.
 
@@ -60,10 +60,8 @@ If a change touches **only docs** (or another non-deploying path), the workflow 
 
 | Secret | Used for |
 |---|---|
-| `GITHUB_TOKEN` | (auto) GHCR push + login |
-| `VPS_HOST` | SSH target |
-| `VPS_USER` | SSH user |
-| `VPS_SSH_KEY` | Private key for SSH |
+| `GITHUB_TOKEN` | (auto) GHCR push |
+| `NOTES_DEPLOY_KEY` | Private key that may only run the VPS deploy hook (`deploy <sha>`; forced command, no shell) |
 
 ## Production stack
 
