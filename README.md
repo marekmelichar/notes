@@ -4,6 +4,18 @@ A server-backed, single-owner notes app. React + Vite frontend, .NET 10 API, Pos
 
 Live at **https://notes.nettio.eu**. A pet project I build and run end to end, from the editor UI to the server it deploys to.
 
+![Notes on desktop: folders, note list and the editor with an image and a checklist](docs/screenshots/desktop-light.png)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/desktop-dark.png" alt="Dark theme with code blocks"></td>
+    <td width="25%"><img src="docs/screenshots/mobile-list.png" alt="Note list on a phone"></td>
+    <td width="25%"><img src="docs/screenshots/mobile-note.png" alt="Editor on a phone"></td>
+  </tr>
+</table>
+
+A demo login with sample content is available on request.
+
 ## What it is
 
 - **Single-tenant per user** — every entity has a `UserId`; ownership enforced server-side.
