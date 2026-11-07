@@ -120,11 +120,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opts => {
         opts.Authority = builder.Configuration["Keycloak:Authority"];   // dev
         opts.MetadataAddress = ...                                       // prod issuer
-        opts.Audience = "account";
         opts.RequireHttpsMetadata = false;   // Nginx terminates TLS
         opts.TokenValidationParameters = new() {
             ValidateIssuer = !isDev,
             ValidateAudience = !isDev,
+            ValidAudiences = ["notes-api", "account"],   // "account" only during the switch
             NameClaimType = "preferred_username",
         };
     });
@@ -133,7 +133,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 Notes:
 
 - **Issuer** comes from `Keycloak:Authority` (dev) or `Keycloak:Issuer` (prod) config keys. Default: `http://localhost:8080/realms/notes`.
-- **Audience** is `"account"` (Keycloak's default for public clients). If you change this, update both the realm and `Program.cs`.
+- **Audience** is `"notes-api"`, added to access tokens by the `notes-api-audience` mapper (type *Audience*, included custom audience `notes-api`, access token only) on the `notes-frontend` client. `"account"` is still accepted while older tokens expire; it goes away in a follow-up. Why: [ADR 0010](./adr/0010-own-audience-for-the-notes-api.md). If you change the audience, update the live realm (Keycloak admin, realm `nettio`), `notes-dev-realm.json` and `Program.cs`.
 - **JWKS** is fetched lazily and cached per the JWT bearer middleware defaults (1h refresh, 24h fail).
 - **TLS metadata** is *not* required because Nginx terminates HTTPS at the edge and forwards plain HTTP internally. If you ever expose the API directly, flip `RequireHttpsMetadata = true`.
 - **Dev mode skips issuer/audience validation** so the realm can be reached at multiple hostnames (`localhost`, container name, etc.) without breaking. **Never** disable in prod.
